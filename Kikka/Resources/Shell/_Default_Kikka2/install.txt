@@ -1,0 +1,4 @@
+Charset,UTF-8
+type,shell
+name,_Default_Kikka2
+directory,_Default_Kikka2
