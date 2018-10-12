@@ -1,0 +1,205 @@
+Balloon設置 ?
+ Balloon為人格使用的對話框,其相關檔如下：
+
+?Balloon設置 
+?descript.txt 
+?balloonc*.png 
+?balloons*.png 
+?balloonk*.png 
+?online*.png 
+?arrow*.png 
+?balloons*s.txt/balloons*k.txt 
+?thumbnail.png 
+?SSP追加圖片檔： 
+■marker.png和sstp_new.png。 
+■ok_down.png/ok_up.png、cancel_down.png/cancel_up.png、mode_down.png/mode_up.png 
+↑
+descript.txt ?
+Balloon設置相關，內容項參見BalloonDescript。
+
+↑
+balloonc*.png ?
+輸入框的Balloon，檔對應如下：
+
+balloonc0.png Send框 
+balloonc1.png Communicate框 
+balloonc2.png Teach框 
+balloonc3.png Input框 
+balloonc4.png Address Bar框(SSP/1.11 Pre25，省略時用Input代替) 
+
+↑
+balloons*.png ?
+\0側Balloon，一般檔對應如下：
+
+balloons0.png 普通Balloon(左側) 
+balloons1.png 普通Balloon(右側) 
+balloons2.png 豎長Balloon(左側) 
+balloons3.png 豎長Balloon(右側) 
+
+↑
+balloonk*.png ?
+\1側Balloon，一般檔對應同上（大小稍小）。
+
+↑
+online*.png ?
+網路通信時顯示的圖片，以編號順序迴圈顯示動畫效果。
+
+↑
+arrow*.png ?
+用於捲動文章的箭頭圖片，0向上、1向下。
+
+↑
+balloons*s.txt/balloons*k.txt ?
+單獨設置對應Balloon的檔，可覆寫descirpt.txt的內容，內容項參見BalloonDescript。
+
+↑
+thumbnail.png ?
+Balloon預覽圖，也可使用bmp或jpg。將png尾碼名改為pnr時，以左上(0,0)處圖元為透明色。當然也可使用pna蒙版來透明。
+
+
+--------------------BalloonDescript------------------------------------------------------------
+
+↑
+SSP追加圖片檔： ?
+↑
+marker.png和sstp_new.png。 ?
+分別為\![*]標記和SSTP標記，如果沒有則都載入sstp.png(SSP/1.10.17以後)。
+
+↑
+ok_down.png/ok_up.png、cancel_down.png/cancel_up.png、mode_down.png/mode_up.png ?
+Balloon的輸入框OK/取消/模式切換按鈕使用圖片(SSP/2.02.19以後)。
+
+
+
+--------------------------------------------------------------------------------
+
+基本資料 
+charset,字串 此文檔顯示編碼，繁體中文Big5, 簡體中文GB2312, 日文Shift-JIS或其他(UTF-8) 
+type,balloon 類別，在這裡為ballon不用更改 
+id,ID Ballon名稱，英數半形 
+name,Ballon名稱 Ballon名稱 
+homeurl,URL 網路更新網址 
+作者資料 
+craftman,作者名 作者名(英數或半形) 
+craftmanw,作者名 作者名(全形可) 
+craftmanurl,URL 作者網址 
+SSTP 
+sstpmarker.x,座標 SSTP Marker X座標 
+sstpmarker.y,座標 SSTP Marker Y座標 
+sstpmessage.font.color.r,數字 SSTP訊息文字顏色紅值(0~255) 
+sstpmessage.font.color.g,數字 SSTP訊息文字顏色綠值(0~255) 
+sstpmessage.font.color.b,數字 SSTP訊息文字顏色藍值(0~255) 
+sstpmessage.font.height,尺寸 SSTP訊息文字大小 
+sstpmessage.font.name,字形名稱 SSTP訊息字形，預設為MS Gothic 
+sstpmessage.x,座標 SSTP訊息X座標 
+sstpmessage.y,座標 SSTP訊息Y座標 
+sstpmessage.xr,座標 SSTP或URL顯示字串過長時，在指定位置切斷(SSP/1.10.11以後) 
+輸入框 
+communicatebox.height,尺寸 通訊視窗高度 
+communicatebox.width,尺寸 通訊視窗寬度 
+communicatebox.x,座標 通訊視窗X座標 
+communicatebox.y,座標 通訊視窗Y座標 
+計數器數字 
+number.font.color.r,數字 計數器數字顏色紅值(0~255) 
+number.font.color.g,數字 計數器數字顏色綠值(0~255) 
+number.font.color.b,數字 計數器數字顏色藍值(0~255) 
+number.font.height,尺寸 計數器數字大小 
+number.font.name,字形名稱 計數器用字形名稱 
+number.xr,座標 計數器X座標(從右邊算) 
+number.y,座標 計數器Y座標 
+箭頭符號 
+arrow0.x,座標 往上箭頭符號圖片X座標 
+arrow0.y,座標 往上箭頭符號圖片Y座標 
+arrow1.x,座標 往下箭頭符號圖片X座標 
+arrow1.y,座標 往下箭頭符號圖片Y座標 
+文字區域 
+origin.x,座標 對話啟始X座標 
+origin.y,座標 對話啟始Y座標 
+validrect.bottom,座標 本文區下邊界 
+validrect.left,座標 本文區左邊界 
+validrect.right,座標 本文區右邊界 
+validrect.top,座標 本文區上邊界 
+windowposition.x,座標 相對於本體的X坐標(balloons*s.txt/balloons*k.txt專用) 
+windowposition.y,座標 相對於本體的Y坐標(balloons*s.txt/balloons*k.txt專用) 
+wordwrappoint.x,座標 自動換行折返X座標 
+wordwrappoint.y,座標 自動換行折返Y坐標,現已停用 
+字型 
+font.name,字形名稱 使用的字型，預設為MS Gothic 
+font.color.r,數字 文字顏色紅值(0~255) 
+font.color.g,數字 文字顏色綠值(0~255) 
+font.color.b,數字 文字顏色藍值(0~255) 
+font.shadowcolor.r,數字 文字陰影顏色紅值(0~255) 
+font.shadowcolor.g,數字 文字陰影顏色綠值(0~255) 
+font.shadowcolor.b,數字 文字陰影顏色藍值(0~255) 
+選項(選中) 
+cursor.style,形狀 選取區表示形狀, square=塊狀, underline=底線, 可用square+underline連用 
+cursor.blendmethod,命令 選取區反白模式, none=無, notmaskpen=r2_notmaskpen, mergepennot=r2_mergepennot 
+cursor.brush.color.r,數字 選取區反白色紅(0~255) 
+cursor.brush.color.g,數字 選取區反白色綠(0~255) 
+cursor.brush.color.b,數字 選取區反白色藍(0~255) 
+cursor.font.color.r,數字 選取區文字顏色紅(0~255)在不指定blendmethod模式時有效 
+cursor.font.color.g,數字 選取區文字顏色綠(0~255)在不指定blendmethod模式時有效 
+cursor.font.color.b,數字 選取區文字顏色藍(0~255)在不指定blendmethod模式時有效 
+cursor.pen.color.r,數字 選取區外框或底線顏色紅(0~255) 
+cursor.pen.color.g,數字 選取區外框或底線顏色綠(0~255) 
+cursor.pen.color.b,數字 選取區外框或底線顏色藍(0~255) 
+選項(未選中)(SSP/2.01.04以後) 
+cursor.style,形狀 選取區表示形狀, square=塊狀, underline=底線, 可用square+underline連用 
+cursor.blendmethod,命令 選取區反白模式, none=無, notmaskpen=r2_notmaskpen, mergepennot=r2_mergepennot 
+cursor.brush.color.r,數字 選取區反白色紅(0~255) 
+cursor.brush.color.g,數字 選取區反白色綠(0~255) 
+cursor.brush.color.b,數字 選取區反白色藍(0~255) 
+cursor.font.color.r,數字 選取區文字顏色紅(0~255)在不指定blendmethod模式時有效 
+cursor.font.color.g,數字 選取區文字顏色綠(0~255)在不指定blendmethod模式時有效 
+cursor.font.color.b,數字 選取區文字顏色藍(0~255)在不指定blendmethod模式時有效 
+cursor.pen.color.r,數字 選取區外框或底線顏色紅(0~255) 
+cursor.pen.color.g,數字 選取區外框或底線顏色綠(0~255) 
+cursor.pen.color.b,數字 選取區外框或底線顏色藍(0~255) 
+錨點(選中) 
+anchor.font.color.r,數字 錨接(網址連接等)顏色(在螢幕上用以顯示錨接所在的顏色)紅值(0~255) 
+anchor.font.color.g,數字 錨接顏色綠值(0~255) 
+anchor.font.color.b,數字 錨接顏色藍值(0~255) 
+錨點(選中)(SSP/2.01.04以後) 
+anchor.style,形狀 錨點表示形狀, square=塊狀, underline=底線, 可用square+underline連用 
+anchor.blendmethod,命令 錨點反白模式, none=無, notmaskpen=r2_notmaskpen, mergepennot=r2_mergepennot 
+anchor.brush.color.r,數字 錨點反白色紅(0~255) 
+anchor.brush.color.g,數字 錨點反白色綠(0~255) 
+anchor.brush.color.b,數字 錨點反白色藍(0~255) 
+anchor.pen.color.r,數字 錨點外框或底線顏色紅(0~255) 
+anchor.pen.color.g,數字 錨點外框或底線顏色綠(0~255) 
+anchor.pen.color.b,數字 錨點外框或底線顏色藍(0~255) 
+錨點(未選中)(SSP/2.01.04以後) 
+anchor.notselect.style,形狀 錨點表示形狀, square=塊狀, underline=底線, 可用square+underline連用 
+anchor.notselect.blendmethod,命令 錨點反白模式, none=無, notmaskpen=r2_notmaskpen, mergepennot=r2_mergepennot 
+anchor.notselect.brush.color.r,數字 錨點反白色紅(0~255) 
+anchor.notselect.brush.color.g,數字 錨點反白色綠(0~255) 
+anchor.notselect.brush.color.b,數字 錨點反白色藍(0~255) 
+anchor.notselect.font.color.r,數字 錨點文字顏色紅(0~255)在不指定blendmethod模式時有效 
+anchor.notselect.font.color.g,數字 錨點文字顏色綠(0~255)在不指定blendmethod模式時有效 
+anchor.notselect.font.color.b,數字 錨點文字顏色藍(0~255)在不指定blendmethod模式時有效 
+anchor.notselect.pen.color.r,數字 錨點外框或底線顏色紅(0~255) 
+anchor.notselect.pen.color.g,數字 錨點外框或底線顏色綠(0~255) 
+anchor.notselect.pen.color.b,數字 錨點外框或底線顏色藍(0~255) 
+錨點(已訪問)(SSP/2.02.31以後) 
+anchor.visited.style,形狀 錨點表示形狀, square=塊狀, underline=底線, 可用square+underline連用 
+anchor.visited.blendmethod,命令 錨點反白模式, none=無, notmaskpen=r2_notmaskpen, mergepennot=r2_mergepennot 
+anchor.visited.brush.color.r,數字 錨點反白色紅(0~255) 
+anchor.visited.brush.color.g,數字 錨點反白色綠(0~255) 
+anchor.visited.brush.color.b,數字 錨點反白色藍(0~255) 
+anchor.visited.font.color.r,數字 錨點文字顏色紅(0~255)在不指定blendmethod模式時有效 
+anchor.visited.font.color.g,數字 錨點文字顏色綠(0~255)在不指定blendmethod模式時有效 
+anchor.visited.font.color.b,數字 錨點文字顏色藍(0~255)在不指定blendmethod模式時有效 
+anchor.visited.pen.color.r,數字 錨點外框或底線顏色紅(0~255) 
+anchor.visited.pen.color.g,數字 錨點外框或底線顏色綠(0~255) 
+anchor.visited.pen.color.b,數字 錨點外框或底線顏色藍(0~255) 
+其他 
+paint_transparent_region_black,0 塗黑處透明(SSP/2.01.41以後) 
+use_self_alpha,1 使用PNG自帶的透明通道(SSP/2.01.41以後) 
+
+SSP專用寫法:
+
+cursor.notselect.brush.color,r,210
+cursor.notselect.brush.color,g,216
+cursor.notselect.brush.color,b,227可以寫為
+
+cursor.notselect.brush.color,210,216,227

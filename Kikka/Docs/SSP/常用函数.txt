@@ -1,0 +1,22 @@
+\![set,choicetimeout,0]   超时禁用
+\![quicksession,true]    快速显示
+\f[color,231,171,109]   \f[color,default]
+\![raiseother,人格名,事件名,r0,r1,r2...]
+\![set,alignmenttodesktop,free]\![move,10,10,100,me]\![move,10,-10,100,me]\![move,-10,-10,100,me]\![move,-10,10,100,me]
+\![sound,stop]
+\![sound,play,档案路径]
+\![raise,事件识别子,r0,r1,...,r7] 
+
+\![sound,resume] ?
+．继续音乐播放
+继续播放被暂停的音乐。
+
+↑
+\![sound,stop] ?
+．停止音乐播放
+将音乐停止，下次播放时会重头开始。
+
+↑
+\![sound,wait] 
+systemuptickcount
+"\![timerraise,%(snake.timespeed),true,OnSnakeTimer]"

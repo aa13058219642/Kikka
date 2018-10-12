@@ -1,0 +1,1331 @@
+根据字母顺序一一进行解说。
+感觉应该要找时间重新写一遍，但觉得这样也不错而保持原样也是有可能的。
+
+
+[v4] 与 version 4 同名函式完全相同机能。 
+[v4:...] 在 version 4 与之相同或类似机能的函式。 
+(没有注明) 在 version 5 新追加的函式。 
+TcXXX-XXX 在 YAYA TcXXX-XXX 新追加的函式。 
+
+．AYA/YAYA 系统函式参照表 
+◦ACOS 
+◦ANY 
+◦ARRAYSIZE　　[v4:具备简易阵列的互换性、2参数的方式已废止] 
+◦ASEARCH 
+◦ASEARCHEX 
+◦ASIN 
+◦ATAN 
+◦BINSTRTOI　　[v4:BINSTRTONUM改名] 
+◦BITWISE_AND　　[Tc513-901] 
+◦BITWISE_NOT　　[Tc513-901] 
+◦BITWISE_OR　　[Tc513-901] 
+◦BITWISE_SHIFT　　[Tc513-901] 
+◦BITWISE_XOR　　[Tc513-901] 
+◦CEIL　　[v4] 
+◦CHARSETIDTOTEXT　　[Tc513-901] 
+◦CHARSETLIB 
+◦CHARSETLIBEX　　[Tc513-901] 
+◦CHARSETTEXTTOID　　[Tc513-901] 
+◦CHR　　[v4:ASC的扩张。与ASCII范围有互换性] 
+◦CHRCODE　　[v4:IASC的扩张。与ASCII范围有互换性] 
+◦COS　　[v4] 
+◦COSH　　[Tc522-1] 
+◦CUTSPACE　　[v4] 
+◦CVAUTO 
+◦CVINT　　[v4:TONUMBER改名] 
+◦CVREAL 
+◦CVSTR　　[v4:TOSTRING改名] 
+◦DUMPVAR　　[Tc529-2] 
+◦ERASE　　[v4:单位由byte单位变更为文字单位] 
+◦ERASEVAR　　[v4:ERASEVARIABLE改名] 
+◦EVAL 
+◦EXECUTE　　[Tc513-901] 
+◦EXECUTE_WAIT　　[Tc532-1] 
+◦FATTRIB 
+◦FCHARSET 
+◦FCLOSE　　[v4] 
+◦FCOPY　　[v4] 
+◦FDEL　　[v4] 
+◦FDIGEST　　[Tc527-1, Tc530-1追加CRC32] 
+◦FENUM　　[v4] 
+◦FLOOR　　[v4] 
+◦FMOVE　　[v4] 
+◦FOPEN　　[v4] 
+◦FREAD　　[v4] 
+◦FREADBIN　　[Tc516-901] 
+◦FREADENCODE　　[Tc535-1] 
+◦FRENAME　　[v4] 
+◦FSEEK　　[Tc516-901] 
+◦FSIZE　　[v4] 
+◦FTELL　　[Tc516-901] 
+◦FWRITE　　[v4] 
+◦FWRITE2　　[v4] 
+◦FWRITEBIN　　[Tc516-901] 
+◦GETCALLSTACK　　[Tc513-901] 
+◦GETDELIM 
+◦GETFUNCLIST　　[Tc513-901] 
+◦GETLASTERROR　　[v4:返值的体系变更] 
+◦GETMEMINFO　　[v4:类似于memory系系统变数] 
+◦GETSECCOUNT　　[Tc513-901] 
+◦GETSETTING 
+◦GETSTRBYTES 
+◦GETTICKCOUNT　　[v4:类似于系统变数systemuptickcount] 
+◦GETTIME　　[v4:类似于时刻取得系系统变数] 
+◦GETTYPE　　[v4:类似于ISINTEGER、ISREAL] 
+◦GETTYPEEX　　[Tc537-3] 
+◦GETVARLIST　　[Tc513-901] 
+◦HAN2ZEN　　[Tc513-901] 
+◦HEXSTRTOI　　[v4:HEXSTRTONUM改名] 
+◦IARRAY 
+◦INSERT　　[v4:byte单位换成文字单位] 
+◦ISFUNC　　[v4:ISFUNCTION改名] 
+◦ISINTSTR 
+◦ISREALSTR 
+◦ISVAR 
+◦LETTONAME　　[v4] 
+◦LICENSE　　[Tc530-1] 
+◦LOADLIB　　[v4] 
+◦LOG　　[v4] 
+◦LOG10　　[v4] 
+◦LOGGING　　[v4:指定字串的写入方式变更] 
+◦LSO 
+◦MKDIR　　[v4] 
+◦POW　　[v4] 
+◦RAND　　[v4] 
+◦RE_GETLEN 
+◦RE_GETPOS 
+◦RE_GETSTR 
+◦RE_GREP 
+◦RE_MATCH 
+◦RE_OPTION　　[Tc534-1] 
+◦RE_REPLACE 
+◦RE_REPLACEEX　　[Tc513-901] 
+◦RE_SEARCH 
+◦RE_SPLIT 
+◦READFMO　　[Tc524-1] 
+◦RESTOREVAR　　[Tc513-901] 
+◦REPLACE　　[v4:Byte单位转换成文字单位] 
+◦REQUESTLIB　　[v4:返值追加] 
+◦RMDIR　　[v4] 
+◦ROUND　　[v4] 
+◦SAVEVAR 
+◦SETDELIM　　[v4:SETSEPARATOR改名] 
+◦SETLASTERROR 
+◦SETSETTING　　[Tc513-901] 
+◦SIN　　[v4] 
+◦SINH　　[Tc522-1] 
+◦SPLIT 
+◦SPLITPATH 
+◦SQRT　　[v4] 
+◦STRDECODE　　[Tc532-1, Tc521-1至Tc532-1叫GETSTRURLDECODE] 
+◦STRENCODE　　[Tc532-1, Tc521-1至Tc532-1叫GETSTRURLENCODE] 
+◦STRFORM 
+◦STRLEN　　[v4:byte单位转换成文字单位、2参数的方式已废止] 
+◦STRSTR　　[v4:byte单位转换成文字单位。2参数的方式已废止] 
+◦SUBSTR　　[v4:byte单位转换成文字单位] 
+◦TAN　　[v4] 
+◦TANH　　[Tc522-1] 
+◦TOAUTO　　[Tc516-901] 
+◦TOBINSTR　　[v4] 
+◦TOHEXSTR　　[v4] 
+◦TOINT　　[v4:TONUMBER2改名] 
+◦TOLOWER　　[v4] 
+◦TOREAL 
+◦TOSTR　　[v4:TOSTRING2改名] 
+◦TOUPPER　　[v4] 
+◦UNLOADLIB　　[v4] 
+◦ZEN2HAN　　[Tc513-901] 
+◦附录：文字编码 
+■YAYA内部文字编码 
+■文字编码和YAYA内的文字编码ID 
+■有关文字编码“二进码” 
+
+ACOS 
+返回反余弦值。参数的单位为radian。
+
+
+
+ANY 
+参数为字串的时候，会视为简易阵列，随机选取其中一个字串。参数为变数的时候，会考虑其分隔符号。
+若为泛用阵列时，会随机选取其中一个元素。
+整数或实数时会原值返回。没有参数时则传回空字串。
+可导入复数个参数，会随机返回其中一个参数的值。
+
+
+   DinnerTalk
+   {
+   	unknownfood = ("荞麦面不加荞麦","牛肉面不加牛肉","黑暗锅")
+   	_i = "\0今天想吃" + ANY(unknownfood) + "。\1" + EVAL("unknownfood[LSO]") + "？"   	_i
+   }选择的序数可以从变数LSO取得。
+当ANY的选择为2时，结果为
+
+　　　 S：“今天想吃黑暗锅。”　Ｋ：“黑暗锅？”
+
+
+ARRAYSIZE　　[v4:具备简易阵列的互换性、2参数的方式已废止] 
+参数指定为简易阵列及泛用阵列，传回此阵列的元素总数量。
+
+
+
+ASEARCH 
+检索泛用阵列中的值。第一参数是检索的关键字、第二参数之后是指定要检索的泛用阵列（不能是简易阵列）。
+会返回第一个找到的元素的序数。没找到的话传回 -1 。
+
+
+   _tea = ("铁观音", "乌龙", "やぶきた", "茉莉花")
+   ipod = ASEARCH("乌龙", _tea)ipod等于1。
+
+
+   nyaoh = ASEARCH("猫", "麒麟", "猿", "象", "猫", "兔")nyaoh等于3。
+
+
+由于搜寻时采用比较单纯的线性检索，所以搜寻花费的时间会随着阵列的长度而改变。
+
+
+
+ASEARCHEX 
+检索泛用阵列中的值。第一参数是检索的关键字、第二参数之后是指定要检索的泛用阵列（不能是简易阵列）。
+会将搜寻到的元素序数以阵列方式传回。没有搜寻到时则为空阵列(IARRAY)。
+
+
+   _tea = ("铁观音", "乌龙", "やぶきた", "乌龙", "茉莉花")
+   ipod = ASEARCHEX("乌龙", _tea)ipod等于泛用阵列 (1,3) 。
+
+
+
+ASIN 
+返回反正弦值。参数的单位为radian。
+
+
+
+ATAN 
+返回反正切值。参数的单位为radian。
+
+
+--------------------------------------------------------------------------------
+
+
+BINSTRTOI　　[v4:BINSTRTONUM改名] 
+将2进位数值字串转换成整数。参数异常时传回0。
+
+
+BITWISE_AND　　[Tc513-901] 
+位元操作 AND 运算子(32位元)。异常时不回传。
+
+例：
+
+_val1 = 30 // 2进数为11110
+_val2 = 13 // 2进数为01101
+BITWISE_AND( _val1, _val2 ) // 输出整数12（01100）
+BITWISE_NOT　　[Tc513-901] 
+位元操作 NOT 运算子(32位元)。异常时不回传。
+
+例：
+
+_val = 28 // 2进数为00011100
+BITWISE_NOT( _val ) // 输出整数-29（11100011）
+BITWISE_OR　　[Tc513-901] 
+位元操作 OR 运算子(32位元)。异常时不回传。
+
+例：
+
+_val1 = 28 // 2进数为11100
+_val2 = 9  // 2进数为01001
+BITWISE_OR( _val1, _val2 ) // 输出整数29（11101）
+BITWISE_SHIFT　　[Tc513-901] 
+位元操作位移运算子(32位元)。异常时不回传。
+第二参数为正数时左移，负数时右移。
+
+例：
+
+_var=0x7fffffff
+_result=BITWISE_SHIFT(_var,-2);_result为0x1fffffff。
+
+
+BITWISE_XOR　　[Tc513-901] 
+位元操作 XOR 运算子(32位元)。异常时不回传。
+
+例：
+
+_val1 = 28 // 2进数为11100
+_val2 = 9  // 2进数为01001
+BITWISE_XOR( _val1, _val2 ) // 输出整数21（10101）
+--------------------------------------------------------------------------------
+
+
+CEIL　　[v4] 
+实数的小数点无条件进位。
+
+
+
+CHARSETIDTOTEXT　　[Tc513-901] 
+CHARSETIDTOTEXT(code)转换文字编码为文字编码名称。失败时回传"default"。
+文字编码清单见附录。
+
+
+CHARSETLIB 
+CHARSETLIB(code)
+CHARSETLIB()指定外部程式库通信所使用的文字编码。
+文字编码清单见附录。
+
+请在LOADLIB之前进行指定。
+可以对LOADLIB设定不同单位的文字编码。
+
+
+预设文字编码在基础设定档案的charset.extension项目（省略时为charset项目）所设定的值。
+没指定文字编码时返回现时文字编码的值，否则无返值。
+Tc531-1起可省略文字编码指定。
+
+
+CHARSETLIBEX　　[Tc513-901] 
+CHARSETLIBEX(path,code)
+CHARSETLIBEX(path)指定特定外部程式库通信所使用的文字编码。
+文字编码清单见附录。
+
+预设文字编码在基础设定档案的charset.extension项目（省略时为charset项目）所设定的值。
+没指定文字编码时返回现时文字编码的值，否则无返值。
+Tc530-2起可在LOADLIB前设定。
+Tc531-1起可省略文字编码指定。
+
+
+
+CHARSETTEXTTOID　　[Tc513-901] 
+CHARSETTEXTTOID(string)转换文字编码名称为文字编码编号。失败时回传0。
+文字编码清单见附录。
+
+
+CHR　　[v4:ASC的扩张。与ASCII范围有互换性] 
+根据UCS-2代码返回1文字。
+
+
+   Test
+   {
+   	_a = "ABC"
+   	_b = "%(CHR(65))%(CHR(66))%(CHR(67))"
+   	
+   	_c = "现在时间是%(hour)时%(minute)分%(second)秒。"
+   	_d = EVAL("%(CHR(34))现在时间是%(hour)时%(minute)分%(second)秒%。(CHR(34))")
+   }_a与_b相等，_c与_d相等。CHR(34)等同于双括号( " )。
+
+
+
+CHRCODE　　[v4:IASC的扩张。与ASCII范围有互换性] 
+将指定字串开头的1文字转换为UCS-2文字代码并传回。
+
+
+
+COS　　[v4] 
+返回余弦值。参数的单位为radian。
+
+
+
+COSH　　[Tc522-1] 
+返回双曲余弦值。参数的单位为radian。
+
+
+
+CUTSPACE　　[v4] 
+字串左右端有空白文字或标记文字的时候，予以去除。
+
+
+
+CVAUTO 
+根据参数指定的变数的内容自动转换形态，将字串转为整数或实数。
+参数为泛用阵列时其动作尚未定义。
+无返值。
+
+
+
+CVINT　　[v4:TONUMBER改名] 
+参数指定的变数为存有整数值形式的字串时，将字串转为整数。
+无返值。
+
+
+
+CVREAL 
+参数指定的变数为存有实数值形式的字串时，将字串转为实数。
+无返值。
+
+
+
+CVSTR　　[v4:TOSTRING改名] 
+参数为变数时，将变数的内容转换为字串。
+无返值。
+
+
+
+--------------------------------------------------------------------------------
+
+
+DUMPVAR　　[Tc529-2] 
+DUMPVAR()将所有变数往纪念档输出。
+无返值。
+
+
+
+--------------------------------------------------------------------------------
+
+
+ERASE　　[v4:单位由byte单位变更为文字单位] 
+削除字串的指定部分。第一参数为对象字串、第二参数为开始削除的文字位置、第三参数为要削除掉的文字数。
+
+
+   Test
+   {
+   	_i = "ABCDEFGHIJ"
+   	_i = ERASE(_i, 3, 4)
+   	
+   	_i
+   }结果为"ABCHIJ"。
+
+
+
+ERASEVAR　　[v4:ERASEVARIABLE改名] 
+将指定的变数削除掉。参数请输入写有变数名称的字串。
+无返值。
+
+
+
+EVAL 
+将输入的字串作为 单一的文指令码去实行。
+请注意所谓“单一的”的意思，代表着无法执行复数的陈述式。因此，EVAL只会作算式程度的展开，无法执行包含if、for之类制御构造的指令码，或是定义新的函式。
+
+
+例如以下的程式码为把1代入变数 i 中。
+
+
+   EVAL("i=1")文并不存在逸出序列(escape sequence)，字串内要包含双括号的话请使用CHR(34)。例如将"test"代入变数 i 的写法如下。
+
+
+   EVAL("i=%(CHR(34))test%(CHR(34))")想在执行的时候进行%的展开时，也请将%写作CHR(37)。
+以下的例子为执行"%(foo)"时的写法。
+
+
+   EVAL("%(CHR(34))%(CHR(37))(foo)%(CHR(34))")转换字串的 TOSTR(EVAL("formula")) 和埋入字串展开的 "%(formula)" 两种写法，其结果与EVAL的结果相同。
+
+
+EXECUTE　　[Tc513-901] 
+EXECUTE( path [ , option ] )执行外部程式。
+成功时返回0或以上的数值(OS依存)，失败时返回-1。
+
+
+EXECUTE_WAIT　　[Tc532-1] 
+EXECUTE_WAIT( path [ , option ] )执行外部程式并等待其结束。
+成功时返回0或以上的数值(OS依存)，失败时返回-1。
+
+
+--------------------------------------------------------------------------------
+
+
+FATTRIB 
+取得档案的属性。
+第一参数指定为档案或资料夹名称，全路径指定可能。相对路径的场合下以 DLL load 取得的路径为基准。
+结果返回以下的泛用阵列。分别取得0或1的值。1的时候，表示那个属性是有效的。然而，如果指定的档案不存在、处理失败的时候，返回的值不会是泛用阵列，而是单一的整数 -1 。
+
+
+   ARCHIV,COMPRESSED,DIRECTORY,HIDDEN,NORMAL,OFFLINE,READONLY,SYSTEM,TEMP   * [0] ARCHIV
+     保存文件，或是保存资料夹。~
+   * [1] COMPRESSED
+     压缩文件，或是压缩资料夹。~
+   * [2] DIRECTORY
+     资料夹/目录。确认此值的话，即可分辨对象是普通的文件还是资料夹。~
+   * [3] HIDDEN
+     隐藏文件，或是隐藏资料夹。~
+   * [4] NORMAL
+     无属性。~
+   * [5] OFFLINE
+     这个档案现在无法使用。~
+   * [6] READONLY
+     唯读档。~
+   * [7] SYSTEM
+     Windows用档案。~
+   * [8] TEMP
+     暂存档。~
+FCHARSET 
+指定档案写入/读取时使用的文字编码。
+文字编码清单见附录。
+
+请在FOPEN之前进行指定。
+可以对档案设定不同单位的文字编码。
+
+
+预设的文字编码为基础设定档案中charset项目的设定值。
+无返值。
+
+
+
+FCLOSE　　[v4] 
+关闭用FOPEN打开的档案。
+参数同样是FOPEN指定的档案名称。
+无返值。
+
+
+
+FCOPY　　[v4] 
+复制档案。
+第一参数为要拷贝的原档名、第二参数为原档所在的资料夹名称。全路径指定可能。相对路径的场合下以 DLL load 取得的路径为基准。
+返值 0 / 1 = 失败 / 成功。
+
+
+
+FDEL　　[v4] 
+删除档案。
+全路径指定可能。相对路径的场合下以 aya5.dll load 取得的路径为基准。
+返值 0 / 1 = 失败 / 成功。
+
+
+
+FDIGEST　　[Tc527-1, Tc530-1追加CRC32] 
+FDIGEST( path , type )对指定的档案产生杂凑值。
+杂凑值种类如下：
+
+CRC32
+32bit CRC值
+MD5
+MD5值
+SHA-1 或 SHA1
+SHA-1值
+成功时返回杂凑值的16进数，失败时返回-1。
+
+
+FENUM　　[v4] 
+列举指定位置存在的档案名/资料夹名，以逗号区隔并传回。全路径指定可能。相对路径的场合下以 DLL load 取得的路径为基准。
+
+
+资料夹的名称会在前头附加 " \ " 。
+第二参数可指定分隔符号。
+
+
+
+FLOOR　　[v4] 
+实数的小数点无条件舍去。
+
+
+
+FMOVE　　[v4] 
+移动档案。
+第一参数为移动对象的档名、第二参数为移动对象的资料夹名。全路径指定可能。相对路径的场合下以 DLL load 取得的路径为基准。
+返值 0 / 1 = 失败 / 成功。
+
+
+
+FOPEN　　[v4] 
+开启档案。
+第一参数为档案名称。全路径指定可能。相对路径的场合下以 DLL load 取得的路径为基准。
+第二参数中对读取 / 写入的指定，如下列所示。
+
+
+   * "w"　或是"write"
+     开启写入模式。~
+   * "r"　或是"read"
+     开启读取模式。~
+   * "a"　或是"append"
+     开启追加模式。 返值 0 / 1 / 2 = 失败 / 成功 / 已经开启过了。
+
+
+
+FREAD　　[v4] 
+对已开启读取模式的档案进行一行的读取。
+参数同样是FOPEN指定的档案名称。
+
+
+会自动去掉改行文字。
+到达档案终端时会传回 -1 。
+
+
+
+FREADBIN　　[Tc516-901] 
+FREADBIN( path , size [ , char ] )不转换文字编码而读取档案。
+使用FREADBIN前需要先用FOPEN开启。
+
+
+引数：
+
+path
+FOPEN所指定的档名
+size
+读取长度（位元组数） 0指定时为全部
+char
+遇到位元组值 0x00 时所转换成的文字（可省略：省略时为半角空白）
+
+FREADENCODE　　[Tc535-1] 
+FREADENCODE( path , size [ , type ] )读取被URL编码或Base64编码的档案。
+使用FREADBIN前需要先用FOPEN开启。
+如没有以二进档模式开启的话改行字元会被转换。
+
+
+引数：
+
+path
+FOPEN所指定的档名
+size
+读取长度（位元组数） 0指定时为全部
+type
+base64 或 url 　　省略时base64
+
+FRENAME　　[v4] 
+变更档案名称。
+第一参数为对象档名、第二参数为新的档名。全路径指定可能。相对路径的场合下以 DLL load 取得的路径为基准。
+返值 0 / 1 = 失败 / 成功。
+
+
+
+FSEEK　　[Tc516-901] 
+FSEEK( path , offset , origin )改变档案存取位置(档案指针)。
+
+引数：
+
+path
+FOPEN所指定的档名
+offset
+移动的位元组数
+origin
+移动的原点的字串 (SEEK_CUR 或 current：现在的位置／SEEK_END 或 end：档案的结尾／SEEK_SET 或 start：档案的开端)
+返值 0 / 1 = 失败 / 成功
+
+
+FSIZE　　[v4] 
+取得指定档案的大小（bytes数）。
+全路径指定可能。相对路径的场合下以 DLL load 取得的路径为基准。
+
+
+失败的情况下则回传-1的值。
+
+
+
+FTELL　　[Tc516-901] 
+FTELL( path )获得档案存取位置(档案指针)。
+
+引数：
+
+path
+FOPEN所指定的档名
+成功时返回从档案开端数起的位元组数，失败时返回-1。
+
+
+FWRITE　　[v4] 
+对已开启读取模式的档案进行写入字串的动作。
+参数同样是FOPEN指定的档案名称。
+无返值。
+
+
+
+FWRITE2　　[v4] 
+对已开启读取模式的档案进行写入字串的动作。
+参数同样是FOPEN指定的档案名称。。
+无返值。
+
+
+FWRITE会自动输入改行符号。FWRITE2不会。
+
+
+
+FWRITEBIN　　[Tc516-901] 
+FWRITEBIN( path , string [ , char ] )不转换文字编码就写入至档案。
+使用FREADBIN前需要先用FOPEN开启。
+如没有以二进档模式开启的话改行字元会被转换。
+
+
+引数：
+
+path
+FOPEN所指定的档名
+size
+读取长度（位元组数） 0指定时为全部
+char
+遇到这文字时就转换为位元组值 0x00 （可省略：省略时为半角空白）
+无返值。
+
+
+
+--------------------------------------------------------------------------------
+
+
+GETCALLSTACK　　[Tc513-901] 
+GETCALLSTACK()以泛用阵列回传使用者函数的呼叫堆叠。
+
+
+GETDELIM 
+传回指定变数所设定的分隔符号（简易阵列中用来分隔元素的文字）。预设分隔符号为半形逗号。
+请在第一参数上指定对象变数。
+
+
+
+GETFUNCLIST　　[Tc513-901] 
+GETFUNCLIST( [ prefix ] )取得函数清单。
+
+引数：
+
+prefix
+有任何字串指定时，回传以该字串开始的函数名（省略可能）。省略时为全部函数。
+成功时返回函数清单的泛用阵列，失败时返回IARRAY。
+
+
+GETLASTERROR　　[v4:返值的体系变更] 
+传回发生的系统函式错误类型的代码。代码如下列所示。
+
+
+代码 意义 
+8 参数不足。 
+9 参数的值有误。 
+10 无法处理空字串。 
+11 没有存放结果的变数。 
+12 范围外或是无效的值。 
+13 处理失败。 
+14 无法读取指定的外部程式库。 
+15 指定的档案没有被打开。 
+16 正则表达式的语法有误或是太复杂了。 
+17 正则表达式的处理中产生了未定义的错误。 
+18 应该传递变数的参数并非是一种变数型态。 
+
+这个函式的返值也可以用SETLASTERROR函式来进行设定。
+使用GETLASTERROR时，如果要确实的确认错误发生的地方的话可以使用下列的方式。
+
+
+   SETLASTERROR(0)
+   (使用系统函式做某些处理)
+   if !GETLASTERROR {
+       "错误发生。"
+   }
+GETMEMINFO　　[v4:类似于memory系系统变数] 
+取得动作环境的记忆体情报。结果会传回下列的泛用阵列。
+
+
+   物理记忆体的使用率,物理记忆体量,剩余物理记忆体量,虚拟 + 物理记忆体量,虚拟 + 物理剩余记忆体量
+GETSECCOUNT　　[Tc513-901] 
+GETSECCOUNT( [ yyyy [ , mm [ , dd [ , wd [ , HH [ , MM [ , SS ] ] ] ] ] ] ] )从1970/1/1 00:00:00 UTC起，到参数所指定的时间所经过的秒数。
+
+引数：全部省略时为现在时间。部份省略时省略的会以现在的值补上。
+
+yyyy
+西历年
+mm
+月
+dd
+日
+wd
+曜日。请指定0。
+HH
+时
+MM
+分
+SS
+秒
+返值：秒数。
+
+
+GETSETTING 
+GETSETTING( string )传回作动中的AYA的相关设定情报。
+第一参数指定你所想要取得的情报字串或代号。
+
+
+字串 代号（过去互换） 情报 例 
+coreinfo.version 0 YAYA版本编号 "Tc522-1" 
+charset 1 现在的文字编码ID 0 
+coreinfo.path 2 AYA现在所处的绝对路径（load时向DLL传入的路径） "c:\hogehoge\" 
+coreinfo.name 3 现在使用中的DLL的名称。 "YAYA" 
+coreinfo.author 4 现在使用中的DLL的作者名。 "umeici/The Maintenance Shop" 
+
+
+GETSTRBYTES 
+传回储存字串所必要的byte数。
+第一参数为对象字串、第二参数为解释用的文字编码。有以下几种选择。
+清单见附录。
+
+
+第二参数可省略，预设为0（Shift_JIS）。
+
+
+
+GETTICKCOUNT　　[v4:类似于系统变数systemuptickcount] 
+传回OS启动至今的经过时间。单位ms。超过24日20小时的话值会回到0。
+
+
+
+GETTIME　　[v4:类似于时刻取得系系统变数] 
+现在的时间情报取得。返回结果即以下的泛用阵列。
+
+
+   西元,月,日,星期,时,分,秒星期为0～6、0是星期日。
+
+
+
+GETTYPE　　[v4:类似于ISINTEGER、ISREAL] 
+取得值的类型。
+0 / 1 / 2 / 3 / 4 = 内部错误 / 整数 / 实数 / 字串 / 泛用阵列
+
+
+GETTYPEEX　　[Tc537-3] 
+比GETTYPE更严谨的取得值的类型。 (使用方法请参照GETTYPE)
+
+
+GETVARLIST　　[Tc513-901] 
+GETVARLIST( [ prefix ] )取得现存的变数清单。
+
+引数：
+
+prefix
+有任何字串指定时，回传以该字串开始的变数名（省略可能）。省略时为全部变数。
+成功时返回变数清单的泛用阵列，失败时返回IARRAY。
+
+
+--------------------------------------------------------------------------------
+
+
+HAN2ZEN　　[Tc513-901] 
+HAN2ZEN( src [ , type ] )转换字串中的全部半角英文字・数字・片假名为全角。
+
+src
+要转换的字串。
+type
+以逗号分隔的要转换文字种类（省略可能）。省略时为全部种类。
+．number - 数值(0～9)
+．alphabet - 字母
+．symbol - 符号等
+．kana - 片假名和句读点
+成功时回传转换后的字串，失败时不回传。
+
+
+HEXSTRTOI　　[v4:HEXSTRTONUM改名] 
+将16进数值字串转换成整数。参数异常时会传回0。
+
+
+--------------------------------------------------------------------------------
+
+
+IARRAY 
+传回空的泛用阵列。
+
+
+
+INSERT　　[v4:byte单位换成文字单位] 
+插入字串。第一参数为对象字串、第二参数为要插入的文字位置、第三参数为要插入的字串。
+
+
+   Test
+   {
+   	_i = "ABCHIJ"
+   	_i = INSERT(_i, 3, "DEFG")
+   	
+   	_i
+   }结果为"ABCDEFGHIJ"。
+
+
+
+ISFUNC　　[v4:ISFUNCTION改名] 
+传回指定名称的函式是否存在。
+0 / 1 / 2 = 不存在 / 函式 / 系统函式
+
+
+ISINTSTR 
+输入的字串如果可以解释为整数的话传回 1 ，其余为 0 。
+
+
+
+ISREALSTR 
+输入的字串如果可以解释为实数的话传回 1 ，其余为 0 。
+
+
+
+ISVAR 
+传回指定名称的变数是否存在。
+0 / 1 / 2 = 不存在 / 全域变数 / 区域变数
+
+
+--------------------------------------------------------------------------------
+
+
+LETTONAME　　[v4] 
+第一参数所指定的字串会被转换成变数，第二参数为代入的值。
+无返值。
+
+
+
+LICENSE　　[Tc530-1] 
+回传 YAYA 的使用者条款。
+
+
+LOADLIB　　[v4] 
+读取外部程式库。做LoadLibrary，实行load。
+外部程式库必须与介面用的文同样具有公开的load/unload/request函式。
+返值 0 / 1 / 2 = 失败 / 成功 / 已读取。
+
+
+
+LOG　　[v4] 
+传回自然对数。
+
+
+
+LOG10　　[v4] 
+传回常用对数。
+
+
+
+LOGGING　　[v4:指定字串的写入方式变更] 
+把指定的值写入LOG档。不问值的型别。值为简易阵列时会用逗号结合所有元素。
+无返值。
+
+
+
+LSO 
+Last Selection Order. 最后进行的选择的结果，传回其位置的值。
+
+
+   request
+   {
+       _i = foo
+       LSO
+   }   foo
+   {
+       "earth"
+       "moon"
+       "sun"
+   }_i是"sun"的时候，LSO即为2。
+
+
+总之，必须在选择进行的同时一起执行。在字串选择执行完毕后才取得的LSO值是没有意义的。
+
+
+   request
+   {
+       {
+           "This is a "+ANY("pen", "pencil", "eraser")+"."
+       }
+       res = LSO
+   }如果想得到ANY的选择结果的话，这样的写法是错误的。这里LSO所取得的值为LSO所处在的 { } 所执行的选择。因此 res 永远为 0 。
+修正成以下写法的话即可得到你所要的答案。
+
+
+   request
+   {
+       {
+           "This is a "+ANY("pen", "pencil", "eraser") + "."
+           res = LSO
+       }
+   }出力确定子存在的场合，LSO会取得全部组合并进行相应的动作。
+
+
+   request
+   {
+       {
+           "1"
+           "2"
+           "3"
+           --
+           "A"
+           "B"
+       }
+       _i = LSO
+   }例如上述函式内的{ }部份会有以下几种输出情况。
+
+
+   "1A" "2A" "3A" "1B" "2B" "3B"LSO值的范围也和此相同，取得0～5的值。各值与上述输出种类的顺序一致。
+
+
+--------------------------------------------------------------------------------
+
+
+MKDIR　　[v4] 
+作成资料夹。全路径指定可能。相对路径的场合下以 DLL load 取得的路径为基准。
+只能作成一阶层。
+返值 0 / 1 = 失败 / 成功。
+
+
+--------------------------------------------------------------------------------
+
+
+POW　　[v4] 
+传回第一参数的第二参数次方。
+
+
+--------------------------------------------------------------------------------
+
+
+RAND　　[v4] 
+乱数取得。第一参数为指定的乱数范围。产生 0 ～ (第一参数 -1 ) 之间的值。
+没有参数时会随机产生 0 ～ 99 的值。
+
+
+
+RE_GETLEN 
+正则表达系函式的实行结果取得。
+返值为泛用阵列，阵列元素为 ( ) 中每个符合检索条件的部份字串的长度。要素0为正则表达全部的符合字串的长度，要素i为第 i 项的 ( ) 符合检索条件的部份字串的长度。
+
+
+
+RE_GETPOS 
+正则表达系函式的实行结果取得。
+返值为泛用阵列，阵列元素为 ( ) 中每个符合检索条件的部份字串的位置。要素0为正则表达全部的符合字串的位置，要素i为第 i 项的 ( ) 符合检索条件的部份字串的位置。
+
+
+
+RE_GETSTR 
+正则表达系函式的实行结果取得。
+返值为泛用阵列，阵列元素为 ( ) 中每个符合检索条件的字串内容。要素0为正则表达全部的符合字串的内容，要素i为第 i 项的 ( ) 符合检索条件的字串内容。
+
+
+
+RE_GREP 
+使用正则表达式(Regular Expression)对字串进行检索，并列出结果。
+第一参数为处理对象字串，第二参数为正则表达式。
+返值为找到的数量。
+
+
+详细的结果可从函式 RE_GETSTR、RE_GETPOS、RE_GETLEN 取得。
+
+
+使用可能的正则表达式语法可至以下网址参考。
+boost::Regex++ Regular expression syntax（日本语）
+
+中文的可上网搜寻"Regular Expression"即可找到相当多的教学文章。
+
+
+
+RE_MATCH 
+处理对象字串全体与写入的正则表达式完全吻合时返回 1 。其他情况则返回 0 。
+第一参数为处理对象字串、第二参数为正则表达式。
+
+
+详细结果可从函式 RE_GETSTR、RE_GETPOS、RE_GETLEN 取得。
+
+
+
+RE_OPTION　　[Tc534-1] 
+RE_OPTION( [ option ] )设定Perl互换正则表达式选项。
+
+．i：不区分大小文字
+．m：多行匹配
+．s：万用匹配符会匹配改行
+．x：无视正则表达式内的注释（#）或空白
+标准设定只有m。
+
+引数：
+
+option
+i/s/m/x的选项。如："imx"
+返值：选项，如："imx"
+
+
+RE_REPLACE 
+利用正则表达式对字串进行检索，将找到的吻合部份全部取代成别的字串。
+第一参数为处理对象字串、第二参数为正则表达式、第三参数为置换后字串。
+详细结果可从函式 RE_GETSTR、RE_GETPOS、RE_GETLEN 取得。
+
+
+在使用 RE_REPLACE 与 RE_SPLIT 时，RE_GETSTR、RE_GETPOS、RE_GETLEN 的意义与其他RE系函式有些不同。其中的差异在于一边是“第 i 次吻合的 ( ) 的内容”，一边是“在对象字串中表示正则表达全体所吻合的第 i 项的内容”。
+
+
+
+RE_REPLACEEX　　[Tc513-901] 
+RE_REPLACEEX ( string , regexp , replace_ex )和RE_REPLACE一样，但支援Perl式参照操作符($1、$2等)。
+(使用方法请参照RE_REPLACE)
+
+
+RE_SEARCH 
+利用正则表达式对处理对象字串进行检索，如果其中有与正则表达式吻合的地方则传回 1 。没有时则传回 0 。
+第一参数为处理对象字串、第二参数为正则表达式。
+
+
+详细结果可从函式 RE_GETSTR、RE_GETPOS、RE_GETLEN 取得。
+
+
+
+RE_SPLIT 
+利用正则表达式分割字串。分割后的结果传回泛用阵列。
+详细结果可从函式 RE_GETSTR、RE_GETPOS、RE_GETLEN 取得。
+
+
+
+READFMO　　[Tc524-1] 
+READFMO( [ name ] )Windows专用。
+将FMO(File Mapping Object)的内容变成字串回传。
+FMO的头4位元组为FMO的大小，取出时会去除这4位元组。
+如果FMO中有位元组值0的话其动作将不可预知。
+
+引数：
+
+name
+FMO名称（省略可）。省略时为 "Sakura" 。
+
+RESTOREVAR　　[Tc513-901] 
+RESTOREVAR( [ path ] )从存档中复原变数。
+
+引数：
+
+path
+存档档名。省略时为主档名(DLL名)加上"_variable.cfg"，如"yaya_variable.cfg"
+不返值。
+
+
+REPLACE　　[v4:Byte单位转换成文字单位] 
+取代字串。
+第一参数为对象字串、第二参数为变换前字串、第三参数为变换后字串。符合部份会全部被取代。
+
+
+
+REQUESTLIB　　[v4:返值追加] 
+将 Load 完毕的外部程式库根据 request 送出字串，取得结果。
+第一参数为 Load 时指定的程式库档名、第二参数为送出的 request 字串。
+返值为结果字串。
+
+
+
+RMDIR　　[v4] 
+删除资料夹。全路径指定可能。相对路径的场合下以 DLL load 取得的路径为基准。无法删除空的资料夹。
+返值 0 / 1 = 失败 / 成功。
+
+
+
+ROUND　　[v4] 
+四舍五入实数的小数点部份。
+
+
+--------------------------------------------------------------------------------
+
+
+SAVEVAR 
+变数保存。与unload时实行的处理是相同的。
+
+
+
+SETDELIM　　[v4:SETSEPARATOR改名] 
+设定变数的标准分隔符号（简易阵列中用来区别元素的分隔文字）。预设为半形逗号。
+第一参数为对象变数、第二参数为指定作为分隔符号的文字或字串。
+无返值。
+
+
+这个函式有以下的限制存在。请注意一下。
+两个参数必须直接写入。
+
+
+   _i = (var, "/")
+   SETDELIM(_i)上述例子是打算将变数var的分隔符号变更为 " / " ，但是事实上这个程式码无法正常运作。
+请像下面一样，将第一参数的对象变数、第二参数的分隔符号直接指定给函式。
+
+
+   SETDELIM(var, "/")
+SETLASTERROR 
+用整数设定GETLASTERROR函式返回的值。
+
+
+
+SETSETTING　　[Tc513-901] 
+SETSETTING( name , string )改变动作中的YAYA设定情报。有些项目设定后没改变。 (要调查)
+
+引数：
+
+name
+项目名称
+string
+值
+返值 0 / 1 = 失败 / 成功
+
+
+SIN　　[v4] 
+返回正弦值。参数的单位为radian。
+
+
+
+SINH　　[Tc522-1] 
+返回双曲正弦值。参数的单位为radian。
+
+
+
+SPLIT 
+将分割的文字串以泛用阵列传回。可以用RE_SPLIT代替，不过不使用正则表达式时比较快。
+第一参数为对象字串、第二参数为分割字串。
+第三参数可以指定最大的分割数。
+
+
+   _array = SPLIT("A//B//C//D//E"," //", 3)_array 即 ("A", "B", "C//D//E") 。
+分割数为 0 时全部分割（省略时也一样）。分割数为 1 时不会进行分割。
+
+
+
+SPLITPATH 
+分解输入的路径字串，放入泛用阵列并传回。
+阵列的元素为“磁碟名”“路径”“主档名”“副档名”共4个。
+
+
+   _i = SPLITPATH("C:\umeici\sample\readme.txt")_i 的4个元素分别为 "C:","\umeici\sample\","readme",".txt" 。
+
+
+
+SQRT　　[v4] 
+传回值的平方根。
+
+
+
+STRDECODE　　[Tc532-1, Tc521-1至Tc532-1叫GETSTRURLDECODE] 
+STRDECODE( string [ , code ] [ , type ] )字串解码。
+
+引数：
+
+string
+要转换的字串。
+code
+文字编码ID（省略可能）。省略时为0。
+type
+解码形式（省略可能）。url为URL编码、base64为Base64编码。省略时为url。
+成功时回传转换后的字串，失败时回传0。
+
+
+STRENCODE　　[Tc532-1, Tc521-1至Tc532-1叫GETSTRURLENCODE] 
+字串编码。
+
+引数：
+
+string
+要转换的字串。
+code
+文字编码ID（省略可能）。省略时为0。
+type
+编码形式（省略可能）。url为URL编码、base64为Base64编码。省略时为url。
+成功时回传转换后的字串，失败时回传0。
+
+
+STRFORM 
+传回格式化的字串。与C言语的 sprintf 机能类似。
+
+
+以下为 STRFORM 与 sprintf 的比较。除了有返值和格式指定的前置字元为" $ "这两点不同之外，基本上是同样的用法。
+
+
+   // C言语
+   int year = 1941;
+   char *warname = "太平洋";
+   sprintf(str, "%04d年　%s战争爆发。", year, warname);   // 文
+   year = 1941
+   warname = "太平洋"
+   str = STRFORM("$04d年　$s战争爆发。", year, warname)一个格式指定所能展开的最大字串长度为1024文字。
+
+
+
+STRLEN　　[v4:byte单位转换成文字单位、2参数的方式已废止] 
+传回字串的文字数。
+
+
+
+STRSTR　　[v4:byte单位转换成文字单位。2参数的方式已废止] 
+对字串内的部分字串进行检索，传回找到的文字位置。
+第一参数为对象字串、第二参数为检索用的关键字、第三参数为检索开始时的文字位置。
+
+
+
+SUBSTR　　[v4:byte单位转换成文字单位] 
+取出字串中的部分字串。
+第一参数为对象字串、第二参数为开始取得时的文字位置、第三参数为取得的文字数。
+
+
+--------------------------------------------------------------------------------
+
+
+TAN　　[v4] 
+返回正切值。参数的单位是radian。
+
+
+
+TANH　　[Tc522-1] 
+返回双曲正切值。参数的单位是radian。
+
+
+
+TOAUTO　　[Tc516-901] 
+TOAUTO(string)将字串转换成整数或实数。参数异常时传回原字串。
+传入的字串为泛用阵列时的动作尚未定义。
+
+
+TOBINSTR　　[v4] 
+将整数转换成2进位数值字串。参数异常时传回空字串。
+
+
+
+TOHEXSTR　　[v4] 
+将整数转换成16进位数值字串。参数异常时传回空字串。
+
+
+
+TOINT　　[v4:TONUMBER2改名] 
+将字串转换成整数。参数异常时传回空字串。
+
+
+
+TOLOWER　　[v4] 
+将字串中含有的大写英文字母转换成小写英文字母。
+
+
+
+TOREAL 
+将字串转换成实数。参数异常时传回0.0。
+
+
+
+TOSTR　　[v4:TOSTRING2改名] 
+将整数、实数、泛用阵列转换成字串。
+
+
+输入泛用阵列时，会传回以逗号结合的字串。也就是说，泛用阵列会转换成简易阵列。
+
+
+
+TOUPPER　　[v4] 
+将字串中含有的小写英文字母转换成大写英文字母。
+
+
+--------------------------------------------------------------------------------
+
+
+UNLOADLIB　　[v4] 
+将LOADLIB所读取的外部程式库进行 unload 之后，执行FreeLibrary。参数为读取时所指定的程式库档名。
+无返值。
+
+
+--------------------------------------------------------------------------------
+
+
+ZEN2HAN　　[Tc513-901] 
+ZEN2HAN( src [ , type ] )转换字串中的全部全角英文字・数字・片假名为半角。
+
+src
+要转换的字串。
+type
+以逗号分隔的要转换文字种类（省略可能）。省略时为全部种类。
+．number - 数值(0～9)
+．alphabet - 字母
+．symbol - 符号等
+．kana - 片假名和句读点
+成功时回传转换后的字串，失败时不回传。
+
+
+--------------------------------------------------------------------------------
+
+
+附录：文字编码 
+
+YAYA内部文字编码 
+．YAYA的内部文字编码为UCS-2。
+．读写辞书或外部档案、存取外部程式库并取得回传字串时，原则上会全部从UCS-2转换成所需的编码。
+
+文字编码和YAYA内的文字编码ID 
+．一部分函数中，需要指定文字编码要以文字编码ID（整数）指定。
+文字编码 字串表现 文字编码ID 版本 
+Shift JIS Shift_JIS 0  
+UTF-8 UTF-8 1  
+EUC-JP EUC_JP 2 Tc531-1 
+BIG-5 BIG-5 3 Tc531-1 
+GB-2312 GB-2312 4 Tc531-1 
+EUC_KR EUC_KR 5 Tc531-1 
+ISO-2022-JP (JIS) ISO-2022-JP 6 Tc531-1 
+二进码 binary 126 Tc531-1 
+OS预设 OSNative 127  
+
+
+有关文字编码“二进码” 
+文字编码“二进码”是特殊的文字编码，是直接使用UCS-2字串的下位位元组的编码。
+
+预定是主要与 FWRITEBIN, FREADBIN 等组合使用，把“二进码”状态的字串直接存取外部的用法。
+
+但是要注意字串中的0x00无法存取是由于YAYA本身的限制所限。
+
+还有，FUNCTIONEX等既存的系统辞书中并不会想到字串会是二进码的。

@@ -1,0 +1,386 @@
+AYA人格範本 †
+人格範本是為了配合文 version 5 所做的桌面應用程式「伺か」用的角色資料（人格）原型。
+由於偽春菜中文界似乎沒有使用ver 4以前版本的人格，因此對此範本進行了簡化。
+
+另外，此篇人格範本是以中文化版的 紺野芽芽美 1.02版 為基準進行解說，採用dll版本為YAYA-tc524-5。
+
+•AYA人格範本 
+◦範本下載 
+•機能概要 
+•辭書解說 
+◦aya_shiori3.dic 
+◦aya_compatible.dic 
+◦aya_word.dic 
+◦aya_aitalk.dic 
+◦aya_bootend.dic 
+◦aya_communicate.dic 
+◦aya_menu.dic 
+◦aya_react.dic 
+◦aya_string.dic 
+◦aya_etc.dic 
+•AYA Versoin 4 的轉移 
+•UTF-8辭書的使用 
+•使用方法 
+◦事件處理器 
+◦新增事件的對應方法 
+•SAORI 
+◦SAORI的執行 
+◦值的回傳 
+◦壽命 
+◦線上更新時的動作 
+•系統變數 
+•已安裝人格清單的作成 
+•溝通 
+◦與其他的人格進行對話 
+◦回覆主動對話 
+•隨機對話的連鎖 
+•製作成自己的人格 
+•結語 
+↑
+範本下載 †
+•由此下載
+↑
+機能概要 †
+人格範本提供以下機能。
+
+•AI talk（隨機對話、連鎖對話）
+•報時對話
+•雙擊跳出選單、對話頻率調整
+•摸頭、觸胸、碰臉的反應
+•穿透．重疊反應
+•起動/終了時的對話（對話内容依時間點不同而有所變化）
+•記住使用者的名字
+•溝通
+•きのこ/猫どりふ反応
+•其他各種事件反應
+•每30分鐘自動保存變數情報
+↑
+辭書解說 †
+辭書的副檔名為.dic，可以直接使用筆記本開啟。
+推薦使用EmEditor進行編輯，並套用AYA Syntex規則*1。
+慣例上會在辭書前端追加『aya_』作為AYA辭書的識別。
+即使不這麼做也沒關係，只要辭書構築文書(在本範本中為yaya.txt)中的路徑正確即可。
+
+要注意的是，根據辭書構築的先後順序，可能會造成不同的編譯結果。
+aya_shiori3.dll與aya_compatible.dic請務必放在第一順位。
+
+↑
+aya_shiori3.dic †
+範本中的辭書檔 aya_shiori3.dic 是作為 AYA SHIORI/3.0 核心控制用的制御辭書。
+
+基本上請勿更動制御辭書。 擁有SHIORI/3.0以及AYA相關知識的話，是可以通過對内容的理解自行擴充機能。但是對於一般的人格開發來說，沒有這麼做的必要。
+
+↑
+aya_compatible.dic †
+支援AYA Version 4 與 Version 5 間的互換性，是為了支援較舊版本的人格。
+
+基本上刪除掉也無所謂。
+
+↑
+aya_word.dic †
+單語辭書。與SSP的SakuraScriptEnv進行對應，會自動取出其中一個單詞。例如以下範例：
+
+\0\s[0]我剛剛好像看到%ms在%mh裡吃著%me。\1\s[10]應該是錯覺吧。%ms會自動轉為你在ms中設定的任意一個人名，%mh為店名，%me為食物，因此整個文章的大意是：
+
+(從者)：我剛剛好像看到(某個人)在(某家店)裡吃著(某食物)。 (使魔)：應該是錯覺吧。於是一個較為簡單的AI對話就這麼產生了。這樣的設定也利於提升在毒電波*2上的泛用性，有興趣的人可以多多研究一下。
+
+由於AYA在語法上能夠使用附帶範圍的展開式『%()』，因此在單詞的選用中可以有更多的變化性，也可自行設定單詞集合。單語取得事件(On_\??)的部份無需修改，那是為了對應SSP而保留的部份。另外，如果選擇使用前處理功能的話，請將此辭書放在系統辭書之後，對話辭書之前。
+
+↑
+aya_aitalk.dic †
+AI對話的處理場所，會根據對話頻率的時間長度自動進行一般對話或連鎖對話。一些會影響到AI行為的對話也會在此處理。
+
+↑
+aya_bootend.dic †
+啟動/關閉/切換人格時會執行的函式都包含在此辭書內。
+有任何預設的初期變數，或關閉人格前想刪除的變數，也請在此一併處理。
+
+↑
+aya_communicate.dic †
+處理User對人格或人格對人格的對話。
+
+↑
+aya_menu.dic †
+處理並生成MENU選單的辭書，以及處理相應的選單選取反應。
+
+↑
+aya_react.dic †
+處理使用者用滑鼠或鍵盤對人格的做出的行為，像是這樣這樣那樣那樣的事……XD。
+
+↑
+aya_string.dic †
+這部份的設定會影響到SSP的右鍵選單，自動取代原有的選單文字。
+
+↑
+aya_etc.dic †
+上述辭書未包含的SSP事件皆置於此，諸如檔案拖曳、對時、收信、安裝等等事件的相應對話。
+如果不打算做較高階的功能的話，基本上沒有必要對此辭書進行更動。
+
+↑
+AYA Versoin 4 的轉移 †
+基本上沒人用得上，所以不多說了。想了解的話，這裡有完整版中文解說：
+
+•http://hk.geocities.com/tionzy/template.html
+↑
+UTF-8辭書的使用 †
+預設上，人格範本辭書的文字編碼Shift_JIS。
+
+如果想讓您的人格在任何環境系統下運作，或是在對話中混用多國語言的話，請將辭書編碼設定為UTF-8。
+如下述進行設定的變更。
+
+•在基礎構築檔案yaya.txt中追加這段代碼。
+         charset,UTF-8↑
+使用方法 †
+在此簡單說明一下。
+詳細內容請直接参照範本的構成檔案。先認真讀過這些解讀後再去看辭書的話應該能理解得快一點。
+
+↑
+事件處理器 †
+事件是「發生了～」「做了～」這類、在人格周遭所發生的各式各樣的現象或環境變化。事件發生之時所引發的函式稱之為事件處理器。明確的說，談到人格的開發就不得不提起事件處理器這東西。
+
+事件本身分為很多種類，在此就不逐一詳細解説。在此提供以下連結，請自行研究如何實行這些事件。
+
+•本體通知事件通知本體的基礎事件。最重要。
+◦核心程式應用?
+•外部應用軟體泛用事件外部應用軟體所通知的事件。
+◦外部軟體應用?
+•文内部事件文自己通知的事件。有OnAiTalk、On_ID 這 2 種類。
+◦OnAiTalk
+是所謂AI對話（隨機對話）的事件。定期的進行通知。
+◦On_ID
+SHIORI/3.0 資源参照系以及本體情報系 ID 的request收到訊息時所發生的事件。
+ID: hwnd 處理器的記述例子如下所示。變數 SakuraHwnd 被本體側 hwnd 保持。
+   On_hwnd
+   {
+       SakuraHwnd = reference0[0]
+   }↑
+新增事件的對應方法 †
+即使將來 SSP 本體或外部程式定義了新的事件，AYA只要追加相對應的事件處理器即可。例如要實裝あの夢的機能的話，可以寫成這樣。
+
+   OnHitThunder
+   {
+       "\0\_s実体化開始。\e"
+   }↑
+SAORI †
+↑
+SAORI的執行 †
+SAORI插件可以用 FUNCTIONEX 或 SAORI 這兩個函式來執行。
+FUNCTIONEX 和 SAORI 在機能上是同等的。用哪一個都隨你喜歡。
+
+第一參數指定 DLL 檔名。可以指定與文 DLL的相對路徑。第二參數以後為 Argument[n] 。
+
+使用方式如下。
+例子所使用的 SAORI 模組「textcopy.dll」可將 Argument0 所指定的字串複製到 Windows 的剪貼簿中。
+（→textcopy.dll 配布先 ClearBrainSystems）
+（→textcopy.dll 的預設編碼是Shift-JIS，所以複製出來的中文會變成亂碼）
+
+
+   FUNCTIONEX("textcopy.dll", "複製到剪貼簿。", 0)Result 可以取得函式傳回的值。
+
+   _result = FUNCTIONEX("textcopy.dll", "複製到剪貼簿。", 1)↑
+值的回傳 †
+SAORI實行後回傳的變數 Value[n] 會被文轉為 valueex? 。
+以 SAORI 模組「debeso.dll」為例，可以產生一個簡單的資料庫系統，並接受簡單的SQL語言。
+Argument0 為 "-f"，指定資料回傳的方式。 Argument1 為 SQL語言 。
+
+   _result = FUNCTIONEX("debeso.dll","-f","SELECT name FROM sqlite_master WHERE type='table'");上述的SQL語法要求SAORI回傳資料庫中所有的資料表名稱。
+於是 _result 回傳資料表的總數，valueex0 ~ n 則為資料表的名稱。
+
+↑
+壽命 †
+從初回實行之前到 load 和 GET Version 送出時開始。unload 在文のunload之前。
+
+↑
+線上更新時的動作 †
+由於線上更新時可能有 SAORI 構成檔案那類的東西被更新，因此所有 load 完畢的 SAORI 在取得 OnUpdateReady 事件的訊息後便 unload 。線上更新中時 SAORI 無法使用。
+
+↑
+
+↑
+系統變數 †
+範本本身提供了以下的系統變數。
+
+•year、month、day、weekday
+現在的西暦年、月、日、星期。
+星期為0～6、0是星期日。
+•hour、hour12、ampm、minute、second
+現在時間（24時間）、現在時間（12時間）、上下午、分、秒。
+•systemuptickcount、systemuptime
+OS起動至今的時間。systemuptickcount的單位是毫秒(ms)、systemuptime是秒(s)。
+•systemuphour、systemupminute、systemupsecond
+由systemuptickcount換算成的時、分、秒。
+•memoryload
+物理記憶體的使用率。單位％。
+•memorytotalphys、memoryavailphys、memorytotalvirtual、memoryavailvirtual
+物理記憶體量、剩餘物理記憶體量、虛擬＋物理記憶體量、虛擬＋物理剩餘記憶體量。單位是KB。
+•username
+使用者的名字。初回起動時為"ユーザーさん" 。
+•basewarename
+「伺か」本體的類別名稱。MATERIA 是 "embryo" 、SSP 是 "SSP" 、CROW 則是 "crow" 。
+OnLoad 無法使用（不能取得有意義的類別名稱）。
+•aitalkinterval
+AI對話（OnAiTalk事件）的発生間隔。單位為秒。預設為 180 (=3 分)。輸入0的話OnAiTalk事件就不會發生。
+•communicateratio
+開始溝通的機率。AI對話中轉換成communicate事件的機率。單位 % 。預設為 10 (也就是說每隨機對話 10 次中有 1 次會跟其他的人格聊天)。
+•ghostexlist / ghostexcount
+以半形逗號列舉現在同樣起動中的人格名稱 / 數量。
+溝通開始時，請從此清單中選擇想要對話的人格。
+•installedghostlist / installedsakuralist / installedkerolist
+已安裝人格名稱、本體側的名字、kero 側的名字清單。用半形逗號區分。
+人格名為 descript.txt 的 name 輸入文字、本体側名為 sakura.name 輸入文字、kero 側名為 kero.name 輸入文字。
+installedghostlist、installedsakuralist、installedkerolist 的元素數量通常是一樣的，並且具有一致性。例如 installedghostlist[32] 為 "陽子＆飯綱＆千早" 的時候、installedsakuraname[32] 為 "陽子" 、 installedkeroname 為 "飯綱" 。
+•uniqueid
+獨有 ID 。用於Owned SSTP 的認證。
+•sakurahwnd / kerohwnd / sakurablnhwnd / keroblnhwnd
+各種 hwnd 。在利用需要使用 hwnd 的 SAORI 時而用的。
+•reference*
+Event reference（受信側）。*為0～。
+可能放入數值或字串。値由半角數字組成的話為數值，其他的則為字串。
+例如 OnCommunicate 的 reference0 為對話對象的人格名稱，通常來說是字串，但如果對象是人格「54」的時候則為數值。
+字串中的byte値 1 會自動的置換成半形逗號。
+
+•res_reference*
+Event reference（應答側）。*為0～。
+如果指派這個系統變數的話，request作為應答會返回 Reference*: header。
+request每次執行完畢後都會清除其內容。這點請注意一下。
+主要是用在communicate時，用來指定對象人格的名字（res_reference0）。
+
+•valueex?
+SAORI 實行結果的 Value[?] header値。
+此外 SAORI 的 Result 是作為 FUNCTIONEX / SAORI 系統函數的傳回值，所以沒有準備專用的變數。
+
+↑
+已安裝人格清單的作成 †
+installedghostlist / installedsakuralist / installedkerolist 是人格在 load 過程中自動構築的。由於構築需要時間，如果已安人格的數量很多時，處理時間會變長。
+因此，如果安裝非常多的人格，等級較低的電腦在啟動人格時會變得比較慢。
+
+要解決這個問題的話，可以指定最大的清單長度。
+
+aya_shiori3.dic 第25行
+
+   #define IGLIST_MAX -1•請將此數值改為你所想要的值。或者指定下列的數值。 指定 0 → 不構築清單。
+•指定-1 → 構築全部的人格。
+假若將此值設定為 5 ，系統將會在所有已安裝人格中挑出5個人格，製成清單放入 installedghostlist、installedsakuralist、installedkerolist。
+放入清單的人格是循環的，下次啟動時會放入與上次不同的5個人格到清單之中。
+
+已安裝人格如果少於設定值則全數取出。
+
+當然，設定為0時是速度最快的。
+如果你製作的人格沒有需要用到這個清單的話，可以設為0。
+
+↑
+溝通 †
+↑
+與其他的人格進行對話 †
+在應答各種事件之時，將對話對象人格的名字代入系統函數 res_reference0 ，兩個人格之間就可以產生對話(溝通)事件。
+不僅是在隨機對話或是任何狀況下都能夠進行溝通(Communicate)。
+
+現在桌面上存在的人格名字，可以用 On_otherghostname 取得。
+
+具體的實裝例子請參照範本。範本是以OnAiTalk來進行溝通。（通常在隨機對話的場合下，溝通的發生率較低。）
+
+↑
+回覆主動對話 †
+如果是由其他的人格或使用者主動對人格進行對話時，會發生OnCommunicate事件。
+以系統變數 reference0 取得對話者的名字、reference1取得對話的內容，然後再判斷要回覆的內容。
+回覆對象的名字則填入 res_reference0 。
+
+下面的例子，當對話是來自於奈留的話，會根據內容返回不同的回覆。至於來自於其他人格的對話，則一律回答「嗯。」。
+
+   OnCommunicate
+   {
+       if reference0 == "奈留" {
+           res_reference0 = "奈留"
+           if "你好" _in_ reference1 {
+               "\0嗯，你好。\e"
+           }
+           elseif "天氣" _in_ reference1 {
+               "\0天氣？也許吧‥‥。\e"
+           }
+           else {
+               res_reference0=""
+               "\0？？\e"
+           }
+       }
+       else {
+           "\0嗯。\e"
+       }
+   }當無法解釋奈留對話的內容時，回覆「？？」避免進一步的對話。
+
+不把人格的名字代入res_reference0 ，並明示其為空的字串時，因為沒有將回覆傳給對方，此次的交談將會在這個回覆之後停住。
+
+如果是來自於使用者的主動對話時， reference0 會代入"user"。
+至於人格對使用者的回覆則是一樣的寫法。
+
+↑
+隨機對話的連鎖 †
+隨機對話的時候，由於對話的長度或是段落的考量，將一整串相同主題的對話內容，分為複數次的對話來進行。此類對話我們稱之為連鎖對話。
+
+•開始
+在連鎖的初次對話中寫入「連鎖ID」。
+連鎖ID ，即為以下對話後面寫下的「:chain=連鎖ID」。
+   RandomTalk
+   RandomTalk
+   {
+       "\0沒有連鎖的對話、其之一。\e"
+       "\0沒有連鎖的對話、其之二。\e"
+       "\0伊藤是大笨蛋。\e:chain=爭吵"
+   }上述例子中，第三項的對話為連鎖的啟動對話，連鎖ID變成「爭吵」。
+這樣一來、以「伊藤是大笨蛋。」為開端，開始進行「爭吵」話題的連鎖再生。
+
+連鎖除了隨機對話可以啟動之外，其他狀況的對話也都能進行連鎖。例如在OnBoot對話(啟動人格時的初始對話)加入連鎖ID的話，人格啟動之後就可以直接進入連鎖對話。
+
+•本體
+連鎖對話「爭吵」的本體如以下記述。
+   爭吵
+   {{CHAIN
+       "\1我哪裡笨了！你這個薄得要死的マセ餓鬼！\e"
+       "\0你才是８位元微處理器的中古貨！\e"
+       "\1８位元哪裡不好啊！\e"
+   }}CHAIN連鎖是寫入「連鎖函式」用的特殊格式・動作函式。
+連鎖函式的動作與sequential選擇對話字串的函式相類似。在取得隨機對話的同時，將接下來的對話順序也一併輸入進去。
+
+連鎖函式不能單純的使用{}來包圍，而是用{{CHAIN及}}CHAIN。
+
+•連鎖對話的子階層與流程控制
+連鎖函式與普通函式一樣可以使用變數或 if 。連鎖之內也可以加入新的連鎖，因此可以寫出相當複雜的連鎖程式。
+連鎖ID被指定為「end」時，連鎖就會被終止，回到一般的隨機對話。
+
+以下簡單的例子所示。
+
+   chain1
+   {{CHAIN
+       "1"
+       "2"
+       {
+           "3"
+           "4:chain=end"
+           "5:chain=chain2"
+       }
+       "6"
+   }}CHAIN
+   
+   chain2
+   {{CHAIN
+       "7"
+       "8"
+   }}CHAIN此連鎖函式 chain1 會隨機產生下列3種型式的連鎖對話。
+
+  1. "1" → "2" → "3" → "6" → 終了
+  2. "1" → "2" → "4" → 終了
+  3. "1" → "2" → "5" → "7" → "8" → 終了↑
+製作成自己的人格 †
+基本上只有下述幾個動作：
+
+1.自訂一個人格名稱，取代 dercript.txt 及 install.txt 上面的人格名稱。
+2.尋找一個自己喜歡的 FreeShell 取代原有的 Shell ，或是自己做一個也可以。
+3.修正 aya_bootend.dic 中 OnFirstBoot 的內容 (第一次執行時的對話) 。
+4.將自己構想的對話放入 aya_aitalk.dic 中的 RandomTalk 裡面。
+5.把 aya_menu.dic 中 OpenMenu 的選單選項改一改。
+6.對 aya_react.dic 作點小修正，看是要這樣那樣……都行，只要SHELL支援的話(XD)。
+這樣一來一個新的人格就誕生了，要公開的話把暫存檔(profile等)刪一刪，然後壓縮成.zip壓縮檔，再把副檔名更名為.nar，放到網路上供人下載，一切搞定！
+
+↑
+結語 †
+製作人格真的不是一件很難的事，只要有創意，花點時間，「創師」這個稱號就是你的了。
+就讓我們一起把中文的偽春菜界發揚光大吧！

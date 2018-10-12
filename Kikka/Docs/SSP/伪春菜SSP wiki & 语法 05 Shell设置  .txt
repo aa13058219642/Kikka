@@ -1,0 +1,500 @@
+Shell設置教學 †
+•Shell設置教學 
+•檔案配置 
+◦descript.txt 
+◦Surface.txt： 
+◦*.png 
+•surface.txt的編排 
+◦華和梨 
+◦美坂 
+◦文 
+◦surfaceX.png的公定編號 
+•動畫製作 
+◦眨眼 
+◦流汗效果 
+◦閃爍效果 
+◦動嘴效果 
+•總結 
+•討論區 
+在談完了偽AI篇，相信您應該已經有一個基本的概念：
+目錄以及檔案對應正確，是讓Ghost正確運作的第一步。
+如果還沒有的話，請先複習前幾篇文章喔。
+
+接下來要談的是Shell製作完全入手，這部分可說是整個Ghost製作之中最簡單的一環(不包含繪製CG)。
+簡單的來說，我們只是指定某個表情號碼出現時的顯現方式(可能是靜態或者動態)。
+而在AI之中，則僅需直接指定表情號碼，如此配合起來即可讓Ghost神靈活現。
+
+↑
+檔案配置 †
+在 Ghost_Name\Shell\master\ 目錄之下，主要由下列三種檔案所組成：
+
+•descript.txt
+•surface.txt
+•*.png (圖檔集合)
+這三種檔案的意義如下：
+
+↑
+descript.txt †
+作用：負責設定shell的名稱、圖片選單的底圖。
+如果您的shell名稱為中文，那麼記得在最頂端加入charset的設定，建議使用UTF-8。
+這個檔案各AI系統是通用的。
+
+//↓此Shell的名稱以及製作人
+charset,UTF-8
+name,NeiNei
+type,shell
+craftman,Man
+id,NeiNei
+
+//↓指定對話框出現的電腦螢幕座標
+sakura.balloon.offsetx,20
+sakura.balloon.offsety,60
+kero.balloon.offsetx,20
+kero.balloon.offsety,50
+
+//↓指定圖片選單檔案
+menu.background.bitmap.filename,menu_background.png
+menu.foreground.bitmap.filename,menu_foreground.png
+menu.sidebar.bitmap.filename,menu_sidebar.png↑
+Surface.txt： †
+作用：表情圖片指定以及效果。
+
+接下來先從最基本的指定靜態表情圖片談起吧，在此我們假定您已經繪製好一定數量的surface圖片。
+要注意的是，這些圖片必須為.png格式，大部分的繪圖軟體如PhotoShop、PhotoImpact、以及Macromedia Fireworks等都有支援。
+另外背景顏色(要透明的區域)盡量設定為純三原色(紅、藍、綠) 較不容易出問題。
+
+•如何取得圖像區域(如頭部、臉、胸部)的座標?
+在里々網站裡有提供一個好用的小程式 Coordin ，下載後將其直接解壓縮到一個目錄下即可。
+
+使用方法：
+
+1.直接執行coordin.exe，之後你會發現有個空白的視窗出現。
+2.用拖曳的方式，將你想設定座標的shell圖片拖放進去該空白視窗，但僅限png圖片檔。
+3.之後該圖片即會出現在視窗當中，這時運用你的滑鼠指標在圖片上拖曳出你想要設定的四方形方框區域範圍：
+
+ P.S理夢最高，萌え~
+
+
+4.確定之後按下組合鍵Ctrl+C，即可複製該四方形方框的區域範圍座標。
+5.在記事本或者其他文件編輯程式選擇貼上，即會出現一組座標值，像是這樣：
+51,47,268,119這即是你所需要的座標值，將其紀錄下來，我們等下會用到。
+
+↑
+*.png †
+這些便是Shell底下的基本構成圖片，根據使用上的不同分為靜態圖片與動態圖片兩種。
+
+靜態圖片通常是一張完整的人格圖片，來表達一特定的動作或表情。而動態圖片則是一張張特定區塊的小圖片，是為了產生動畫效果而製作的。
+
+↑
+surface.txt的編排 †
+首先必須注意的是各種偽AI之間的設定上有小部分的不同，以下提出華和梨與美坂二個偽AI來解說：
+
+↑
+華和梨 †
+1.看你有多少張shell圖片，以surfaceX.png為命名方式，X代表從0開始的任意數字，到100或200也沒關係，範圍主要看你要如何去設定。
+在此以surface0.png為範例。
+1.用記事本開啟surface.txt，以下是文件設定的內容：
+surface0
+{
+collision0,51,47,268,119,head    //→設定頭部座標範圍
+collision1,94,124,229,209,face   //→設定臉龐座標範圍
+collision2,105,218,196,287,bust //→設定胸部座標範圍
+}
+
+surface1
+{
+collision0,51,47,268,119,head
+collision1,94,124,229,209,face
+collision2,105,218,196,287,bust
+}
+.
+.
+.以此類推，每張圖片都要對應一個surface描述語言，如果無指定的話系統會使用surfaceX.png中的X號碼為該張圖片的內定值，
+但只有靜態顯示，對任何點選都不會有反應。
+
+你會注意到每個設定上都有四個為一組的座標值，這些座標值依照第一部分的說明，運用coordin程式即可方便的取得。
+要注意的是座標值範圍不可重疊，否則Ghost就沒辦法作出適當的反應了。
+
+一般來說：
+
+•頭部 → Shell 中有頭髮的大部分
+•臉頰 → Shell 中頭髮以下，包含眼睛、嘴部、跟臉形的範圍
+•胸部 → (消音)~
+
+基本上是不會重疊的，除非設定錯誤。
+
+↑
+美坂 †
+所有的設定同上，但請注意這邊的不同處：
+
+sakura.surface.alias
+{
+1,[0]
+2,[0]
+4,[0]
+5,[0]
+6,[0]
+7,[0]
+8,[0]
+}
+
+kero.surface.alias
+{
+11,[10]
+}
+
+surface0
+{
+collision0,51,47,268,119,Head
+collision1,94,124,229,209,Face
+collision2,105,218,196,287,Bust
+}
+首先美坂有多前導設定值。可以設定那個表情要配合哪個編號的surface png檔。
+另外注意到了嗎?surface描述語言的設定裡， "Head" 是大寫開頭，而華和梨是 "head" ，小寫開頭。
+造成這種差異的原因在於程式碼的寫法差異，倒反過來也是可以，但是這樣一來你就要一一修改原始碼中所有與Mouse事件有關的函式，
+所以建議是照著默認的方式去寫就好了。
+
+以下是另一種比較整齊的美坂shell的寫法：
+
+surface0
+{
+element0,base,surface0.png,0,0
+
+collision0,51,47,268,119,Head
+collision1,94,124,229,209,Face
+collision2,105,218,196,287,Bust
+}以下類推，直到需要用到的表情指定完畢為止。
+
+注意"element0,base,surface0.png,0,0"這一行，它可以讓你值定surface0要用哪一張圖片來對應，
+也就是說圖片不一定要按照編號來取檔名，直接在surface.txt裡面再指定也是可以的。
+
+如你要使用surface200.png來代表surface0表情，那麼要這樣寫：
+
+element0,base,surface200.png,0,0P.S除了檔名的部分之外，其餘的語法不建議變更。以下的部分都將會採用這個寫法。
+
+↑
+文 †
+設定方式大致上與華和梨無異，Surface的區塊名稱建議為字首大寫。
+
+↑
+surfaceX.png的公定編號 †
+儘管玩家們可以任意指定自己想要的編號，不過還是有個不成文的協定標準，如下表所示：
+
+ Sakura端  kero端 
+00 正常 10 正常 
+01 害羞   
+02 驚訝 11 驚訝 
+03 不安   
+04 失望   
+05 微笑   
+06 閉眼   
+07 生氣   
+08 冷笑(汗)   
+09 生氣(面紅耳赤樣)   
+25 唱歌 19 唱歌 
+
+基本上如果您沒有特別指定表情的檔案編號，那麼系統就會使用如上表的預設值作為各表情對應的圖片檔案。
+使用公定表情的好處是當Shell去任意搭配其他的標準的Ghost時，不用再特別的去修改編號即可展現出大致正確的表情。
+另外一般有添加表情設定的歌詞卡也會依照這個公定的編號以便適合每個 Ghost而不至於有不符合的表情出現。
+
+當然如果您堅持要自訂專屬的編號也是可以的。
+
+↑
+動畫製作 †
+最後來談談動畫效果吧。什麼是動畫效果呢?相信您應該有注意到有些Ghost會有如ACG動畫般的眨眼、流汗動作，
+或者閃爍的表情符號效果等，甚至是嘴巴會動的效果，都是在這範圍裡面。
+
+↑
+眨眼 †
+接下來的部分教大家如何讓你的Ghost眨眼睛。
+
+這裡以妮妮為範例，首先請看這段surface.txt設定:
+surface0
+{
+element0,base,surface0.png,0,0
+
+collision0,91,47,290,120,Head
+collision1,128,126,236,202,Face
+collision2,132,242,218,285,Bust
+
+0interval,sometimes
+0pattern0,1000,0,overlayfast,132,108
+0pattern1,1001,0,overlayfast,132,108
+0pattern2,1000,9,overlayfast,132,108
+0pattern3,-1,10,overlay,132,108
+}
+
+有沒有注意到?比第一部分多出了一些代碼：
+0interval,sometimes
+0pattern0,1000,0,overlayfast,132,108
+0pattern1,1001,0,overlayfast,132,108
+0pattern2,1000,9,overlayfast,132,108
+0pattern3,-1,10,overlay,132,108
+
+這即是眨眼睛的關鍵設定，此段設定主要是讓伺か在執行的時候，
+以置換圖片的方式將shell的某區域在一定時間內更換為另一個圖片，最後再切回來。
+當置換的區域是眼睛區域的時候，就產生眨眼的動作(事先需自行準備好切換時的圖片)。
+
+由於更換的時間相當的短，如範例上是9ms，即產生這個事件的時候，會有約1/100秒的時間該區域是另一個圖片，
+(milli-second,千分之一秒的意思,一般來說~~人眼最快的辨認速度是二十分之一秒,也就是50 ms.)，
+而這超過了人眼可以接受的移動速度，因此會產生視覺暫留現象，讓使用者有眨眼睛的感覺，其實只是圖片置換罷了。
+
+在此以：
+
+  半閉眼 
+  完全閉眼 
+
+二張圖片，圖片只需要二雙眼睛部分的大小即可，配合以下圖片：
+
+ surface0.png
+
+完整的shell圖片
+
+表情為normal
+
+(妮妮) 
+
+來作解說。
+
+以下是程式碼詳細設定方式：
+
+開始置換圖片，發生時間設定為sometimes
+
+0interval,sometimes
+第一個置換圖片，格式：
+•0pattern0,圖檔編號,置換時間,overlayfast,x座標,y座標
+
+pattern編號為0，代表第0階段。
+0pattern0,1000,0,overlayfast,132,108
+
+同上pattern編號變1，代表第1階段，第二個要置換的圖片。
+0pattern1,1001,0,overlayfast,132,108
+
+同上，切換回來第一個要置換的圖片，如此完成一個眨眼的動作。
+pattern編號為2，代表第2階段。
+0pattern2,1000,9,overlayfast,132,108
+
+同上，-1代表將該區域切換回原本的surface0.png的內容，一次的眨眼動作完成。
+pattern編號為3，代表第3階段。
+0pattern3,-1,10,overlay,132,108
+
+其中，(x座標,y座標)為將眨眼圖片置換到原本surface0.png眼睛區域的起始座標，
+在此即是你當初擷取眼睛部位圖片時的起始座標。主要是要讓眨眼的圖片完全契合要取代的眼睛區域。
+
+這些座標值可以很容易的利用繪圖軟體來取得，
+也就是說你在製作眨眼圖片部分的過程需要特別紀錄一下擷取時的起始(x,y)座標值，
+如此在置換某區域圖片時即能看起來完全的融入原本的surface0.png裡面。
+
+以上是最簡單的眨眼做法，僅使用二張眼睛圖片，實際上你可以視你的需求增加圖片，
+並配合增加pattern的編號即可，可以從0~你所需要的步驟數字。
+
+同樣的，每個要有眨眼睛效果的表情，都必須設定眨眼描述才行。
+例如我們希望0~3號表情都會眨眼睛，那麼surface0~surface3的描述區塊都需要寫入眨眼效果的程式碼。
+
+要訣：可以不用太去在意這些程式碼的實際意涵，只需要複製上述的程式碼，
+並隨著Shell的設計，填入對應的圖片檔名編號以及反應時間、起始座標、步驟編號即可：
+
+0interval,sometimes
+0pattern0,1000,0,overlayfast,132,108
+0pattern1,1001,0,overlayfast,132,108
+.
+.(類推)
+.
+0pattern3,-1,10,overlay,132,108 
+→最後的-1代表整個置換程序結束。 
+基本上所有偽AI的設定方式都與上面相同，不過要注意華和梨的區域部位為英文字母小寫。
+
+華和梨部份範例：
+surface0
+{
+element0,base,surface0.png,0,0
+
+collision0,91,47,290,120,head
+collision1,128,126,236,202,face
+collision2,132,242,218,285,bust
+
+0interval,sometimes
+0pattern0,1000,0,overlayfast,132,108
+0pattern1,1001,0,overlayfast,132,108
+0pattern2,1000,9,overlayfast,132,108
+0pattern3,-1,10,overlay,132,108
+}
+
+↑流汗效果 †
+先來看看美坂surface.txt的程式碼：
+surface8
+{
+element0,base,surface8.png,0,0
+
+collision0,91,47,290,120,Head
+collision1,128,126,236,202,Face
+collision2,132,242,218,285,Bust
+
+1interval,runonce
+1option,exclusive
+1pattern0,2220,5,overlay,207,58
+1pattern1,2220,5,overlay,207,61
+1pattern2,2220,5,overlay,207,64
+1pattern3,2220,5,overlay,207,67
+1pattern4,2220,5,overlay,207,70
+1pattern5,2220,5,overlay,207,73
+1pattern6,2220,5,overlay,207,76
+1pattern7,2220,5,overlay,207,79
+1pattern8,2220,5,overlay,207,81
+1pattern9,2220,5,overlay,207,84
+}
+
+這次多出的是這段程式碼：
+
+1interval,runonce
+1option,exclusive
+1pattern0,2220,5,overlay,207,58
+1pattern1,2220,5,overlay,207,61
+1pattern2,2220,5,overlay,207,64
+1pattern3,2220,5,overlay,207,67
+1pattern4,2220,5,overlay,207,70
+1pattern5,2220,5,overlay,207,73
+1pattern6,2220,5,overlay,207,76
+1pattern7,2220,5,overlay,207,79
+1pattern8,2220,5,overlay,207,81
+1pattern9,2220,5,overlay,207,84
+
+雖然同樣是置換圖檔的效果，這邊與之前眨眼不同的地方在於圖檔置換事件結束之後就不會在產生任何變化了，
+而眨眼則是以sometimes的方式持續的進行置換，所以你會看到Ghost不停的在眨眼睛。
+
+同樣的，我們不去深究這些程式碼的原意，注意以下格式：
+•1pattern0,2220,5,overlay,207,58
+
+•1patternX,動畫圖檔編號,反應時間,overlay,x座標,y座標
+其中X代表變化的步驟編號，從0~動畫終點。
+
+在這邊我們希望當表情8號出現的時候，搭配有流汗的效果，所以先準備好以下的圖檔： 
+|#img(http://cuc2.idv.tw/cucold/images/surface2220.png)|動畫圖檔：surface2220.png
+流汗效果用 |#img(http://cuc2.idv.tw/cucold/images/surface8.png)|8號表情：surface8.png
+
+然後在surface8描述區塊裡面加入這段程式碼即可：
+1interval,runonce
+1option,exclusive
+1pattern0,2220,5,overlay,207,58
+1pattern1,2220,5,overlay,207,61
+1pattern2,2220,5,overlay,207,64
+1pattern3,2220,5,overlay,207,67
+1pattern4,2220,5,overlay,207,70
+1pattern5,2220,5,overlay,207,73
+1pattern6,2220,5,overlay,207,76
+1pattern7,2220,5,overlay,207,79
+1pattern8,2220,5,overlay,207,81
+1pattern9,2220,5,overlay,207,84
+如此當表情8出現的時候，surface2220.png圖檔就會重疊在surface8.png上面，
+並且以5ms的方式按照0~9的步驟，在座標(207,58)~(207,84)之間重複出現(同樣是置換圖檔的原理)，看起來就像是有汗滴在移動。
+
+如果希望讓汗低在最後消失的話，只要加上以下這段即可：
+1pattern9,-1,5,overlay,207,84
+
+注意到了嗎?又是-1，由此可知，當-1編號出現的時候，
+即是代表消除重疊在圖檔之上的效果圖片，恢復為原本圖檔的畫面。
+
+↑閃爍效果 †
+由上可知，我們可以利用-1這個編號來讓圖檔產生閃爍的效果，
+事實上在程式碼內是這樣的設定：出現→消失→出現→消失。
+因為置換的速度相當的快，所以能有閃爍的效果，如下段的程式碼：
+
+1interval,runonce 
+1option,exclusive 
+1pattern0,2250,9,overlay,0,56 
+1pattern1,-1,9,overlay,0,56 
+1pattern2,2250,9,overlay,0,56 
+1pattern3,-1,9,overlay,0,56 
+1pattern4,2250,9,overlay,0,56 
+1pattern5,-1,9,overlay,0,56
+
+這邊的可讓surface2250.png圖檔在(0,56)開始的位置覆蓋原本的圖檔部位，
+並閃爍三次，最後消失恢復原本的靜態表情圖檔。
+
+↑
+動嘴效果 †
+首先我們必須先知道，動嘴效果也是圖片置換的原理，
+那麼採用上述的指令不就好了嗎?為何要特別有這段指令呢?
+
+這跟事件產生的時機有關，因為上述的指令，只能讓Ghost持續或者進行部份的置換，
+但沒辦法依照事件(如唱歌或說話)去啟動或停止。
+如此會造成嘴巴動個不停或者只動作一次之後就不會有變化了。
+
+先來看看這段美坂的surface程式碼：
+
+surface25
+{
+element0,base,surface25.png,0,0
+
+collision0,91,47,290,120,Head
+collision1,128,126,236,202,Face
+collision2,132,242,218,285,Bust
+
+40interval,talk,4
+40pattern0,0,0,alternativestart,[41.42.43.44]
+
+41interval,never
+41pattern0,3310,10,overlay,158,159
+41pattern1,-1,10,overlay,0,0
+
+42interval,never
+42pattern0,3320,10,overlay,158,159
+42pattern1,-1,10,overlay,0,0
+
+43interval,never
+43pattern0,3310,10,overlay,158,159
+43pattern1,-1,10,overlay,0,0
+
+44interval,never
+44pattern0,3320,10,overlay,158,159
+44pattern1,-1,10,overlay,0,0
+}
+
+重點程式碼：
+40interval,talk,4
+40pattern0,0,0,alternativestart,[41.42.43.44]
+
+41interval,never
+41pattern0,3310,10,overlay,158,159
+41pattern1,-1,10,overlay,0,0
+
+42interval,never
+42pattern0,3320,10,overlay,158,159
+42pattern1,-1,10,overlay,0,0
+
+43interval,never
+43pattern0,3310,10,overlay,158,159
+43pattern1,-1,10,overlay,0,0
+
+44interval,never
+44pattern0,3320,10,overlay,158,159
+44pattern1,-1,10,overlay,0,0
+
+這邊我們可以馬上的理解到，3320代表surface3320.png，(158,159)代表圖片置換的起始座標。
+這邊能讓編號25的圖檔，在 Talk事件出現的時候(即對話框每個文字出現的時候)，
+都會依照41,42,43,44的步驟來置換圖片。
+在此除了粗體字部分之外，不建議去更改其他部分的程式碼。
+
+以下是用到的圖片：
+
+  閉口狀態：surface3310.png 
+  開口狀態：surface3320.png 
+  唱歌的表情：surface25.png
+(這是研發中的妮妮圖檔，華和梨測試版本的妮妮並未包含這表情，不過您可以試著自己加入這圖檔，並搭配上述效果看看) 
+
+↑
+總結 †
+綜合以上，只要多配合些巧思，即可搭配出各種炫目的變換效果喔
+
+
+在這邊強調：千萬不要拘泥於其原本的應用。
+
+這些事實上都只是圖片置換的原理，上述只是配合各指令功能的一種應用罷了。
+實際上您可以用任何的圖檔來搭配任何的指令功能，例如理夢持續不停上下浮動的Materia魔石即是眨眼效果的另一個應用。
+
+另外，美坂跟華和梨的surface.txt編寫區別，只在於區域部位的大小寫(head,bust,face)，
+只要遵循華和梨小寫，美坂大寫的原則即可，其餘surface設定值以及指令碼都可通用。
+
+以上說明的概念滿抽象的，例如圖片置換的動作，因此建議能配合實際的例子來參考，
+如理夢D2R版本(美坂)的shell設定，華和梨版可以參考妮妮，會更容易明白。
+另外各位也可以將舊版橘花(美坂)與新版橘花(AYA)拿來比較一下，應該能很快就理解到兩種偽AI的差異之處。
