@@ -84,14 +84,26 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <IncludePath>$(IncludePath)</IncludePath>
     <LibraryPath>$(LibraryPath)</LibraryPath>
-    <OutDir>..\Kikka\</OutDir>
+    <OutDir>output\</OutDir>
     <TargetName>Kikka</TargetName>
+    <IntDir>output\$(Configuration)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <IncludePath>D:\Works\Python36-64\include;$(IncludePath)</IncludePath>
     <LibraryPath>D:\Works\Python36-64\libs;$(LibraryPath)</LibraryPath>
-    <OutDir>..\Kikka\</OutDir>
+    <OutDir>output\</OutDir>
     <TargetName>Kikka</TargetName>
+    <IntDir>output\$(Configuration)\</IntDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <OutDir>output\</OutDir>
+    <TargetName>Kikka</TargetName>
+    <IntDir>output\$(Configuration)\</IntDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <OutDir>output\</OutDir>
+    <TargetName>Kikka</TargetName>
+    <IntDir>output\$(Configuration)\</IntDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -111,6 +123,9 @@
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
     </ClCompile>
+    <PostBuildEvent>
+      <Command>copy /Y "$(ProjectDir)output\Kikka.exe" "$(ProjectDir)..\Kikka\Kikka.exe"</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>

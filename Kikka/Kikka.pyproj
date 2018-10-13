@@ -6,7 +6,7 @@
     <ProjectHome>
     </ProjectHome>
     <StartupFile>Scripts\Main.py</StartupFile>
-    <SearchPath>..\Kikka</SearchPath>
+    <SearchPath>..\Kikka;Scripts\Bin;Scripts\Moudles</SearchPath>
     <WorkingDirectory>Scripts\</WorkingDirectory>
     <OutputPath>.</OutputPath>
     <Name>Kikka</Name>

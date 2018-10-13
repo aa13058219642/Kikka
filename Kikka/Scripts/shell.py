@@ -8,7 +8,7 @@ from enum import Enum
 from PyQt5.QtCore import Qt, QPoint, QRect
 from PyQt5.QtGui import QImage, QPainter, QColor
 
-from .helper import Helper
+import kikkahelper
 
 
 class Shell:
@@ -67,7 +67,7 @@ class Shell:
 
     def _open_descript(self, descript_path):
         map = {}
-        charset = Helper.checkEncoding(descript_path)
+        charset = kikkahelper.checkEncoding(descript_path)
 
         f = open(descript_path, 'r', encoding=charset)
         for line in f:
@@ -91,7 +91,7 @@ class Shell:
         map = {}
         surfaceID = []
         is_load_key = True
-        charset = Helper.checkEncoding(surfaces_path)
+        charset = kikkahelper.checkEncoding(surfaces_path)
 
         f = open(surfaces_path, 'r', encoding=charset)
         for line in f:

@@ -10,8 +10,8 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QApplication, QSystemTrayIcon
 
-from .systemmenu import SystemMenu
-from .core import Core
+from systemmenu import SystemMenu
+from core import Core
 
 
 class KikkaApp(QApplication):
@@ -33,7 +33,7 @@ class KikkaApp(QApplication):
         self.isdebug = False
         if len(args[0]) >= 1 and "-c" in args[0]:
             self.isdebug = True
-
+            
         self.core = Core.get_instance()
         self.runGuardThread()
         self.core.start(self.isdebug)

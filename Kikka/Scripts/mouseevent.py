@@ -1,7 +1,7 @@
 import logging
 from enum import Enum
 
-from .core import Core
+from core import Core
 
 
 def getEventList():

@@ -9,16 +9,16 @@ from PyQt5.QtWidgets import QMenu, QStyle, QStyleOptionMenuItem, QStyleOption, Q
 from PyQt5.QtWidgets import QAction
 from PyQt5.QtGui import QIcon, QImage, QPainter, QFontMetrics, QFont, QPalette, QColor, QPixmap
 
-import Bin.kikka
+import kikkahelper
 
 class SystemMenu(QMenu):
     def __init__(self, parent):
         QMenu.__init__(self)
         self._parent = parent
         
-        self.bg = QImage(os.path.join(sys.path[0],r"..\Resources\Shell\_Default_Kikka2\background.png"))
-        self.fg = QImage(os.path.join(sys.path[0],r"..\Resources\Shell\_Default_Kikka2\foreground.png"))
-        self.side = QImage(os.path.join(sys.path[0],r"..\Resources\Shell\_Default_Kikka2\sidebar.png"))
+        self.bg = QImage(os.path.join(kikkahelper.getPath(kikkahelper.PATH_SHELL), r"_Default_Kikka2\background.png"))
+        self.fg = QImage(os.path.join(kikkahelper.getPath(kikkahelper.PATH_SHELL), r"_Default_Kikka2\foreground.png"))
+        self.side = QImage(os.path.join(kikkahelper.getPath(kikkahelper.PATH_SHELL), r"_Default_Kikka2\sidebar.png"))
 
         self.setFixedHeight(700)
 
@@ -89,7 +89,9 @@ class SystemMenu(QMenu):
 
     def onExit(self):
         logging.info("SystemMenu-onExit")
-        Bin.kikka.KikkaApp.get_instance().exitApp()
+        from kikka import KikkaApp
+
+        KikkaApp.get_instance().exitApp()
         #sys.exit(0)
         pass
 

@@ -4,8 +4,8 @@ from PyQt5.QtCore import Qt, QRect, QPoint
 from PyQt5.QtGui import QPixmap, QPainter, QColor
 from PyQt5.QtWidgets import QWidget
 
-from .systemmenu import SystemMenu
-from .mouseevent import MouseEvent
+from systemmenu import SystemMenu
+from mouseevent import MouseEvent
 
 
 class MainWindow(QWidget):

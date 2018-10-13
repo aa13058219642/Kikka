@@ -2,7 +2,9 @@ import sys
 import signal
 import logging
 import logging.handlers
-from Bin.kikka import KikkaApp
+
+
+from kikka import KikkaApp
 
 
 def runApp():

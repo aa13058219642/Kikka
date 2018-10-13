@@ -26,10 +26,10 @@ int __stdcall WinMain(HINSTANCE hInstance,
 	}
 	fs.close();
 
-	fs.open("Scripts\\Main.py", ios::in);
+	fs.open("Main.py", ios::in);
 	if (!fs)
 	{
-		MessageBox(NULL, "Scripts\\Main.py NOT found", "Error", MB_ICONERROR);
+		MessageBox(NULL, "Main.py NOT found", "Error", MB_ICONERROR);
 		return -1;
 	}
 	fs.close();
@@ -37,11 +37,11 @@ int __stdcall WinMain(HINSTANCE hInstance,
 	if (!strcmp(lpCmdLine, "-c"))
 	{
 		//debug
-		system("Python\\python.exe Scripts\\Main.py & echo ByeBye & pause");
+		system("set PYTHONPATH=Scripts;Scripts/Bin;Scripts/Moudles;Resources; & Python\\python.exe Main.py & pause");
 	}
 	else
 	{
-		TCHAR commandLine[] = TEXT("Python\\python.exe Scripts\\Main.py");
+		TCHAR commandLine[] = TEXT("set PYTHONPATH=Scripts;Scripts/Bin;Scripts/Moudles;Resources; & Python\\python.exe Main.py");
 		STARTUPINFO si = { sizeof(si) };
 		PROCESS_INFORMATION pi;
 		bool bRet = CreateProcess(

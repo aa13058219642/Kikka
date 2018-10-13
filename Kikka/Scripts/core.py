@@ -3,7 +3,7 @@ import os
 import logging
 import time
 from enum import Enum
-
+import kikkahelper
 
 class Core:
     _instance = None
@@ -18,9 +18,11 @@ class Core:
         raise SyntaxError('can not instance, please use get_instance')
 
     def _init(self):
-        from .shell import ShellManager
+        from shell import ShellManager
         self._shellMgr = ShellManager.get_instance()
-        self._shellMgr.loadAllShell(os.path.join(sys.path[0],  r'..\Resources\Shell'))
+        self.rootpath = sys.path[0]
+
+        self._shellMgr.loadAllShell(kikkahelper.getPath(kikkahelper.PATH_SHELL))
 
         self._isfullscreen = False
         self._app_state = Core.APP_STATE.HIDE
@@ -55,7 +57,7 @@ class Core:
     def start(self, isDebug=False):
         self._debug=isDebug
         #self._app_state = APP_STATE.SHOW
-        from .mainwindow import MainWindow
+        from mainwindow import MainWindow
         self._mainwindow = MainWindow(self._debug)
         self.setSurface(0)
 
