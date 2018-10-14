@@ -1,7 +1,7 @@
 
 import os
 import sys
-
+from win32api import GetSystemMetrics
 
 def checkEncoding(filepath):
     CODES = ['UTF-8', 'GBK', 'Shift-JIF', 'GB18030', 'BIG5','UTF-16']
@@ -50,3 +50,7 @@ def getPath(tag):
     elif tag == PATH_SHELL: path = os.path.join(sys.path[0], 'Resources/Shell')
     return path
 
+def getScreenResolution():
+    w = GetSystemMetrics(0)
+    h = GetSystemMetrics(1)
+    return w, h

@@ -1,11 +1,12 @@
 import logging
 
-from PyQt5.QtCore import Qt, QRect, QPoint
+from PyQt5.QtCore import Qt, QRect, QPoint, QEvent
 from PyQt5.QtGui import QPixmap, QPainter, QColor
 from PyQt5.QtWidgets import QWidget
 
 from systemmenu import SystemMenu
 from mouseevent import MouseEvent
+from kikkamenu import Menu, KikkaMenu
 
 
 class MainWindow(QWidget):
@@ -18,7 +19,6 @@ class MainWindow(QWidget):
         self.setMouseTracking(True)
         self.setAcceptDrops(True)
 
-        self.createSyatemMenu()
         self.CollisionBoxes = {}
 
         pixmap = QPixmap(1,1)
@@ -34,17 +34,16 @@ class MainWindow(QWidget):
         self._boxes = {}
         self._movepos = QPoint(0, 0)
 
-    def createSyatemMenu(self):
-        self.menu = SystemMenu(self)
+        self.menu = KikkaMenu.this()
         self.setContextMenuPolicy(Qt.CustomContextMenu)
         self.customContextMenuRequested.connect(self.showSystemMenu)
 
     def showSystemMenu(self, pos):
-        self.menu.move(self.pos() + pos)
+        self.menu.setPos(self.pos() + pos)
         self.menu.show()
 
     ###############################################################################################################
-    # mouse event
+    # Event
 
     def setBoxes(self, boxes):
         self._boxes = {}
@@ -67,10 +66,12 @@ class MainWindow(QWidget):
         page_sizes = dict((n, x) for x, n in vars(Qt).items() if isinstance(n, Qt.MouseButton))
         logging.debug("%s %s (%d, %d)", event, page_sizes[button], x, y)
 
+
     def mousePressEvent(self, event):
         btn = event.buttons()
         self._mouseLogging("mousePressEvent", btn, event.pos().x(), event.pos().y())
         if event.buttons() == Qt.LeftButton:
+            #self.menu.Hide()
             self._movepos = event.globalPos()
             event.accept()
             self._isMoving = True
@@ -94,17 +95,6 @@ class MainWindow(QWidget):
         if self._isMoving is False:
             boxevent = self._boxCollision()
             if boxevent != '': MouseEvent.event_selector(MouseEvent.MouseMove, boxevent)
-
-    # def mouseReleaseEvent(self, event):
-    #     btn = event.buttons()
-    #     self._mouseLogging("mouseReleaseEvent", btn, event.pos().x(), event.pos().y())
-    #     if btn == Qt.LeftButton:
-    #         self._isMoving = False
-    #
-    #     if self._isMoving is False:
-    #         boxevent = self._boxCollision()
-    #         if boxevent != '': MouseEvent.event_selector(MouseEvent.MouseUp, boxevent)
-
 
     def mouseDoubleClickEvent(self, event):
         btn = event.buttons()

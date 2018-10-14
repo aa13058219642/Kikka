@@ -17,6 +17,13 @@ class Core:
 
         raise SyntaxError('can not instance, please use get_instance')
 
+    @staticmethod
+    def get_instance():
+        if Core._instance is None:
+            Core._instance = object.__new__(Core)
+            Core._instance._init()
+        return Core._instance
+
     def _init(self):
         from shell import ShellManager
         self._shellMgr = ShellManager.get_instance()
@@ -27,12 +34,6 @@ class Core:
         self._isfullscreen = False
         self._app_state = Core.APP_STATE.HIDE
         pass
-
-    def get_instance():
-        if Core._instance is None:
-            Core._instance = object.__new__(Core)
-            Core._instance._init()
-        return Core._instance
 
     def isDebug(self):
 
