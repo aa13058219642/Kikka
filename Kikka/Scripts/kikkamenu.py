@@ -5,7 +5,7 @@ import sys
 from PyQt5.QtCore import QRect, QSize, Qt, QRectF, QPoint, QMargins, QEvent, QTimer
 from PyQt5.QtPrintSupport import QPrinter
 from PyQt5.QtWidgets import QMenu, QStyle, QStyleOptionMenuItem, QStyleOption, QApplication, QWidget, QScrollArea, \
-    QVBoxLayout, QFrame, QPushButton
+    QVBoxLayout, QFrame
 from PyQt5.QtWidgets import QAction
 from PyQt5.QtGui import QIcon, QImage, QPainter, QFontMetrics, QFont, QPalette, QColor, QPixmap, QMouseEvent
 
@@ -26,106 +26,75 @@ class KikkaMenu:
         return KikkaMenu._instance
 
     def _init(self):
-        # self._menu = MenuEx("Main")
-        # self._menu2 = MenuEx("Sub")
-        # self._menu.getMenu().addMenu(self._menu2)
-        # self._menu3 = MenuEx("SubSub")
-        # self._menu2.getMenu().addMenu(self._menu3)
-        # self._menu.updateSize()
-        # self._menu2.updateSize()
-        # self._menu3.updateSize()
-
-        self._menu = Menu(QWidget(), "Main")
-        #self._menu2 = Menu(self._menu, "Sub")
-        #self._menuaddMenu(self._menu2)
-        #self._menu3 = Menu(self._menu2, "SubSub")
-        #self._menu2.addMenu(self._menu3)
-        #self._menu.updateSize()
-        #self._menu2.updateSize()
-        #self._menu3.updateSize()
-
-
         pass
 
     def hide(self):
 
-        self._menu.Hide()
-        # self._menu.hide()
+        self._menu.hide()
 
     def show(self):
-        self._menu.Show()
-        # self._menu.show()
-        #self._menu.activateWindow()
+        self._menu.show()
 
     def setPos(self, pos):
-        #self._menu.updateSize()
-
-        pos = QPoint(pos)
-        w, h = kikkahelper.getScreenResolution()
-        if pos.y() + self._menu.height() > h:
-            pos.setY(h - self._menu.height())
-        elif pos.y() < 0:
-            pos.setY(0)
-
-        if pos.x() + self._menu.width() > w:
-            pos.setX(w - self._menu.width())
-        elif pos.x() < 0:
-            pos.setX(0)
-
-        self._menu.move(pos)
+        self._menu.setPosition(pos)
 
     def addAction(self):
         pass
 
-
-class MenuEx(QMenu):
-    def __init__(self, title='', parent=None):
-        self._title = "%s(MenuEx)"%(title)
-        QMenu.__init__(self, title, parent)
-
-        self.setMinimumSize(250, 100)
-        self.setMaximumSize(300, 700)
-        self.installEventFilter(self)
-        #self.setMouseTracking(True)
-        #self.setWindowFlags(Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint)
-
-        self.submenu = {}
-        self._menu = Menu(self, title)
-        self._menu.setTitle(title)
-        self._menu.createAction()
-        #self.level = level
-
-        self._scrollarea = QScrollArea(self)
-        self._scrollarea.setWidget(self._menu)
-        self._scrollarea.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        self._scrollarea.setFrameShape(QFrame.NoFrame)
-
-        self._vbox = QVBoxLayout()
-        self._vbox.addWidget(self._scrollarea, alignment=Qt.AlignLeft)
-        self._vbox.setContentsMargins(0, 0, 0, 0)
-        self.setLayout(self._vbox)
-
-    def getMenu(self):
-        return self._menu
-
-    def Hide(self):
-        self.hide()
-
-    def Show(self):
-        self._menu.show()
-        self.show()
-        #self.activateWindow()
-
-    def setTitle(self, text):
-
-        self._menu.setTitle(text)
-
-    def updateSize(self):
+    def addMenu(self, parent):
+        self._menu = Menu(parent, "Main")
+        self._menu2 = Menu(self._menu, "Sub")
+        self._menu.addMenu(self._menu2)
+        self._menu3 = Menu(self._menu2, "SubSub")
+        self._menu2.addMenu(self._menu3)
         self._menu.updateRect()
-        self.setFixedHeight(min(self._menu.height(), 700))
-        self.setFixedWidth(min(self._menu.width(), 275))
-        self._scrollarea.setFixedSize(self.size())
-        pass
+
+    def isShow(self):
+        return not self._menu.isHidden()
+
+class Menu(QMenu):
+    def __init__(self, parent, title=''):
+        self._title = "%s(Menu)" % (title)
+        QMenu.__init__(self, title, parent)
+        self._parent = parent
+
+        self.aRect = {}
+        self.bg = QImage(os.path.join(kikkahelper.getPath(kikkahelper.PATH_SHELL), r"_Default_Kikka2\background.png"))
+        self.fg = QImage(os.path.join(kikkahelper.getPath(kikkahelper.PATH_SHELL), r"_Default_Kikka2\foreground.png"))
+        self.side = QImage(os.path.join(kikkahelper.getPath(kikkahelper.PATH_SHELL), r"_Default_Kikka2\sidebar.png"))
+
+        self.installEventFilter(self)
+        self.setStyleSheet("QMenu { menu-scrollable: 1; }")
+        self.createAction()
+        self.setMouseTracking(True)
+
+    def createAction(self):
+        icon = QIcon(r"D:\Project\B\BigProject\Kikka\Kikka\icon.ico")
+        self.addAction(QAction(icon, "Exittttttttttttttttttttttt", self._parent, triggered=self.onExit))
+
+        for i in range(100):
+            text = str("exit%d" % i)
+            act = QAction(icon, text, self._parent)
+            act.triggered.connect(lambda checked, i=i: self.onExit(i))
+            self.addAction(act)
+
+        c = len(self.actions())
+        self.actions()[0].setDisabled(True)
+
+        self.actions()[3].setIcon(QIcon())
+        self.actions()[3].setCheckable(True)
+        self.actions()[3].setChecked(True)
+
+        self.actions()[2].setCheckable(True)
+
+    def addItem(self, text, callbackfunc, iconfile=None):
+        if iconfile != None and os.path.exists(iconfile):
+            icon = QIcon(iconfile)
+            act = QAction(icon, text, self._parent)
+            act.triggered.connet = callbackfunc
+            self.addAction(QAction(icon, text, self._parent, triggered=callbackfunc))
+        else:
+            self.addAction(QAction(text, self._parent, triggered=callbackfunc))
 
     def eventFilter(self, obj, event):
         text = ''
@@ -144,140 +113,33 @@ class MenuEx(QMenu):
         elif event.type() == QEvent.HideToParent:text = 'HideToParent'
         elif event.type() == QEvent.Timer:text = 'Timer'
         elif event.type() == QEvent.Paint:text = 'Paint'
-        elif event.type() == QEvent.MouseButtonPress: text = 'MouseButtonPress'
+        elif event.type() == QEvent.MouseButtonPress: text = 'MouseButtonPress(%d %d)'%(event.globalPos().x(), event.globalPos().y())
         logging.info("%s %d %s"%(self._title, event.type(), text))
-
         if obj == self:
             if event.type() == QEvent.WindowDeactivate:
                 self.Hide()
-            elif event.type() == QEvent.Show:
-                self._menu.show()
-            elif event.type() == QEvent.Close:
-                return True
-            elif event.type() == QEvent.Hide:
-                return True
+            #elif event.type() == QEvent.MouseMove:
+            #    QApplication.sendEvent(self._parent, event)
+
         return False
 
-class Menu(QWidget):
-    def __init__(self, parent, title=''):
-        self._title = "%s(Menu)" % (title)
-        QWidget.__init__(self, parent)
-        self._parent = parent
+    def setPosition(self, pos):
+        pos = QPoint(pos)
+        w, h = kikkahelper.getScreenResolution()
+        if pos.y() + self.height() > h: pos.setY(h - self.height())
+        if pos.y() < 0: pos.setY(0)
 
-        self.bg = QImage(os.path.join(kikkahelper.getPath(kikkahelper.PATH_SHELL), r"_Default_Kikka2\background.png"))
-        self.fg = QImage(os.path.join(kikkahelper.getPath(kikkahelper.PATH_SHELL), r"_Default_Kikka2\foreground.png"))
-        self.side = QImage(os.path.join(kikkahelper.getPath(kikkahelper.PATH_SHELL), r"_Default_Kikka2\sidebar.png"))
+        if pos.x() + self.width() > w: pos.setX(w - self.width())
+        if pos.x() < 0: pos.setX(0)
+        self.move(pos)
 
-        self.setStyleSheet("QMenu { menu-scrollable: 1; }")
-        self.setMaximumWidth(275)
-
-        self.installEventFilter(self)
-        #self.setMouseTracking(True)
-        #self.setMinimumSize(250, 100)
-        #self.setMaximumSize(300, 700)
-        #self.installEventFilter(self)
-        #self.setMouseTracking(True)
-        #self.setWindowFlags(Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint)
-
-        self.submenu = {}
-        #self._menu = Menu(self, title)
-        #self._menu.setTitle(title)
-        #self.createAction()
-        #self.level = level
-
-        self._widget = ScoreWidget(self)
-        #QPushButton("1111", self._widget)
-        self._scrollarea = QScrollArea(self)
-        self._scrollarea.setWidget(self._widget)
-        self._scrollarea.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        self._scrollarea.setFrameShape(QFrame.NoFrame)
-
-        self._vbox = QVBoxLayout()
-        self._vbox.addWidget(self._scrollarea, alignment=Qt.AlignLeft)
-        self._vbox.setContentsMargins(0, 0, 0, 0)
-        self.setLayout(self._vbox)
-        self.createAction()
-
-    def _eventFilter(self, obj, event):
-        text = ''
-        if event.type() == QEvent.UpdateRequest:text = 'UpdateRequest'
-        elif event.type() == QEvent.Leave:text = 'Leave'
-        elif event.type() == QEvent.Enter:text = 'Enter'
-        elif event.type() == QEvent.ToolTip:text = 'ToolTip'
-        elif event.type() == QEvent.StatusTip:text = 'StatusTip'
-        elif event.type() == QEvent.ZOrderChange:text = 'ZOrderChange'
-        elif event.type() == QEvent.Show:text = 'Show'
-        elif event.type() == QEvent.ShowToParent:text = 'ShowToParent'
-        elif event.type() == QEvent.UpdateLater:text = 'UpdateLater'
-        elif event.type() == QEvent.MouseMove:text = 'MouseMove'
-        elif event.type() == QEvent.Close:text = 'Close'
-        elif event.type() == QEvent.Hide:text = 'Hide'
-        elif event.type() == QEvent.HideToParent:text = 'HideToParent'
-        elif event.type() == QEvent.Timer:text = 'Timer'
-        elif event.type() == QEvent.Paint:text = 'Paint'
-        elif event.type() == QEvent.MouseButtonPress: text = 'MouseButtonPress'
-        logging.info("%s %d %s"%(self._title, event.type(), text))
-        if obj == self:
-            if event.type() == QEvent.Close:
-                return False
-            elif event.type() == QEvent.Hide:
-                return False
-        return False
-
-    def mousePressEvent(self, event):
-        logging.info("Menu(%d, %d)" % (event.pos().x(), event.pos().y()))
-        act = self.actionAt(event.pos())
-        if act is None: return
-        #act.activate(event)
-
-
-
-
-    def createAction(self):
-        icon = QIcon(r"D:\Projects\Kikka\Kikka\icon.ico")
-        #self.addAction(QAction(icon, "Exittttttttttttttttttttttt", self._parent, triggered=self.onExit))
-
-        for i in range(100):
-            text = str("exit%d" % i)
-            act = QAction(icon, text, self._parent)
-            act.triggered.connect(lambda checked, i=i: self.onExit(i))
-            self.addAction(act)
-            #self.addAction(QAction(icon, text, self._parent, triggered=self.onExit))
-
-        c = len(self.actions())
-        self.actions()[0].setDisabled(True)
-
-        self.actions()[3].setIcon(QIcon())
-        self.actions()[3].setCheckable(True)
-        self.actions()[3].setChecked(True)
-        self.actions()[2].setCheckable(True)
-        self.updateSize()
-
-    def addItem(self, text, callbackfunc, iconfile=None):
-        if iconfile != None and os.path.exists(iconfile):
-            icon = QIcon(iconfile)
-            act = QAction(icon, text, self._parent)
-            act.triggered.connet=callbackfunc
-            self.addAction(QAction(icon, text, self._parent, triggered=callbackfunc))
-        else:
-            self.addAction(QAction(text, self._parent, triggered=callbackfunc))
-
-        self.updateRect()
-
-    def updateSize(self):
-        self.resize(self.sizeHint())
-        size = self.size()
-        self._updateActionRect()
-        self._widget.setRect(self.aRect)
-        size =self.size()
-
-        self._widget.resize(self.sizeHint())
-        #self._widget.updateActionRect()
-
-        self.setFixedHeight(min(self.height(), 700))
-        self.setFixedWidth(min(self.width(), 275))
-        self._scrollarea.setFixedSize(self.size())
-        pass
+    def updateRect(self):
+        s = self.sizeHint()
+        w, h = kikkahelper.getScreenResolution()
+        if s.height() > h: logging.warning("Menu height > Screen height")
+        if s.width() > w: logging.warning("Menu width > Screen width")
+        # s = QSize(min(s.width(), w), min(s.height(), h))
+        self.resize(s)
 
     def onExit(self, index):
         logging.info("SystemMenu-onExit: %d"%index)
@@ -292,11 +154,12 @@ class Menu(QWidget):
         logging.info("%s %s", text, s)
         return s
 
-    def _updateActionRect(self):
+    def updateActionRect(self):
         """
         void QMenuPrivate::updateActionRects(const QRect &screen) const
         https://cep.xray.aps.anl.gov/software/qt4-x11-4.8.6-browser/da/d61/class_q_menu_private.html#acf93cda3ebe88b1234dc519c5f1b0f5d
         """
+
         self.aRect = {}
         c = len(self.actions())
         style = self.style()
@@ -309,8 +172,7 @@ class Menu(QWidget):
         deskFw = style.pixelMetric(QStyle.PM_MenuDesktopFrameWidth, opt, self)
         tearoffHeight = style.pixelMetric(QStyle.PM_MenuTearoffHeight, opt, self) if self.isTearOffEnabled() else 0
 
-        # dh = QApplication.desktop().screenGeometry(self).height()
-        dh = self.height()
+        dh = self.sizeHint().height()
         max_column_width = 0
         tabWidth = 0
         maxIconWidth = 0
@@ -403,25 +265,22 @@ class Menu(QWidget):
 
             y += self.aRect[i].height()
 
-    def _paintEvent(self, event):
+        self.updateRect()
+
+    def paintEvent(self, event):
         """
         https://cep.xray.aps.anl.gov/software/qt4-x11-4.8.6-browser/d8/d24/class_q_menu.html#a8863816ad5113a5e8b21d01e85939d76
         """
-        logging.info("%s paintEvent##################################################" % self.title())
-        p = QPainter(self._widget)
-        leftW = self.side.width()
-        p.fillRect(0, 0, self.width(), self.height(), Qt.black)
-        p.drawImage(0, self.height() - self.side.height(), self.side)
-        p.drawImage(leftW, self.height() - self.bg.height(), self.bg)
+        #if self.isHidden(): return
 
+        logging.info("%s paintEvent##################################################" % self.title())
         p = QPainter(self)
         leftW = self.side.width()
         p.fillRect(0, 0, self.width(), self.height(), Qt.black)
         p.drawImage(0, self.height() - self.side.height(), self.side)
         p.drawImage(leftW, self.height() - self.bg.height(), self.bg)
 
-        #self._widget.repaint()
-        self._updateActionRect()
+        self.updateActionRect()
         actioncount = len(self.actions())
 
         for i in range(actioncount):
@@ -518,158 +377,3 @@ class Menu(QWidget):
                 opt.rect = iconRect
                 style.drawPrimitive(pe, opt, p, self)
         pass
-
-    def Hide(self):
-        self.hide()
-
-    def Show(self):
-        self.show()
-        #self.update()
-        #self.activeAction()
-
-class ScoreWidget(QWidget):
-    def __init__(self, menu):
-        QWidget.__init__(self)
-        self.menu = menu
-
-        self.bg = QImage(os.path.join(kikkahelper.getPath(kikkahelper.PATH_SHELL), r"_Default_Kikka2\background.png"))
-        self.fg = QImage(os.path.join(kikkahelper.getPath(kikkahelper.PATH_SHELL), r"_Default_Kikka2\foreground.png"))
-        self.side = QImage(os.path.join(kikkahelper.getPath(kikkahelper.PATH_SHELL), r"_Default_Kikka2\sidebar.png"))
-
-        self.setMouseTracking(True)
-
-    def mousePressEvent(self, event):
-        logging.info("ScoreWidget(%d, %d)"%(event.pos().x(), event.pos().y()))
-        #self.menu.setActiveAction(self.menu.actionAt(event.pos()))
-        act = self.menu.actionAt(event.pos())
-        if act is None: return
-
-        self.menu.setActiveAction(act)
-        #QApplication.sendEvent(self.menu, event)
-
-    def setRect(self, rect):
-        self.aRect = rect
-
-    def paintEvent(self, event):
-        """
-        https://cep.xray.aps.anl.gov/software/qt4-x11-4.8.6-browser/d8/d24/class_q_menu.html#a8863816ad5113a5e8b21d01e85939d76
-        """
-        logging.info("scroll paintEvent##################################################")
-        #self._widget.repaint()
-        menu = self.menu
-        #menu.updateSize()
-        #self.updateActionRect()
-        size = self.size()
-        #self.aRect = menu.aRect
-
-        p = QPainter(self)
-        leftW = self.side.width()
-        p.fillRect(0, 0, self.width(), self.height(), Qt.black)
-        p.drawImage(0, self.height() - self.side.height(), self.side)
-        p.drawImage(leftW, self.height() - self.bg.height(), self.bg)
-
-        actioncount = len(menu.actions())
-
-        for i in range(actioncount):
-            act = menu.actions()[i]
-            arect = QRect(self.aRect[i])
-            if event.rect().intersects(arect) is False:
-                continue
-
-            opt = QStyleOptionMenuItem()
-            menu.initStyleOption(opt, act)
-            opt.rect = arect
-
-            if opt.menuItemType == QStyleOptionMenuItem.Separator:
-                # 分隔线
-                #logging.info("%s 分隔线%d: %d" % (self.title(), i, opt.menuItemType))
-                p.setPen(Qt.white)
-                p.drawLine(leftW, arect.y(), arect.width(), arect.y())
-            elif opt.menuItemType == QStyleOptionMenuItem.SubMenu:
-                # 子菜单
-                #logging.info("%s 子菜单%d: %d" % (self.title(), i, opt.menuItemType))
-                self._drawMenuItem(p, opt, arect, act.icon(), Qt.green)
-            else:
-                # 其他菜单项
-                #logging.info("%s 其他菜单项%d: %d" % (self.title(), i, opt.menuItemType))
-                self._drawMenuItem(p, opt, arect, act.icon(), Qt.white)
-
-    def _drawMenuItem(self, p, opt, arect, icon, color):
-        menu = self.menu
-        style = menu.style()
-
-        checkable = opt.checkType != QStyleOptionMenuItem.NotCheckable
-        checked = opt.checked if checkable else False
-        dis = not (int(opt.state) & int(QStyle.State_Enabled))
-        active = int(opt.state) & int(QStyle.State_Selected)
-
-        fw = style.pixelMetric(QStyle.PM_MenuPanelWidth, opt, menu)
-        leftW = menu.side.width()
-
-        pencolor = color
-        if opt.state & QStyle.State_Selected \
-                and opt.state & QStyle.State_Enabled:
-            # 被选中项
-            #logging.info("%s 被选中项: %d" % (self.title(), opt.menuItemType))
-            irect = QRectF(arect)
-            irect.moveLeft(leftW + irect.x())
-            irect.setWidth(irect.width() - leftW)
-
-            srect = QRectF(arect)
-            srect.moveBottom(menu.bg.height() - menu.height() + srect.bottom())
-            srect.setWidth(srect.width() - leftW)
-            p.drawImage(irect, menu.fg, srect)
-            pencolor = Qt.red
-
-        p.setPen(pencolor)
-        tr = QRect(arect)
-        p.setFont(opt.font)
-        text_flag = Qt.AlignVCenter | Qt.TextShowMnemonic | Qt.TextDontClip | Qt.TextSingleLine
-        s = opt.text
-        if '\t' in s:
-            ss = s[s.index('\t') + 1:]
-            fontwidth = opt.fontMetrics.width(ss)
-            tr.moveLeft(opt.rect.right() - fontwidth)
-            tr = QStyle.visualRect(opt.direction, opt.rect, tr)
-            p.drawText(tr, text_flag, ss)
-        tr.moveLeft(leftW + arect.x())
-        tr = QStyle.visualRect(opt.direction, opt.rect, tr)
-        p.drawText(tr, text_flag, s)
-
-        # https://cep.xray.aps.anl.gov/software/qt4-x11-4.8.6-browser/df/d91/class_q_style_sheet_style.html#ab92c0e0406eae9a15bc126b67f88c110
-        if opt.icon.isNull() is False:
-            mode = QIcon.Disabled if dis else QIcon.Normal
-            if active != 0 and not dis: mode = QIcon.Active
-
-            # pixmap = QPixmap()
-            icone = style.pixelMetric(QStyle.PM_SmallIconSize, opt, menu)
-            # iconRule = QRenderRule()
-            iconRect = QRectF(arect.x() - fw, arect.y(), leftW, arect.height())
-
-            if checked:
-                pixmap = icon.pixmap(QSize(icone, icone), mode, QIcon.On)
-            else:
-                pixmap = icon.pixmap(QSize(icone, icone), mode)
-
-            pixw = pixmap.width()
-            pixh = pixmap.height()
-            pmr = QRectF(0, 0, pixw, pixh)
-            pmr.moveCenter(iconRect.center())
-            if checked:
-                p.drawRect(QRectF(pmr.x() - 1, pmr.y() - 1, pixw + 2, pixh + 2))
-            p.drawPixmap(pmr.topLeft(), pixmap)
-        elif checkable:
-            iconRect = QRect(0, arect.y(), leftW, arect.height())
-            if checked:
-                pe = QStyle.PE_IndicatorMenuCheckMark
-                opt.rect = iconRect
-                style.drawPrimitive(pe, opt, p, menu)
-        pass
-
-
-
-
-
-
-
-

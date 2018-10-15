@@ -1,8 +1,8 @@
 import logging
 
 from PyQt5.QtCore import Qt, QRect, QPoint, QEvent
-from PyQt5.QtGui import QPixmap, QPainter, QColor
-from PyQt5.QtWidgets import QWidget
+from PyQt5.QtGui import QPixmap, QPainter, QColor, QInputMethodQueryEvent, QMouseEvent
+from PyQt5.QtWidgets import QWidget, QApplication
 
 from systemmenu import SystemMenu
 from mouseevent import MouseEvent
@@ -21,7 +21,7 @@ class MainWindow(QWidget):
 
         self.CollisionBoxes = {}
 
-        pixmap = QPixmap(1,1)
+        pixmap = QPixmap(1, 1)
         self._pixmap = pixmap
         self._message = ""
         self._color = QColor.black
@@ -33,10 +33,37 @@ class MainWindow(QWidget):
         self._isMoving = False
         self._boxes = {}
         self._movepos = QPoint(0, 0)
+        self._mousepos = QPoint(0, 0)
 
         self.menu = KikkaMenu.this()
+        self.menu.addMenu(self)
         self.setContextMenuPolicy(Qt.CustomContextMenu)
         self.customContextMenuRequested.connect(self.showSystemMenu)
+        self.installEventFilter(self)
+
+    def eventFilter(self, obj, event):
+        text = ''
+        if event.type() == QEvent.UpdateRequest:text = 'UpdateRequest'
+        elif event.type() == QEvent.Leave:text = 'Leave'
+        elif event.type() == QEvent.Enter:text = 'Enter'
+        elif event.type() == QEvent.ToolTip:text = 'ToolTip'
+        elif event.type() == QEvent.StatusTip:text = 'StatusTip'
+        elif event.type() == QEvent.ZOrderChange:text = 'ZOrderChange'
+        elif event.type() == QEvent.Show:text = 'Show'
+        elif event.type() == QEvent.ShowToParent:text = 'ShowToParent'
+        elif event.type() == QEvent.UpdateLater:text = 'UpdateLater'
+        elif event.type() == QEvent.MouseMove:text = 'MouseMove'
+        elif event.type() == QEvent.Close:text = 'Close'
+        elif event.type() == QEvent.Hide:text = 'Hide'
+        elif event.type() == QEvent.HideToParent:text = 'HideToParent'
+        elif event.type() == QEvent.Timer:text = 'Timer'
+        elif event.type() == QEvent.Paint:text = 'Paint'
+        elif event.type() == QEvent.Move:text = 'Move'
+        elif event.type() == QEvent.InputMethodQuery:text = 'InputMethodQuery';self._InputMethodQuery = event
+        elif event.type() == QEvent.MouseButtonPress:text = 'MouseButtonPress(%d %d)' % (event.globalPos().x(), event.globalPos().y())
+
+        logging.info("%s %d %s"%("MainWindow", event.type(), text))
+        return False
 
     def showSystemMenu(self, pos):
         self.menu.setPos(self.pos() + pos)
@@ -56,7 +83,7 @@ class MainWindow(QWidget):
         my = self._mousepos.y()
         for cid, box in self._boxes.items():
             rect = box[0]
-            if rect.contains(mx,my) is True:
+            if rect.contains(mx, my) is True:
                 return box[1]
         return ''
     
@@ -66,39 +93,54 @@ class MainWindow(QWidget):
         page_sizes = dict((n, x) for x, n in vars(Qt).items() if isinstance(n, Qt.MouseButton))
         logging.debug("%s %s (%d, %d)", event, page_sizes[button], x, y)
 
+    def leaveEvent(self, QEvent):
+        logging.info("leaveEvent")
+        self._isMoving = False
+
+    def enterEvent(self, QEvent):
+        logging.info("enterEvent")
+        self.activateWindow()
+        #self._isMoving = False
+
+    def inputMethodEvent(self, event):
+        logging.info("inputMethodEvent")
 
     def mousePressEvent(self, event):
         btn = event.buttons()
-        self._mouseLogging("mousePressEvent", btn, event.pos().x(), event.pos().y())
+        self._mouseLogging("mousePressEvent", btn, event.globalPos().x(), event.globalPos().y())
+        self._movepos = event.globalPos() - self.pos()
         if event.buttons() == Qt.LeftButton:
-            #self.menu.Hide()
-            self._movepos = event.globalPos()
-            event.accept()
+
             self._isMoving = True
+            #e =QInputMethodQueryEvent(queries=0x101)
+            #e = QInputMethodQuery()
+            #QApplication.sendEvent(self, QEvent.InputMethodQuery)
+            event.accept()
 
         if self._isMoving is False:
             boxevent = self._boxCollision()
             if boxevent != '': MouseEvent.event_selector(MouseEvent.MouseDown, boxevent)
 
     def mouseMoveEvent(self, event):
+        #logging.info("mouseMoveEvent##################")
         btn = event.buttons()
-        self._mouseLogging("mouseMoveEvent", btn, event.pos().x(), event.pos().y())
+        self._mouseLogging("mouseMoveEvent", btn, event.globalPos().x(), event.globalPos().y())
 
         self._mousepos = event.pos()
-        if btn == Qt.LeftButton:
-            self.move(self.pos() + event.globalPos() - self._movepos)
-            self._movepos = event.globalPos()
+        if self._isMoving and event.buttons() == Qt.LeftButton:
+            self.move(event.globalPos() - self._movepos)
             event.accept()
         else:
             self._isMoving = False
 
         if self._isMoving is False:
             boxevent = self._boxCollision()
-            if boxevent != '': MouseEvent.event_selector(MouseEvent.MouseMove, boxevent)
+            if boxevent != '':
+                MouseEvent.event_selector(MouseEvent.MouseMove, boxevent)
 
     def mouseDoubleClickEvent(self, event):
         btn = event.buttons()
-        self._mouseLogging("mouseDoubleClickEvent", btn, event.pos().x(), event.pos().y())
+        #self._mouseLogging("mouseDoubleClickEvent", btn, event.globalPos().x(), event.globalPos().y())
         if btn == Qt.LeftButton:
             self._isMoving = False
 
@@ -108,7 +150,7 @@ class MainWindow(QWidget):
 
     def wheelEvent(self, event):
         btn = event.buttons()
-        self._mouseLogging("wheelEvent", btn, event.pos().x(), event.pos().y())
+        #self._mouseLogging("wheelEvent", btn, event.pos().x(), event.pos().y())
         if self._isMoving is False:
             boxevent = self._boxCollision()
             if boxevent != '': MouseEvent.event_selector(MouseEvent.WheelEvent, boxevent)
@@ -131,14 +173,8 @@ class MainWindow(QWidget):
     # paint event
 
     def paintEvent(self, event):
-        textbox = QRect(self.rect())
-        textbox.setRect(textbox.x() + 5, textbox.y() + 5,
-                        textbox.width() - 10, textbox.height() - 10)
         painter = QPainter(self)
         painter.drawPixmap(self.rect(), self._pixmap)
-        # pen = QtGui.QPen(QBrush(QtGui.QColor.yellow),2,)
-        painter.setPen(Qt.red)
-        painter.drawText(textbox, self._alignment, self._message)
 
     def clearMessage(self):
         self._message.clear()

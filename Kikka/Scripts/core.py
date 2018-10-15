@@ -49,7 +49,7 @@ class Core:
 
     def hide(self):
         self._app_state=Core.APP_STATE.HIDE
-        self._mainwindow.hide()
+        #self._mainwindow.hide()
 
     def show(self):
         self._app_state=Core.APP_STATE.SHOW
@@ -60,13 +60,14 @@ class Core:
         #self._app_state = APP_STATE.SHOW
         from mainwindow import MainWindow
         self._mainwindow = MainWindow(self._debug)
+        #self._mainwindow.show()
         self.setSurface(0)
 
         from PyQt5.QtCore import QTimer
         self._lasttime = time.clock()
         self._Timer_Run = QTimer()
         self._Timer_Run.timeout.connect(self.run)
-        self._Timer_Run.start(1)
+        self._Timer_Run.start(10)
         self.show()
         pass
 
