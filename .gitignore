@@ -4,7 +4,7 @@
 /Tools
 /WinForms
 /Kikka/Resources/Shell
-kikka.log
+kikka.log*
 
 
 __pycache__/

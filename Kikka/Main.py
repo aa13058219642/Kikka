@@ -26,7 +26,7 @@ def initLogging(level):
     logging.basicConfig(
         level=level,
         format='%(asctime)s %(filename)s[line:%(lineno)d] ''%(levelname)s: %(message)s')
-    file_handler = logging.handlers.RotatingFileHandler('kikka.log', mode='a', maxBytes=1*1024*1024, backupCount=1, encoding='utf-8')
+    file_handler = logging.handlers.RotatingFileHandler('kikka.log', mode='a', maxBytes=1.01*1024*1024, backupCount=1, encoding='utf-8')
     formatter = logging.Formatter('%(asctime)s %(filename)s[line:%(lineno)d] %(levelname)s: %(message)s')
     file_handler.setLevel(level)
     file_handler.setFormatter(formatter)

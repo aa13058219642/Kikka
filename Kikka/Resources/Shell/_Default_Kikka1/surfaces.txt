@@ -1085,6 +1085,7 @@ point.centery,88
 
 surface110
 {
+element0,overlay,surface110.png,0,0
 1interval,talk,4
 1pattern0,2113,0,overlay,109,97
 1pattern1,-1,10,overlay,109,97
