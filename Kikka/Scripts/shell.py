@@ -268,16 +268,21 @@ class Shell:
         if self.isLoaded is False:
             self.loadShell()
 
-        self._CurfaceID = surfacesID
-        surface = self.surfaces[surfacesID]
+        if surfacesID in self.surfaces:
+            old = self._CurfaceID
+            self._CurfaceID = surfacesID
+            surface = self.surfaces[surfacesID]
 
-        if 0 not in surface.elements:
-            base_image_name = "surface%04d.png"%surfacesID
+            base_image_name = "surface%04d.png"%surfacesID if 0 not in surface.elements else surface.elements[0].filename
+
+            if base_image_name in self._pngs:
+                self._base_image = self._pngs[base_image_name]
+            else:
+                logging.warning("Shell.setSurfaces: png %s NOT found!"%base_image_name)
+                self.setSurfaces(old)
         else:
-            base_image_name = surface.elements[0].filename
-
-        self._base_image = self._pngs[base_image_name]
-        pass
+            logging.warning("Shell.setSurfaces: surfaceID: %d NOT exist"%surfacesID)
+            self.setSurfaces(0)
 
     def _getSurfacePath(self, surfacesID):
 
