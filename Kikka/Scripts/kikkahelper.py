@@ -1,7 +1,10 @@
-
 import os
 import sys
 from win32api import GetSystemMetrics
+
+from PyQt5.QtCore import QSize
+from PyQt5.QtGui import QImage
+
 
 def checkEncoding(filepath):
     CODES = ['UTF-8', 'GBK', 'Shift-JIF', 'GB18030', 'BIG5','UTF-16']
@@ -54,3 +57,8 @@ def getScreenResolution():
     w = GetSystemMetrics(0)
     h = GetSystemMetrics(1)
     return w, h
+
+def getDefaultImage():
+    return QImage(QSize(1, 1))
+
+

@@ -1,8 +1,8 @@
 import logging
 
 from PyQt5.QtCore import Qt, QRect, QPoint, QEvent
-from PyQt5.QtGui import QPixmap, QPainter, QColor, QInputMethodQueryEvent, QMouseEvent
-from PyQt5.QtWidgets import QWidget, QApplication
+from PyQt5.QtGui import QPixmap, QPainter, QColor, QInputMethodQueryEvent, QMouseEvent, QImage
+from PyQt5.QtWidgets import QWidget, QApplication, QMenu
 
 from systemmenu import SystemMenu
 from mouseevent import MouseEvent
@@ -37,33 +37,38 @@ class MainWindow(QWidget):
 
         self.menu = KikkaMenu.this()
         self.menu.addMenu(self)
-        self.setContextMenuPolicy(Qt.CustomContextMenu)
-        self.customContextMenuRequested.connect(self.showSystemMenu)
-        self.installEventFilter(self)
+        #self.setContextMenuPolicy(Qt.CustomContextMenu)
+        #self.customContextMenuRequested.connect(self.showSystemMenu)
+        # self.installEventFilter(self)
 
-    def eventFilter(self, obj, event):
-        text = ''
-        if event.type() == QEvent.UpdateRequest:text = 'UpdateRequest'
-        elif event.type() == QEvent.Leave:text = 'Leave'
-        elif event.type() == QEvent.Enter:text = 'Enter'
-        elif event.type() == QEvent.ToolTip:text = 'ToolTip'
-        elif event.type() == QEvent.StatusTip:text = 'StatusTip'
-        elif event.type() == QEvent.ZOrderChange:text = 'ZOrderChange'
-        elif event.type() == QEvent.Show:text = 'Show'
-        elif event.type() == QEvent.ShowToParent:text = 'ShowToParent'
-        elif event.type() == QEvent.UpdateLater:text = 'UpdateLater'
-        elif event.type() == QEvent.MouseMove:text = 'MouseMove'
-        elif event.type() == QEvent.Close:text = 'Close'
-        elif event.type() == QEvent.Hide:text = 'Hide'
-        elif event.type() == QEvent.HideToParent:text = 'HideToParent'
-        elif event.type() == QEvent.Timer:text = 'Timer'
-        elif event.type() == QEvent.Paint:text = 'Paint'
-        elif event.type() == QEvent.Move:text = 'Move'
-        elif event.type() == QEvent.InputMethodQuery:text = 'InputMethodQuery';self._InputMethodQuery = event
-        elif event.type() == QEvent.MouseButtonPress:text = 'MouseButtonPress(%d %d)' % (event.globalPos().x(), event.globalPos().y())
+    def contextMenuEvent(self, event):
+        self.menu.setPos(event.globalPos())
+        self.menu.show()
 
-        logging.info("%s %d %s"%("MainWindow", event.type(), text))
-        return False
+
+    # def eventFilter(self, obj, event):
+    #     text = ''
+    #     if event.type() == QEvent.UpdateRequest:text = 'UpdateRequest'
+    #     elif event.type() == QEvent.Leave:text = 'Leave'
+    #     elif event.type() == QEvent.Enter:text = 'Enter'
+    #     elif event.type() == QEvent.ToolTip:text = 'ToolTip'
+    #     elif event.type() == QEvent.StatusTip:text = 'StatusTip'
+    #     elif event.type() == QEvent.ZOrderChange:text = 'ZOrderChange'
+    #     elif event.type() == QEvent.Show:text = 'Show'
+    #     elif event.type() == QEvent.ShowToParent:text = 'ShowToParent'
+    #     elif event.type() == QEvent.UpdateLater:text = 'UpdateLater'
+    #     elif event.type() == QEvent.MouseMove:text = 'MouseMove'
+    #     elif event.type() == QEvent.Close:text = 'Close'
+    #     elif event.type() == QEvent.Hide:text = 'Hide'
+    #     elif event.type() == QEvent.HideToParent:text = 'HideToParent'
+    #     elif event.type() == QEvent.Timer:text = 'Timer'
+    #     elif event.type() == QEvent.Paint:text = 'Paint'
+    #     elif event.type() == QEvent.Move:text = 'Move'
+    #     elif event.type() == QEvent.InputMethodQuery:text = 'InputMethodQuery';self._InputMethodQuery = event
+    #     elif event.type() == QEvent.MouseButtonPress:text = 'MouseButtonPress(%d %d)' % (event.globalPos().x(), event.globalPos().y())
+    #
+    #     logging.info("%s %d %s"%("MainWindow", event.type(), text))
+    #     return False
 
     def showSystemMenu(self, pos):
         self.menu.setPos(self.pos() + pos)
@@ -188,6 +193,7 @@ class MainWindow(QWidget):
 
     def setImage(self, image):
         # painter = QPainter(image)
+        image = QImage(r"C:\\test.png")
         pixmap = QPixmap().fromImage(image, Qt.AutoColor)
         self._pixmap = pixmap
         self._message = "132"

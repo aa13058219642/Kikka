@@ -22,7 +22,7 @@ class Shell:
         self.setting = ShellSetting()
 
         self._pngs = {}
-        self._shellpath = shellpath  # root path of this shell
+        self.shellpath = shellpath  # root path of this shell
         self.surfaces = {}
         self.isInitialized = False
         self.isLoaded = False
@@ -31,7 +31,7 @@ class Shell:
 
         # path check
         if os.path.exists(shellpath):
-            descript_path = os.path.join(self._shellpath, 'descript.txt')
+            descript_path = os.path.join(self.shellpath, 'descript.txt')
             if not os.path.exists(descript_path): return
             descript_map = self._open_descript(descript_path)
             self._load_descript(descript_map)
@@ -41,6 +41,7 @@ class Shell:
         pass
 
     def clearShell(self):
+        self._pngs = {}
         self.surfaces = {}
         self.isLoaded = False
 
@@ -52,13 +53,18 @@ class Shell:
 
             # load PNG
             for filename, _ in self._pngs.items():
-                self._pngs[filename] = QImage(os.path.join(self._shellpath, filename))
+                p = os.path.join(self.shellpath, filename)
+                if p == self.menu.background_image \
+                or p == self.menu.foreground_image \
+                or p == self.menu.sidebar_image:
+                    continue
+                self._pngs[filename] = QImage(p)
 
             self.isLoaded = True
         pass
 
     def _loadPNGindex(self):
-        for parent, dirnames, filenames in os.walk(self._shellpath):
+        for parent, dirnames, filenames in os.walk(self.shellpath):
             for filename in filenames:
                 a = filename[len(filename) - 4:]
                 if filename[len(filename) - 4:] == '.png':
@@ -169,7 +175,7 @@ class Shell:
                         elif key[4] == 'g': self.menu.background_font_color[1] = int(value[0])
                         elif key[4] == 'b': self.menu.background_font_color[2] = int(value[0])
                         else: self._IgnoreParams(keys, values)
-                    elif key[2] == 'bitmap' and key[3] == 'filename': self.menu.background_image = value[0]
+                    elif key[2] == 'bitmap' and key[3] == 'filename': self.menu.background_image = os.path.join(self.shellpath, value[0])
                     elif key[2] == 'alignment': self.menu.background_alignment = value[0]
                     else: self._IgnoreParams(keys, values)
                 elif key[1] == 'foreground':
@@ -178,7 +184,7 @@ class Shell:
                         elif key[4] == 'g': self.menu.foreground_font_color[1] = int(value[0])
                         elif key[4] == 'b': self.menu.foreground_font_color[2] = int(value[0])
                         else: self._IgnoreParams(keys, values)
-                    elif key[2] == 'bitmap' and key[3] == 'filename': self.menu.foreground_image = value[0]
+                    elif key[2] == 'bitmap' and key[3] == 'filename': self.menu.foreground_image = os.path.join(self.shellpath, value[0])
                     elif key[2] == 'alignment': self.menu.foreground_alignment = value[0]
                     else: self._IgnoreParams(keys, values)
                 elif key[1] == 'disable':
@@ -194,7 +200,7 @@ class Shell:
                         elif key[3] == 'b': self.menu.separator_color[2] = int(value[0])
                         else: self._IgnoreParams(keys, values)
                 elif key[1] == 'sidebar':
-                    if key[2] == 'bitmap' and key[3] == 'filename': self.menu.sidebar_image = value[0]
+                    if key[2] == 'bitmap' and key[3] == 'filename': self.menu.sidebar_image = os.path.join(self.shellpath, value[0])
                     elif key[2] == 'alignment': self.menu.sidebar_alignment = value[0]
                     else: self._IgnoreParams(keys, values)
                 else: self._IgnoreParams(keys, values)
@@ -246,13 +252,13 @@ class Shell:
         pass
 
     def _load_surfaces(self):
-        surfaces_path = os.path.join(self._shellpath, 'surfaces.txt')
+        surfaces_path = os.path.join(self.shellpath, 'surfaces.txt')
         if not os.path.exists(surfaces_path): return
         surfaces_map = self._open_surfaces(surfaces_path)
 
         i = 2
         while 1:
-            surfaces_path = os.path.join(self._shellpath, 'surfaces%d.txt' % i)
+            surfaces_path = os.path.join(self.shellpath, 'surfaces%d.txt' % i)
             if not os.path.exists(surfaces_path): break
             surfaces_map = self._open_surfaces(surfaces_path)
             i = i + 1
@@ -286,7 +292,7 @@ class Shell:
 
     def _getSurfacePath(self, surfacesID):
 
-        return os.path.join(self._shellpath, "surface%04d.png"%surfacesID)
+        return os.path.join(self.shellpath, "surface%04d.png" % surfacesID)
 
     def update(self, updatetime):
         isNeedUpdate = False
@@ -328,6 +334,8 @@ class Shell:
         surface = self.surfaces[self._CurfaceID]
         return surface.CollisionBoxes
 
+    def getShellMenu(self):
+        return self.menu
 
 class ShellManager:
     _instance = None
@@ -352,13 +360,13 @@ class ShellManager:
         if shell.isInitialized is False:
             return
 
-        isExist = True
+        isExist = False
         for s in self.shells:
             if shell.id == s.id and shell.name == s.name:
-                isExist = False
+                isExist = True
                 break
 
-        if isExist:
+        if not isExist:
             logging.info("scan shell: %s", shell.name)
             self.shells.append(shell)
         pass
@@ -372,7 +380,7 @@ class ShellManager:
                 self.loadShell(shellpath)
 
         logging.info("shell count: %d", len(self.shells))
-        self.curShell = 0
+        self.setCurShell(1)
 
     def getCurShell(self):
 
@@ -389,6 +397,13 @@ class ShellManager:
     def getCollisionBoxes(self):
         shell = self.getCurShell()
         return shell.getCollisionBoxes()
+
+    def setCurShell(self, index):
+        if index >= 0 and index < len(self.shells):
+            self.curShell = index
+            from kikkamenu import KikkaMenu
+            KikkaMenu.this().setMenuStyle(self.getCurShell().getShellMenu())
+        else: logging.warning("setCurShell: index NOT in shells list")
 
 
 class Animation:
@@ -671,19 +686,19 @@ class ShellMenu:
         self.hidden = False
         self.menuitem = {}
         
-        self.font_family = 'Arial'
-        self.font_size = 36
+        self.font_family = ''
+        self.font_size = -1
 
         self.background_image = ''
-        self.background_font_color = [255, 255, 255]
+        self.background_font_color = [-1, -1, -1]
         self.background_alignment = 'lefttop'
 
         self.foreground_image = ''
-        self.foreground_font_color = [0, 0, 0]
+        self.foreground_font_color = [-1, -1, -1]
         self.foreground_alignment = 'lefttop'
 
-        self.disable_font_color = [0, 0, 0]
-        self.separator_color = [0, 0, 0]
+        self.disable_font_color = [-1, -1, -1]
+        self.separator_color = [-1, -1, -1]
 
         self.sidebar_image = ''
         self.sidebar_alignment = 'lefttop'
