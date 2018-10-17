@@ -9,6 +9,7 @@ import ctypes
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QApplication, QSystemTrayIcon
+from kikkamenu import KikkaMenu
 
 from systemmenu import SystemMenu
 from core import Core
@@ -42,7 +43,7 @@ class KikkaApp(QApplication):
     def createTrayIcon(self):
         icon = QIcon("icon.ico")
         self.setWindowIcon(icon)
-        self.systemmenu = SystemMenu(self)
+        self.systemmenu = KikkaMenu.this().getMenu()
         self.systemmenu.setCursor(Qt.PointingHandCursor)
 
         self.trayIcon = QSystemTrayIcon(self)

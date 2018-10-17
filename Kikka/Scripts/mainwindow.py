@@ -35,16 +35,13 @@ class MainWindow(QWidget):
         self._movepos = QPoint(0, 0)
         self._mousepos = QPoint(0, 0)
 
-        self.menu = KikkaMenu.this()
-        self.menu.addMenu(self)
-        #self.setContextMenuPolicy(Qt.CustomContextMenu)
-        #self.customContextMenuRequested.connect(self.showSystemMenu)
-        # self.installEventFilter(self)
+        KikkaMenu.this().getTestMenu()
 
     def contextMenuEvent(self, event):
-        self.menu.setPos(event.globalPos())
-        self.menu.show()
+        KikkaMenu.this().show(event.globalPos())
 
+    def showSystemMenu(self, pos):
+        KikkaMenu.this().show(self.pos() + pos)
 
     # def eventFilter(self, obj, event):
     #     text = ''
@@ -70,9 +67,7 @@ class MainWindow(QWidget):
     #     logging.info("%s %d %s"%("MainWindow", event.type(), text))
     #     return False
 
-    def showSystemMenu(self, pos):
-        self.menu.setPos(self.pos() + pos)
-        self.menu.show()
+
 
     ###############################################################################################################
     # Event
@@ -98,28 +93,12 @@ class MainWindow(QWidget):
         page_sizes = dict((n, x) for x, n in vars(Qt).items() if isinstance(n, Qt.MouseButton))
         logging.debug("%s %s (%d, %d)", event, page_sizes[button], x, y)
 
-    def leaveEvent(self, QEvent):
-        logging.info("leaveEvent")
-        self._isMoving = False
-
-    def enterEvent(self, QEvent):
-        logging.info("enterEvent")
-        self.activateWindow()
-        #self._isMoving = False
-
-    def inputMethodEvent(self, event):
-        logging.info("inputMethodEvent")
-
     def mousePressEvent(self, event):
         btn = event.buttons()
         self._mouseLogging("mousePressEvent", btn, event.globalPos().x(), event.globalPos().y())
         self._movepos = event.globalPos() - self.pos()
         if event.buttons() == Qt.LeftButton:
-
             self._isMoving = True
-            #e =QInputMethodQueryEvent(queries=0x101)
-            #e = QInputMethodQuery()
-            #QApplication.sendEvent(self, QEvent.InputMethodQuery)
             event.accept()
 
         if self._isMoving is False:
