@@ -4,7 +4,6 @@ from PyQt5.QtCore import Qt, QRect, QPoint, QEvent
 from PyQt5.QtGui import QPixmap, QPainter, QColor, QInputMethodQueryEvent, QMouseEvent, QImage
 from PyQt5.QtWidgets import QWidget, QApplication, QMenu
 
-from systemmenu import SystemMenu
 from mouseevent import MouseEvent
 from kikkamenu import Menu, KikkaMenu
 

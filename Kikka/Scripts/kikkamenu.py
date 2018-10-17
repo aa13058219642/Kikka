@@ -62,7 +62,7 @@ class KikkaMenu:
 
         text = "Exit"
         from kikka import KikkaApp
-        callbackfunc = lambda:KikkaApp.get_instance().exitApp()
+        callbackfunc = lambda:KikkaApp.this().exitApp()
         self._menu.addMenuItem(text, callbackfunc)
         self._menu.addSeparator()
 

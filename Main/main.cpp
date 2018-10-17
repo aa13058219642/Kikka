@@ -14,6 +14,7 @@ int __stdcall WinMain(HINSTANCE hInstance,
 	HANDLE hMutex = ::CreateMutex(NULL, FALSE, "Kikka.exe");
 	if (GetLastError() == ERROR_ALREADY_EXISTS)
 	{
+		MessageBox(NULL, "Kikka is Running", "Info", MB_ICONINFORMATION);
 		return FALSE;
 	}
 
@@ -41,7 +42,8 @@ int __stdcall WinMain(HINSTANCE hInstance,
 	}
 	else
 	{
-		TCHAR commandLine[] = TEXT("set PYTHONPATH=Scripts;Scripts/Bin;Scripts/Moudles;Resources; & Python\\python.exe Main.py");
+		SetEnvironmentVariable(TEXT("PYTHONPATH"), TEXT("Scripts;Scripts/Bin;Scripts/Moudles;Resources;"));
+		TCHAR commandLine[] = TEXT("Python\\python.exe Main.py");
 		STARTUPINFO si = { sizeof(si) };
 		PROCESS_INFORMATION pi;
 		bool bRet = CreateProcess(
