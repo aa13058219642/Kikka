@@ -1,7 +1,8 @@
+# coding=utf-8
 import logging
 from enum import Enum
 
-from core import Core
+import kikka
 
 
 def getEventList():
@@ -34,60 +35,66 @@ def getEventList():
     return e
 
 
-
 def head_touch():
     logging.info("head_touch")
-    Core.get_instance().setSurface(0)
+    kikka.core.setSurface(0)
     pass
+
 
 def head_click():
     logging.info("head_click")
     pass
 
+
 def head_doubleclick():
     logging.info("head_doubleclick")
     pass
 
+
 def face_touch():
     logging.info("face_touch")
-    Core.get_instance().setSurface(33)
+    kikka.core.setSurface(33)
     pass
+
 
 def face_click():
     logging.info("face_click")
     pass
 
+
 def face_doubleclick():
     logging.info("face_doubleclick")
     pass
+
 
 def bust_touch():
     logging.info("bust_touch")
     pass
 
+
 def bust_click():
     logging.info("bust_click")
     pass
+
 
 def bust_doubleclick():
     logging.info("bust_doubleclick")
     pass
 
+
 def hand_touch():
     logging.info("hand_touch")
     pass
+
 
 def hand_click():
     logging.info("hand_click")
     pass
 
+
 def hand_doubleclick():
     logging.info("hand_doubleclick")
     pass
-
-
-
-
 
 
 class MouseEvent(Enum):
@@ -97,11 +104,11 @@ class MouseEvent(Enum):
     MouseDoubleClick = 3
     WheelEvent = 4
 
+    @staticmethod
     def event_selector(event, boxtag):
         e = getEventList()
 
-        if boxtag in e \
-        and event in e[boxtag]:
+        if boxtag in e and event in e[boxtag]:
             e[boxtag][event]()
 
 

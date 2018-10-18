@@ -2,20 +2,57 @@ import sys
 import logging
 import logging.handlers
 
-from kikkaapp import KikkaApp
+from PyQt5.QtWidgets import QApplication
 
 
-def boot():
+def init():
     # logging level (low to hight):
     # CRITICAL, ERROR, WARNING, INFO, DEBUG, NOTSET
-    initLogging(logging.INFO)
+    setLogging(logging.INFO)
 
+    # init all Singletion class
+    import kikka
+    import kikkahelper
+
+    # set debug
+    if '-c' in sys.argv:
+        kikka.app.isDebug = True
+        kikka.core.isDebug = True
+
+    # start
+    shellpath = kikkahelper.getPath(kikkahelper.PATH_SHELL)
+    kikka.shell.loadAllShell(shellpath)
+    kikka.menu.getTestMenu()
+    kikka.core.start()
+    kikka.app.start()
+
+    kikka.core.updateMenu()
     pass
 
-def runApp():
+
+def setLogging(level):
+    if level == logging.DEBUG or level == logging.NOTSET:
+        logging.basicConfig(level=level,
+                            format='%(asctime)s %(filename)s %(funcName)s[line:%(lineno)d] ''%(levelname)s: %(message)s')
+        file_handler = logging.handlers.RotatingFileHandler(
+            'kikka.log', mode='a', maxBytes=5.01*1024*1024, backupCount=1, encoding='utf-8')
+        formatter = logging.Formatter('%(asctime)s %(filename)s%(funcName)s[line:%(lineno)d] %(levelname)s: %(message)s')
+    else:
+        logging.basicConfig(level=level,
+                            format='%(asctime)s %(filename)s[line:%(lineno)d] ''%(levelname)s: %(message)s')
+        file_handler = logging.handlers.RotatingFileHandler(
+            'kikka.log', mode='a', maxBytes=1.01*1024*1024, backupCount=1, encoding='utf-8')
+        formatter = logging.Formatter('%(asctime)s %(filename)s[line:%(lineno)d] %(levelname)s: %(message)s')
+
+    file_handler.setLevel(level)
+    file_handler.setFormatter(formatter)
+    logging.getLogger().addHandler(file_handler)
+
+
+def run():
     try:
-        app = KikkaApp.this()
-        app.start()
+        app = QApplication(sys.argv)
+        init()
         sys.exit(app.exec_())
     except SystemExit:
         pass
@@ -24,22 +61,5 @@ def runApp():
         raise SyntaxError('run time error')
 
 
-def initLogging(level):
-    logging.basicConfig(
-        level=level,
-        format='%(asctime)s %(filename)s[line:%(lineno)d] ''%(levelname)s: %(message)s')
-    file_handler = logging.handlers.RotatingFileHandler(
-        'kikka.log',
-        mode='a',
-        maxBytes=1.01*1024*1024,
-        backupCount=1,
-        encoding='utf-8')
-    formatter = logging.Formatter('%(asctime)s %(filename)s[line:%(lineno)d] %(levelname)s: %(message)s')
-    file_handler.setLevel(level)
-    file_handler.setFormatter(formatter)
-    logging.getLogger().addHandler(file_handler)
-
-
 if __name__ == '__main__':
-    boot()
-    runApp()
+    run()

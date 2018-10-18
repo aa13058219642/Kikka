@@ -1,5 +1,7 @@
+# coding=utf-8
 import logging
 import os
+from PyQt5 import QtCore
 
 from PyQt5.QtCore import QRect, QSize, Qt, QRectF, QPoint, QEvent
 from PyQt5.QtWidgets import QMenu, QStyle, QStyleOptionMenuItem, QStyleOption, QWidget, QApplication
@@ -8,12 +10,13 @@ from PyQt5.QtGui import QIcon, QImage, QPainter, QFont, QPalette, QColor
 
 import kikkahelper
 
+
 class KikkaMenu:
     _instance = None
     isDebug = False
 
     def __init__(self, **kwargs):
-        raise SyntaxError('The class is Singletion, please use KikkaMenu.this()')
+        raise SyntaxError('The class is Singletion, please use KikkaMenu.this() or kikka.menu')
 
     @staticmethod
     def this():
@@ -30,7 +33,8 @@ class KikkaMenu:
         pass
 
     def hide(self):
-        if self._menu is not None: self._menu.hide()
+        if self._menu is not None:
+            self._menu.hide()
 
     def show(self, pos=None):
         if self._menu is None: return
@@ -38,7 +42,8 @@ class KikkaMenu:
         self._menu.show()
 
     def setPos(self, pos):
-        if self._menu is not None: self._menu.setPosition(pos)
+        if self._menu is not None:
+            self._menu.setPosition(pos)
 
     def setMenu(self, menu):
         self._menu = menu
@@ -46,8 +51,8 @@ class KikkaMenu:
     def getMenu(self):
         return self._menu
 
-    def setMenuStyle(self, shellmenu):
-        self._menustyle = MenuStyle(shellmenu)
+    def setMenuStyle(self, shellmenustyle):
+        self._menustyle = MenuStyle(shellmenustyle)
         pass
 
     def getMenuStyle(self):
@@ -61,7 +66,7 @@ class KikkaMenu:
         self._menu = Menu(parten, "Main")
 
         from kikkaapp import KikkaApp
-        callbackfunc = lambda:KikkaApp.this().exitApp()
+        callbackfunc = lambda: KikkaApp.this().exitApp()
         self._menu.addMenuItem("Exit", callbackfunc)
         self._menu.addSeparator()
 
@@ -142,7 +147,7 @@ class KikkaMenu:
         # Image test  ######################################################################
         self._menu.addSeparator()
         menu = Menu(self._menu, "MenuImage-normal")
-        for i in range(32): text = " "*54; menu.addMenuItem(text)
+        for i in range(32): text = " " * 54; menu.addMenuItem(text)
         self._menu.addSubMenu(menu)
 
         menu = Menu(self._menu, "MenuImage-bit")
@@ -150,28 +155,28 @@ class KikkaMenu:
         self._menu.addSubMenu(menu)
 
         menu = Menu(self._menu, "MenuImage-small")
-        for i in range(10): text = " "*30; menu.addMenuItem(text)
+        for i in range(10): text = " " * 30; menu.addMenuItem(text)
         self._menu.addSubMenu(menu)
 
         menu = Menu(self._menu, "MenuImage-long")
-        for i in range(64): text = " "*54; menu.addMenuItem(text)
+        for i in range(64): text = " " * 54; menu.addMenuItem(text)
         self._menu.addSubMenu(menu)
 
         menu = Menu(self._menu, "MenuImage-long2")
-        for i in range(32): text = " "*300; menu.addMenuItem(text)
+        for i in range(32): text = " " * 300; menu.addMenuItem(text)
         self._menu.addSubMenu(menu)
 
         menu = Menu(self._menu, "MenuImage-large")
-        for i in range(64): text = " "*300; menu.addMenuItem(text)
+        for i in range(64): text = " " * 300; menu.addMenuItem(text)
         self._menu.addSubMenu(menu)
 
         menu = Menu(self._menu, "MenuImage-verylarge")
-        for i in range(100): text = " "*600; menu.addMenuItem(text)
+        for i in range(100): text = " " * 600; menu.addMenuItem(text)
         self._menu.addSubMenu(menu)
 
-        callbackfunc = lambda:KikkaApp.this().exitApp()
-        self._menu.addMenuItem("Exit", callbackfunc)
         self._menu.addSeparator()
+        callbackfunc = lambda: KikkaApp.this().exitApp()
+        self._menu.addMenuItem("Exit", callbackfunc)
 
         self.isDebug = old
         return self._menu
@@ -187,43 +192,53 @@ class MenuStyle:
             self.bg_image = QImage(shellmenu.background_image)
         else:
             self.bg_image = kikkahelper.getDefaultImage()
-            logging.warning("Menu background image NOT found: %s"%(shellmenu.background_image))
+            logging.warning("Menu background image NOT found: %s" % (shellmenu.background_image))
 
         if os.path.exists(shellmenu.foreground_image):
             self.fg_image = QImage(shellmenu.foreground_image)
         else:
             self.fg_image = kikkahelper.getDefaultImage()
-            logging.warning("Menu foreground image NOT found: %s"%(shellmenu.foreground_image))
+            logging.warning("Menu foreground image NOT found: %s" % (shellmenu.foreground_image))
 
         if os.path.exists(shellmenu.sidebar_image):
             self.side_image = QImage(shellmenu.sidebar_image)
         else:
             self.side_image = kikkahelper.getDefaultImage()
-            logging.warning("Menu sidebar image NOT found: %s"%(shellmenu.sidebar_image))
+            logging.warning("Menu sidebar image NOT found: %s" % (shellmenu.sidebar_image))
 
         # font and color
-        if shellmenu.font_family != '':self.font = QFont(shellmenu.font_family, shellmenu.font_size)
-        else: self.font = None
+        if shellmenu.font_family != '':
+            self.font = QFont(shellmenu.font_family, shellmenu.font_size)
+        else:
+            self.font = None
 
-        if -1 in shellmenu.background_font_color: self.bg_font_color = None
-        else: self.bg_font_color = QColor(shellmenu.background_font_color[0],
-                                          shellmenu.background_font_color[1],
-                                          shellmenu.background_font_color[2])
+        if -1 in shellmenu.background_font_color:
+            self.bg_font_color = None
+        else:
+            self.bg_font_color = QColor(shellmenu.background_font_color[0],
+                                        shellmenu.background_font_color[1],
+                                        shellmenu.background_font_color[2])
 
-        if -1 in shellmenu.foreground_font_color: self.fg_font_color = None
-        else: self.fg_font_color = QColor(shellmenu.foreground_font_color[0],
-                                          shellmenu.foreground_font_color[1],
-                                          shellmenu.foreground_font_color[2])
+        if -1 in shellmenu.foreground_font_color:
+            self.fg_font_color = None
+        else:
+            self.fg_font_color = QColor(shellmenu.foreground_font_color[0],
+                                        shellmenu.foreground_font_color[1],
+                                        shellmenu.foreground_font_color[2])
 
-        if -1 in shellmenu.disable_font_color: self.disable_font_color = None
-        else: self.disable_font_color = QColor(shellmenu.disable_font_color[0],
-                                               shellmenu.disable_font_color[1],
-                                               shellmenu.disable_font_color[2])
+        if -1 in shellmenu.disable_font_color:
+            self.disable_font_color = None
+        else:
+            self.disable_font_color = QColor(shellmenu.disable_font_color[0],
+                                             shellmenu.disable_font_color[1],
+                                             shellmenu.disable_font_color[2])
 
-        if -1 in shellmenu.separator_color: self.separator_color = None
-        else: self.separator_color = QColor(shellmenu.separator_color[0],
-                                            shellmenu.separator_color[1],
-                                            shellmenu.separator_color[2])
+        if -1 in shellmenu.separator_color:
+            self.separator_color = None
+        else:
+            self.separator_color = QColor(shellmenu.separator_color[0],
+                                          shellmenu.separator_color[1],
+                                          shellmenu.separator_color[2])
 
         # others
         self.hidden = shellmenu.hidden
@@ -263,9 +278,12 @@ class Menu(QMenu):
         self.setSeparatorsCollapsible(False)
 
     def addMenuItem(self, text, callbackfunc=None, iconfilepath=None):
-        if iconfilepath is None: act = QAction(text, self._parent)
-        elif os.path.exists(iconfilepath): act = QAction(QIcon(iconfilepath), text, self._parent)
-        else: logging.info("fail to add menu item"); return
+        if iconfilepath is None:
+            act = QAction(text, self._parent)
+        elif os.path.exists(iconfilepath):
+            act = QAction(QIcon(iconfilepath), text, self._parent)
+        else:
+            logging.info("fail to add menu item"); return
 
         if callbackfunc is not None: act.triggered.connect(callbackfunc)
 
@@ -346,7 +364,7 @@ class Menu(QMenu):
             act = self.actions()[i]
 
             if act.isVisible() is False \
-            or (self.separatorsCollapsible() and previousWasSeparator and act.isSeparator()):
+                    or (self.separatorsCollapsible() and previousWasSeparator and act.isSeparator()):
                 # we continue, this action will get an empty QRect
                 self.aRect[i] = QRect()
                 continue
@@ -377,7 +395,7 @@ class Menu(QMenu):
                 sz.setWidth(fm.boundingRect(QRect(), Qt.TextSingleLine | Qt.TextShowMnemonic, s).width())
                 sz.setHeight(fm.height())
 
-                if act.icon().isNull() == False:
+                if not act.icon().isNull():
                     is_sz = QSize(icone, icone)
                     if is_sz.height() > sz.height():
                         sz.setHeight(is_sz.height())
@@ -393,10 +411,11 @@ class Menu(QMenu):
                 y += sz.height()
                 # update the item
                 self.aRect[i] = QRect(0, 0, sz.width(), sz.height())
-        pass # exit for
+        pass  # exit for
 
-        max_column_width += tabWidth # finally add in the tab width
-        sfcMargin = style.sizeFromContents(QStyle.CT_Menu, opt, QApplication.globalStrut(), self).width() - QApplication.globalStrut().width()
+        max_column_width += tabWidth  # finally add in the tab width
+        sfcMargin = style.sizeFromContents(QStyle.CT_Menu, opt, QApplication.globalStrut(),
+                                           self).width() - QApplication.globalStrut().width()
         min_column_width = self.minimumWidth() - (sfcMargin + leftmargin + rightmargin + 2 * (fw + hmargin))
         max_column_width = max(min_column_width, max_column_width)
 
@@ -437,7 +456,7 @@ class Menu(QMenu):
         # Line 3566: draw icon and checked sign
         checkable = opt.checkType != QStyleOptionMenuItem.NotCheckable
         checked = opt.checked if checkable else False
-        if opt.icon.isNull() is False: # has custom icon
+        if opt.icon.isNull() is False:  # has custom icon
             dis = not (int(opt.state) & int(QStyle.State_Enabled))
             active = int(opt.state) & int(QStyle.State_Selected)
             mode = QIcon.Disabled if dis else QIcon.Normal
@@ -446,8 +465,10 @@ class Menu(QMenu):
             fw = style.pixelMetric(QStyle.PM_MenuPanelWidth, opt, self)
             icone = style.pixelMetric(QStyle.PM_SmallIconSize, opt, self)
             iconRect = QRectF(arect.x() - fw, arect.y(), self.side_image.width(), arect.height())
-            if checked: pixmap = icon.pixmap(QSize(icone, icone), mode, QIcon.On)
-            else: pixmap = icon.pixmap(QSize(icone, icone), mode)
+            if checked:
+                pixmap = icon.pixmap(QSize(icone, icone), mode, QIcon.On)
+            else:
+                pixmap = icon.pixmap(QSize(icone, icone), mode)
 
             pixw = pixmap.width()
             pixh = pixmap.height()
@@ -457,15 +478,17 @@ class Menu(QMenu):
             if checked: p.drawRect(QRectF(pmr.x() - 1, pmr.y() - 1, pixw + 2, pixh + 2))
             p.drawPixmap(pmr.topLeft(), pixmap)
 
-        elif checkable and checked: # draw default checked sign
+        elif checkable and checked:  # draw default checked sign
             opt.rect = QRect(0, arect.y(), self.side_image.width(), arect.height())
             opt.palette.setColor(QPalette.Text, menustyle.getPenColor(opt))
             style.drawPrimitive(QStyle.PE_IndicatorMenuCheckMark, opt, p, self)
 
         # Line 3604: draw emnu text
         font = menustyle.font
-        if font is not None: p.setFont(font)
-        else: p.setFont(opt.font)
+        if font is not None:
+            p.setFont(font)
+        else:
+            p.setFont(opt.font)
         text_flag = Qt.AlignVCenter | Qt.TextShowMnemonic | Qt.TextDontClip | Qt.TextSingleLine
 
         tr = QRect(arect)
@@ -530,10 +553,11 @@ class Menu(QMenu):
             self.initStyleOption(opt, act)
             opt.rect = arect
             if opt.state & QStyle.State_Selected \
-            and opt.state & QStyle.State_Enabled:
+                    and opt.state & QStyle.State_Enabled:
                 # Selected Item, draw foreground image
                 p.setClipping(True)
-                p.setClipRect(arect.x() + self.side_image.width(), arect.y(), self.width() - self.side_image.width(), arect.height())
+                p.setClipRect(arect.x() + self.side_image.width(), arect.y(), self.width() - self.side_image.width(),
+                              arect.height())
 
                 p.fillRect(QRect(QPoint(), self.size()), self.fg_image.pixelColor(0, 0))
                 vertical = False
@@ -558,7 +582,7 @@ class Menu(QMenu):
             else:
                 # MenuItem
                 self.drawControl(p, opt, arect, act.icon(), menustyle)
-        pass # exit for
+        pass  # exit for
 
     def eventFilter(self, obj, event):
         # text = ''

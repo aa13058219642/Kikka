@@ -1,12 +1,19 @@
-import sys
-import os
+# coding=utf-8
 import logging
 import time
 from enum import Enum
-import kikkahelper
+
+from PyQt5.QtGui import QIcon
+from PyQt5.QtWidgets import QSystemTrayIcon, QApplication
+from PyQt5.QtCore import QTimer
+
+import kikka
+from mainwindow import MainWindow
+
 
 class Core:
     _instance = None
+    isDebug = False
 
     class APP_STATE(Enum):
         HIDE = 0
@@ -14,30 +21,20 @@ class Core:
         FULL_SCREEN = 2
 
     def __init__(self, **kwargs):
-
-        raise SyntaxError('can not instance, please use get_instance')
+        raise SyntaxError('The class is Singletion, please use Core.this() or kikka.core')
 
     @staticmethod
-    def get_instance():
+    def this():
         if Core._instance is None:
             Core._instance = object.__new__(Core)
             Core._instance._init()
         return Core._instance
 
     def _init(self):
-        from shell import ShellManager
-        self._shellMgr = ShellManager.get_instance()
-        self.rootpath = sys.path[0]
-
-        self._shellMgr.loadAllShell(kikkahelper.getPath(kikkahelper.PATH_SHELL))
-
-        self._isfullscreen = False
         self._app_state = Core.APP_STATE.HIDE
+        self._Timer_Run = None
+        self._lasttime = 0
         pass
-
-    def isDebug(self):
-
-        return self._debug
 
     def getMainWindow(self):
 
@@ -48,37 +45,34 @@ class Core:
         return self._app_state
 
     def hide(self):
-        self._app_state=Core.APP_STATE.HIDE
-        #self._mainwindow.hide()
+        self._app_state = Core.APP_STATE.HIDE
+        self._mainwindow.hide()
 
     def show(self):
-        self._app_state=Core.APP_STATE.SHOW
+        self._app_state = Core.APP_STATE.SHOW
         self._mainwindow.show()
 
-    def start(self, isDebug=False):
-        self._debug=isDebug
-        #self._app_state = APP_STATE.SHOW
-        from mainwindow import MainWindow
-        self._mainwindow = MainWindow(self._debug)
-        #self._mainwindow.show()
+    def start(self):
+        # self._app_state = APP_STATE.SHOW
+        self._createTrayIcon()
+
+        self._mainwindow = MainWindow(self.isDebug)
         self.setSurface(0)
 
-        from PyQt5.QtCore import QTimer
         self._lasttime = time.clock()
         self._Timer_Run = QTimer()
         self._Timer_Run.timeout.connect(self.run)
         self._Timer_Run.start(10)
         self.show()
-        pass
 
     def run(self):
         try:
             nowtime = time.clock() 
             updatetime = (nowtime - self._lasttime) * 1000
 
-            ret = self._shellMgr.update(updatetime)
+            ret = kikka.shell.update(updatetime)
             if ret == True:
-                img = self._shellMgr.getCurImage(self.isDebug())
+                img = kikka.shell.getCurImage(self.isDebug)
                 self._mainwindow.setImage(img)
 
             self._lasttime = nowtime
@@ -88,12 +82,34 @@ class Core:
         pass
 
     def setSurface(self, index):
-        self._shellMgr.getCurShell().setSurfaces(index)
+        kikka.shell.getCurShell().setSurfaces(index)
 
-        img = self._shellMgr.getCurImage(self.isDebug())
+        img = kikka.shell.getCurImage(self.isDebug)
         self._mainwindow.setImage(img)
         
-        boxes = self._shellMgr.getCollisionBoxes()
+        boxes = kikka.shell.getCollisionBoxes()
         self._mainwindow.setBoxes(boxes)
 
+    def _createTrayIcon(self):
+        qapp = QApplication.instance()
+        icon = QIcon("icon.ico")
+        qapp.setWindowIcon(icon)
 
+        qapp.trayIcon = QSystemTrayIcon(qapp)
+        qapp.trayIcon.setIcon(icon)
+        qapp.trayIcon.setContextMenu(kikka.menu.getMenu())
+        qapp.trayIcon.show()
+        qapp.trayIcon.activated.connect(self._trayIconActivated)
+
+    def _trayIconActivated(self, reason):
+        if reason == QSystemTrayIcon.DoubleClick:
+            core = kikka.core
+            if core.getAppState() == core.APP_STATE.HIDE:
+                core.show()
+            else:
+                core.hide()
+        pass
+
+    def updateMenu(self):
+        QApplication.instance().trayIcon.setContextMenu(kikka.menu.getMenu())
+        self._mainwindow.setMenu(kikka.menu)

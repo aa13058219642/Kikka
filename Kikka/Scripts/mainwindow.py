@@ -1,11 +1,11 @@
+# coding=utf-8
 import logging
 
-from PyQt5.QtCore import Qt, QRect, QPoint, QEvent
-from PyQt5.QtGui import QPixmap, QPainter, QColor, QInputMethodQueryEvent, QMouseEvent, QImage
-from PyQt5.QtWidgets import QWidget, QApplication, QMenu
+from PyQt5.QtCore import Qt, QRect, QPoint
+from PyQt5.QtGui import QPixmap, QPainter, QColor, QImage
+from PyQt5.QtWidgets import QWidget
 
 from mouseevent import MouseEvent
-from kikkamenu import Menu, KikkaMenu
 
 
 class MainWindow(QWidget):
@@ -33,14 +33,13 @@ class MainWindow(QWidget):
         self._boxes = {}
         self._movepos = QPoint(0, 0)
         self._mousepos = QPoint(0, 0)
+        self._menu = None
 
-        KikkaMenu.this().getTestMenu()
+    def setMenu(self, kikkamenu):
+        self._menu = kikkamenu
 
     def contextMenuEvent(self, event):
-        KikkaMenu.this().show(event.globalPos())
-
-    def showSystemMenu(self, pos):
-        KikkaMenu.this().show(self.pos() + pos)
+        self._menu.show(event.globalPos())
 
     # def eventFilter(self, obj, event):
     #     text = ''
@@ -61,14 +60,13 @@ class MainWindow(QWidget):
     #     elif event.type() == QEvent.Paint:text = 'Paint'
     #     elif event.type() == QEvent.Move:text = 'Move'
     #     elif event.type() == QEvent.InputMethodQuery:text = 'InputMethodQuery';self._InputMethodQuery = event
-    #     elif event.type() == QEvent.MouseButtonPress:text = 'MouseButtonPress(%d %d)' % (event.globalPos().x(), event.globalPos().y())
+    #     elif event.type() == QEvent.MouseButtonPress:
+    #         text = 'MouseButtonPress(%d %d)' % (event.globalPos().x(), event.globalPos().y())
     #
     #     logging.info("%s %d %s"%("MainWindow", event.type(), text))
     #     return False
 
-
-
-    ###############################################################################################################
+    # ##############################################################################################################
     # Event
 
     def setBoxes(self, boxes):
@@ -105,7 +103,7 @@ class MainWindow(QWidget):
             if boxevent != '': MouseEvent.event_selector(MouseEvent.MouseDown, boxevent)
 
     def mouseMoveEvent(self, event):
-        #logging.info("mouseMoveEvent##################")
+        # logging.info("mouseMoveEvent##################")
         btn = event.buttons()
         self._mouseLogging("mouseMoveEvent", btn, event.globalPos().x(), event.globalPos().y())
 
@@ -123,7 +121,7 @@ class MainWindow(QWidget):
 
     def mouseDoubleClickEvent(self, event):
         btn = event.buttons()
-        #self._mouseLogging("mouseDoubleClickEvent", btn, event.globalPos().x(), event.globalPos().y())
+        # self._mouseLogging("mouseDoubleClickEvent", btn, event.globalPos().x(), event.globalPos().y())
         if btn == Qt.LeftButton:
             self._isMoving = False
 
@@ -132,8 +130,7 @@ class MainWindow(QWidget):
             if boxevent != '': MouseEvent.event_selector(MouseEvent.MouseDoubleClick, boxevent)
 
     def wheelEvent(self, event):
-        btn = event.buttons()
-        #self._mouseLogging("wheelEvent", btn, event.pos().x(), event.pos().y())
+        # self._mouseLogging("wheelEvent", btn, event.pos().x(), event.pos().y())
         if self._isMoving is False:
             boxevent = self._boxCollision()
             if boxevent != '': MouseEvent.event_selector(MouseEvent.WheelEvent, boxevent)
@@ -145,7 +142,7 @@ class MainWindow(QWidget):
     def dropEvent(self, event):
         urls = event.mimeData().urls()
         for url in urls:
-            logging.info("drop file: %s"%url.toLocalFile())
+            logging.info("drop file: %s" % url.toLocalFile())
         pass
 
     def getMousePose(self):
@@ -158,16 +155,6 @@ class MainWindow(QWidget):
     def paintEvent(self, event):
         painter = QPainter(self)
         painter.drawPixmap(self.rect(), self._pixmap)
-
-    def clearMessage(self):
-        self._message.clear()
-        self.repaint()
-
-    def showMessage(self, message, alignment=Qt.AlignLeft,color=QColor.black):
-        self._message = message
-        self._alignment = alignment
-        self._color = color
-        self.repaint()
 
     def setImage(self, image):
         # painter = QPainter(image)

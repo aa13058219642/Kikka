@@ -1,3 +1,4 @@
+# coding=utf-8
 import os
 import sqlite3
 
@@ -12,6 +13,7 @@ class KikkaMemory(object):
         self._cursor.close()
         self._conn.close()
 
+    @staticmethod
     def this():
         if KikkaMemory._instance is None:
             KikkaMemory._instance = object.__new__(KikkaMemory)
@@ -20,13 +22,13 @@ class KikkaMemory(object):
 
     def _init(self):
         self._filepath = 'Kikka.Memory'
-        if os.path.exists(self._filepath) != True:
+        if not os.path.exists(self._filepath):
             self._createDB()
         else:
             self._openDB()
 
-        #self._update('key', 'kikka99988')
-        #print(self.getValue('key'))
+        # self._update('key', 'kikka99988')
+        # print(self.getValue('key'))
 
         pass
 
@@ -45,7 +47,7 @@ class KikkaMemory(object):
         return self._cursor.execute(sql)
 
     def setValue(self, key, value):
-        if self.getValue(key) != None:
+        if self.getValue(key) is not None:
             sql = 'UPDATE T_DICT SET __value__=? WHERE __key__=?'
             values = (str(value), str(key))
         else:
@@ -58,7 +60,9 @@ class KikkaMemory(object):
     def getValue(self, key):
         sql = 'SELECT __value__ FROM T_DICT WHERE __key__=?'
         result = self._cursor.execute(sql, [key])
-        f= result.fetchall()
+        f = result.fetchall()
 
-        if len(f) == 0: return None
-        else: return f[0][0]
+        if len(f) == 0:
+            return None
+        else:
+            return f[0][0]

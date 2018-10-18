@@ -1,3 +1,4 @@
+# coding=utf-8
 import os
 import re
 import logging
@@ -9,6 +10,77 @@ from PyQt5.QtCore import Qt, QPoint, QRect
 from PyQt5.QtGui import QImage, QPainter, QColor
 
 import kikkahelper
+import kikka
+
+
+class KikkaShell:
+    _instance = None
+
+    def __init__(self, **kwargs):
+        raise SyntaxError('The class is Singletion, please use ShellManager.this() or kikka.shell_manager')
+
+    @staticmethod
+    def this():
+        if KikkaShell._instance is None:
+            KikkaShell._instance = object.__new__(KikkaShell)
+            KikkaShell._instance._init()
+        return KikkaShell._instance
+
+    def _init(self):
+        self.shells = []
+        self.isNeedUpdate = True
+        self.shelldir = ''
+        self.curShell = 0
+
+    def loadShell(self, shellpath):
+        shell = Shell(shellpath)
+        if shell.isInitialized is False:
+            return
+
+        isExist = False
+        for s in self.shells:
+            if shell.id == s.id and shell.name == s.name:
+                isExist = True
+                break
+
+        if not isExist:
+            logging.info("scan shell: %s", shell.name)
+            self.shells.append(shell)
+        pass
+
+    def loadAllShell(self, shelldir):
+        self.shelldir = shelldir
+
+        for parent, dirnames, filenames in os.walk(shelldir):
+            for dirname in dirnames:
+                shellpath = os.path.join(parent, dirname)
+                self.loadShell(shellpath)
+
+        logging.info("shell count: %d", len(self.shells))
+        self.setCurShell(1)
+
+    def getCurShell(self):
+
+        return self.shells[self.curShell]
+
+    def update(self, updatetime):
+        shell = self.getCurShell()
+        return shell.update(updatetime)
+
+    def getCurImage(self, isDebug=False):
+        shell = self.getCurShell()
+        return shell.getCurImage(isDebug)
+
+    def getCollisionBoxes(self):
+        shell = self.getCurShell()
+        return shell.getCollisionBoxes()
+
+    def setCurShell(self, index):
+        if 0 <= index < len(self.shells):
+            self.curShell = index
+            kikka.menu.setMenuStyle(self.getCurShell().getShellMenuStyle())
+        else:
+            logging.warning("setCurShell: index NOT in shells list")
 
 
 class Shell:
@@ -18,7 +90,7 @@ class Shell:
         self.type = ''
         self.author = AuthorInfo()
 
-        self.menu = ShellMenu()
+        self.shellmenustyle = ShellMenuStyle()
         self.setting = ShellSetting()
 
         self._pngs = {}
@@ -54,9 +126,9 @@ class Shell:
             # load PNG
             for filename, _ in self._pngs.items():
                 p = os.path.join(self.shellpath, filename)
-                if p == self.menu.background_image \
-                or p == self.menu.foreground_image \
-                or p == self.menu.sidebar_image:
+                if p == self.shellmenustyle.background_image \
+                        or p == self.shellmenustyle.foreground_image \
+                        or p == self.shellmenustyle.sidebar_image:
                     continue
                 self._pngs[filename] = QImage(p)
 
@@ -79,7 +151,7 @@ class Shell:
         for line in f:
             line = line.replace("\n", "").replace("\r", "")
             line = line.strip(' ')
-        
+
             if line == '': continue
             if line.find('\\') == 0: continue
             if line.find('//') == 0: continue
@@ -89,7 +161,7 @@ class Shell:
 
             key = line[0:index]
             value = line[index + 1:]
-        
+
             map[key] = value
         return map
 
@@ -103,15 +175,15 @@ class Shell:
         for line in f:
             line = line.replace("\n", "").replace("\r", "")
             line = line.strip(' ')
-        
+
             if line == '': continue
-            if line.find('\\') == 0:continue
-            if line.find('//') == 0:continue
-            if line.find('#') == 0:continue
+            if line.find('\\') == 0: continue
+            if line.find('//') == 0: continue
+            if line.find('#') == 0: continue
 
             if line == '{': is_load_key = False; continue
             if line == '}': is_load_key = True; surfaceID = []; continue
-        
+
             if is_load_key is False:
                 # set value
                 for id in surfaceID:
@@ -164,46 +236,76 @@ class Shell:
             value = values.split(',')
 
             if key[0] == 'menu':
-                if len(key) == 1: self.menu.hidden = True
+                if len(key) == 1:
+                    self.shellmenustyle.hidden = True
                 elif key[1] == 'font':
-                    if key[2] == 'name': self.menu.font_family = value[0]
-                    elif key[2] == 'height': self.menu.font_size = int(value[0])
-                    else: self._IgnoreParams(keys, values)
+                    if key[2] == 'name':
+                        self.shellmenustyle.font_family = value[0]
+                    elif key[2] == 'height':
+                        self.shellmenustyle.font_size = int(value[0])
+                    else:
+                        self._IgnoreParams(keys, values)
                 elif key[1] == 'background':
-                    if key[2] == 'font'and key[3] == 'color':
-                        if key[4] == 'r': self.menu.background_font_color[0] = int(value[0])
-                        elif key[4] == 'g': self.menu.background_font_color[1] = int(value[0])
-                        elif key[4] == 'b': self.menu.background_font_color[2] = int(value[0])
-                        else: self._IgnoreParams(keys, values)
-                    elif key[2] == 'bitmap' and key[3] == 'filename': self.menu.background_image = os.path.join(self.shellpath, value[0])
-                    elif key[2] == 'alignment': self.menu.background_alignment = value[0]
-                    else: self._IgnoreParams(keys, values)
+                    if key[2] == 'font' and key[3] == 'color':
+                        if key[4] == 'r':
+                            self.shellmenustyle.background_font_color[0] = int(value[0])
+                        elif key[4] == 'g':
+                            self.shellmenustyle.background_font_color[1] = int(value[0])
+                        elif key[4] == 'b':
+                            self.shellmenustyle.background_font_color[2] = int(value[0])
+                        else:
+                            self._IgnoreParams(keys, values)
+                    elif key[2] == 'bitmap' and key[3] == 'filename':
+                        self.shellmenustyle.background_image = os.path.join(self.shellpath, value[0])
+                    elif key[2] == 'alignment':
+                        self.shellmenustyle.background_alignment = value[0]
+                    else:
+                        self._IgnoreParams(keys, values)
                 elif key[1] == 'foreground':
-                    if key[2] == 'font'and key[3] == 'color':
-                        if key[4] == 'r': self.menu.foreground_font_color[0] = int(value[0])
-                        elif key[4] == 'g': self.menu.foreground_font_color[1] = int(value[0])
-                        elif key[4] == 'b': self.menu.foreground_font_color[2] = int(value[0])
-                        else: self._IgnoreParams(keys, values)
-                    elif key[2] == 'bitmap' and key[3] == 'filename': self.menu.foreground_image = os.path.join(self.shellpath, value[0])
-                    elif key[2] == 'alignment': self.menu.foreground_alignment = value[0]
-                    else: self._IgnoreParams(keys, values)
+                    if key[2] == 'font' and key[3] == 'color':
+                        if key[4] == 'r':
+                            self.shellmenustyle.foreground_font_color[0] = int(value[0])
+                        elif key[4] == 'g':
+                            self.shellmenustyle.foreground_font_color[1] = int(value[0])
+                        elif key[4] == 'b':
+                            self.shellmenustyle.foreground_font_color[2] = int(value[0])
+                        else:
+                            self._IgnoreParams(keys, values)
+                    elif key[2] == 'bitmap' and key[3] == 'filename':
+                        self.shellmenustyle.foreground_image = os.path.join(self.shellpath, value[0])
+                    elif key[2] == 'alignment':
+                        self.shellmenustyle.foreground_alignment = value[0]
+                    else:
+                        self._IgnoreParams(keys, values)
                 elif key[1] == 'disable':
-                    if key[2] == 'font'and key[3] == 'color':
-                        if key[4] == 'r': self.menu.disable_font_color[0] = int(value[0])
-                        elif key[4] == 'g': self.menu.disable_font_color[1] = int(value[0])
-                        elif key[4] == 'b': self.menu.disable_font_color[2] = int(value[0])
-                        else: self._IgnoreParams(keys, values)
+                    if key[2] == 'font' and key[3] == 'color':
+                        if key[4] == 'r':
+                            self.shellmenustyle.disable_font_color[0] = int(value[0])
+                        elif key[4] == 'g':
+                            self.shellmenustyle.disable_font_color[1] = int(value[0])
+                        elif key[4] == 'b':
+                            self.shellmenustyle.disable_font_color[2] = int(value[0])
+                        else:
+                            self._IgnoreParams(keys, values)
                 elif key[1] == 'separator':
                     if key[2] == 'color':
-                        if key[3] == 'r': self.menu.separator_color[0] = int(value[0])
-                        elif key[3] == 'g': self.menu.separator_color[1] = int(value[0])
-                        elif key[3] == 'b': self.menu.separator_color[2] = int(value[0])
-                        else: self._IgnoreParams(keys, values)
+                        if key[3] == 'r':
+                            self.shellmenustyle.separator_color[0] = int(value[0])
+                        elif key[3] == 'g':
+                            self.shellmenustyle.separator_color[1] = int(value[0])
+                        elif key[3] == 'b':
+                            self.shellmenustyle.separator_color[2] = int(value[0])
+                        else:
+                            self._IgnoreParams(keys, values)
                 elif key[1] == 'sidebar':
-                    if key[2] == 'bitmap' and key[3] == 'filename': self.menu.sidebar_image = os.path.join(self.shellpath, value[0])
-                    elif key[2] == 'alignment': self.menu.sidebar_alignment = value[0]
-                    else: self._IgnoreParams(keys, values)
-                else: self._IgnoreParams(keys, values)
+                    if key[2] == 'bitmap' and key[3] == 'filename':
+                        self.shellmenustyle.sidebar_image = os.path.join(self.shellpath, value[0])
+                    elif key[2] == 'alignment':
+                        self.shellmenustyle.sidebar_alignment = value[0]
+                    else:
+                        self._IgnoreParams(keys, values)
+                else:
+                    self._IgnoreParams(keys, values)
 
             elif key[0] == 'sakura':
                 if 'bindgroup' in key[1]:
@@ -213,42 +315,60 @@ class Shell:
                         self.setting.bindgroups[aid] = BindGroup(aid, value[0], value[1], img)
                     elif key[2] == 'default':
                         self.setting.bindgroups[aid].setDefault(value[0])
-                    else: self._IgnoreParams(keys, values)
+                    else:
+                        self._IgnoreParams(keys, values)
                 elif 'menuitem' in key[1]:
                     mid = int(key[1][8:])
-                    if value[0] != '-': self.menu.menuitem[mid] = int(value[0])
-                    else: self.menu.menuitem[mid] = -1
+                    if value[0] != '-':
+                        self.shellmenustyle.menuitem[mid] = int(value[0])
+                    else:
+                        self.shellmenustyle.menuitem[mid] = -1
                 elif key[1] == 'balloon':
-                    if key[2] == 'offsetx': self.setting.balloon_offset[0] = int(value[0])
-                    elif key[2] == 'offsety': self.setting.balloon_offset[1] = int(value[0])
-                    elif key[2] == 'alignment': self.setting.balloon_alignment = value[0]
-                    else: self._IgnoreParams(keys, values)
+                    if key[2] == 'offsetx':
+                        self.setting.balloon_offset[0] = int(value[0])
+                    elif key[2] == 'offsety':
+                        self.setting.balloon_offset[1] = int(value[0])
+                    elif key[2] == 'alignment':
+                        self.setting.balloon_alignment = value[0]
+                    else:
+                        self._IgnoreParams(keys, values)
                 elif 'bindoption' in key[1]:
                     gid = int(key[1][10:])
-                    if key[2] == 'group': self.setting.bindoption[value[0]] = value[1]
-                    else: self._IgnoreParams(keys, values)
-                else: self._IgnoreParams(keys, values)
+                    if key[2] == 'group':
+                        self.setting.bindoption[value[0]] = value[1]
+                    else:
+                        self._IgnoreParams(keys, values)
+                else:
+                    self._IgnoreParams(keys, values)
 
-            elif key[0] == 'id': self.id = value[0]
-            elif key[0] == 'name': self.name = value[0]
-            elif key[0] == 'type': self.type = value[0]
-            elif key[0] == 'craftman' or key[0] == 'craftmanw': self.author.name = value[0]
-            elif key[0] == 'crafmanurl': self.author.webside = value[0]
-            elif key[0] == 'homeurl': self.author.updateurl = value[0]
-            elif key[0] == 'readme': self.author.readme = value[0]
+            elif key[0] == 'id':
+                self.id = value[0]
+            elif key[0] == 'name':
+                self.name = value[0]
+            elif key[0] == 'type':
+                self.type = value[0]
+            elif key[0] == 'craftman' or key[0] == 'craftmanw':
+                self.author.name = value[0]
+            elif key[0] == 'crafmanurl':
+                self.author.webside = value[0]
+            elif key[0] == 'homeurl':
+                self.author.updateurl = value[0]
+            elif key[0] == 'readme':
+                self.author.readme = value[0]
 
             # skip params
             elif key[0] == 'charset' \
-                or key[0] == 'kero'\
-                or key[0:4] == 'char' \
-                or key[0] == 'shiori' \
-                or key[0] == 'mode' \
-                or key[0] == 'seriko':
+                    or key[0] == 'kero' \
+                    or key[0:4] == 'char' \
+                    or key[0] == 'shiori' \
+                    or key[0] == 'mode' \
+                    or key[0] == 'seriko':
                 # self._IgnoreParams(keys, values)
                 pass
 
             # unknow params
-            else: self._IgnoreParams(keys, values)
+            else:
+                self._IgnoreParams(keys, values)
         pass
 
     def _load_surfaces(self):
@@ -263,7 +383,7 @@ class Shell:
             surfaces_map = self._open_surfaces(surfaces_path)
             i = i + 1
 
-        for key,values in surfaces_map.items():
+        for key, values in surfaces_map.items():
             self.surfaces[key] = Surface(key, values)
 
     def _IgnoreParams(self, key, values):
@@ -279,15 +399,16 @@ class Shell:
             self._CurfaceID = surfacesID
             surface = self.surfaces[surfacesID]
 
-            base_image_name = "surface%04d.png"%surfacesID if 0 not in surface.elements else surface.elements[0].filename
+            base_image_name = "surface%04d.png" % surfacesID if 0 not in surface.elements else surface.elements[
+                0].filename
 
             if base_image_name in self._pngs:
                 self._base_image = self._pngs[base_image_name]
             else:
-                logging.warning("Shell.setSurfaces: png %s NOT found!"%base_image_name)
+                logging.warning("Shell.setSurfaces: png %s NOT found!" % base_image_name)
                 self.setSurfaces(old)
         else:
-            logging.warning("Shell.setSurfaces: surfaceID: %d NOT exist"%surfacesID)
+            logging.warning("Shell.setSurfaces: surfaceID: %d NOT exist" % surfacesID)
             self.setSurfaces(0)
 
     def _getSurfacePath(self, surfacesID):
@@ -303,7 +424,7 @@ class Shell:
             ret = ani.update(updatetime)
             if ret is True:
                 isNeedUpdate = True
-        
+
         return isNeedUpdate
 
     def getCurImage(self, isDebug=False):
@@ -334,76 +455,8 @@ class Shell:
         surface = self.surfaces[self._CurfaceID]
         return surface.CollisionBoxes
 
-    def getShellMenu(self):
-        return self.menu
-
-class ShellManager:
-    _instance = None
-
-    def __init__(self, **kwargs):
-        raise SyntaxError('can not instance, please use get_instance')
-
-    def _init(self):
-        self.shells = []
-        self.isNeedUpdate = True
-        self.shelldir = ''
-        self.curShell = 0
-
-    def get_instance():
-        if ShellManager._instance is None:
-            ShellManager._instance = object.__new__(ShellManager)
-            ShellManager._instance._init()
-        return ShellManager._instance
-
-    def loadShell(self, shellpath):
-        shell = Shell(shellpath)
-        if shell.isInitialized is False:
-            return
-
-        isExist = False
-        for s in self.shells:
-            if shell.id == s.id and shell.name == s.name:
-                isExist = True
-                break
-
-        if not isExist:
-            logging.info("scan shell: %s", shell.name)
-            self.shells.append(shell)
-        pass
-
-    def loadAllShell(self, shelldir):
-        self.shelldir = shelldir
-
-        for parent, dirnames, filenames in os.walk(shelldir):
-            for dirname in dirnames:
-                shellpath = os.path.join(parent, dirname)
-                self.loadShell(shellpath)
-
-        logging.info("shell count: %d", len(self.shells))
-        self.setCurShell(1)
-
-    def getCurShell(self):
-
-        return self.shells[self.curShell]
-
-    def update(self, updatetime):
-        shell = self.getCurShell()
-        return shell.update(updatetime)
-    
-    def getCurImage(self, isDebug=False):
-        shell = self.getCurShell()
-        return shell.getCurImage(isDebug)
-
-    def getCollisionBoxes(self):
-        shell = self.getCurShell()
-        return shell.getCollisionBoxes()
-
-    def setCurShell(self, index):
-        if index >= 0 and index < len(self.shells):
-            self.curShell = index
-            from kikkamenu import KikkaMenu
-            KikkaMenu.this().setMenuStyle(self.getCurShell().getShellMenu())
-        else: logging.warning("setCurShell: index NOT in shells list")
+    def getShellMenuStyle(self):
+        return self.shellmenustyle
 
 
 class Animation:
@@ -431,10 +484,10 @@ class Animation:
 
     def randomSatrt(self):
         if self.interval == 'never' \
-        or self.interval == 'talk' \
-        or self.interval == 'bind' \
-        or self.interval == 'yen-e' \
-        or self.interval == 'runonce':
+                or self.interval == 'talk' \
+                or self.interval == 'bind' \
+                or self.interval == 'yen-e' \
+                or self.interval == 'runonce':
             return False
 
         elif self.interval == 'sometimes':
@@ -467,15 +520,14 @@ class Animation:
         for pid, pattern in self.patterns.items():
             m_type = self.patterns[0].methodType
             if m_type == 'alternativestart' \
-            or m_type == 'start'\
-            or m_type == 'insert':
+                    or m_type == 'start' \
+                    or m_type == 'insert':
                 r = random.choice(self.patterns[0].aid)
                 if r in self._parent: self._parent[r].start()
-            elif m_type == 'alternativestop'\
-            or m_type == 'stop':
+            elif m_type == 'alternativestop' \
+                    or m_type == 'stop':
                 for aid in self.patterns[0].aid:
                     if aid in self._parent: self._parent[aid].stop()
-
 
     def update(self, updatetime):
         isNeedUpdate = False
@@ -499,12 +551,12 @@ class Animation:
             while self.patterns[self.curPattern].time == 0:
                 m_type = self.patterns[self.curPattern].methodType
                 if m_type == 'alternativestart' \
-                or m_type == 'start'\
-                or m_type == 'insert':
+                        or m_type == 'start' \
+                        or m_type == 'insert':
                     r = random.choice(self.patterns[0].aid)
                     if r in self._parent: self._parent[r].start()
-                elif m_type == 'alternativestop'\
-                or m_type == 'stop':
+                elif m_type == 'alternativestop' \
+                        or m_type == 'stop':
                     for aid in self.patterns[0].aid:
                         if aid in self._parent: self._parent[aid].stop()
 
@@ -540,30 +592,22 @@ class EPatternType(Enum):
 
 
 class Pattern:
-    def __init__(self):
-        self.ID = -1
-        self.methodType = ""
-        self.surfaceID = 0
-        self.time = 0
-        self.offset = [0, 0]
-        self.aid = [-1]
-
-    def __init__(self, params, type=EPatternType.Normal):
-        if type == EPatternType.Normal:
+    def __init__(self, params, matchtype=EPatternType.Normal):
+        if matchtype == EPatternType.Normal:
             self.ID = int(params[1])
             self.methodType = params[4]
             self.surfaceID = int(params[2])
             self.time = int(params[3]) * 10
             self.offset = [int(params[5]), int(params[6])]
             self.aid = [-1]
-        elif type == EPatternType.New:
+        elif matchtype == EPatternType.New:
             self.ID = int(params[1])
             self.methodType = params[2]
             self.surfaceID = int(params[3])
             self.time = int(params[4])
             self.offset = [int(params[5]), int(params[6])]
             self.aid = [-1]
-        elif type == EPatternType.Alternative:
+        elif matchtype == EPatternType.Alternative:
             self.ID = int(params[1])
             self.methodType = params[4]
             self.surfaceID = int(params[2])
@@ -575,20 +619,17 @@ class Pattern:
                 self.aid = list(map(int, params[5].split(',')))
             else:
                 self.aid = [int(params[5])]
+
     pass
 
-class Element:
-    def __init__(self):
-        self.ID = -1
-        self.PaintType = ""
-        self.filename = ""
-        self.offset = [0, 0]
 
+class Element:
     def __init__(self, params):
         self.ID = int(params[0])
         self.PaintType = params[1]
         self.filename = params[2]
         self.offset = [int(params[3]), int(params[4])]
+
 
 class CollisionBox:
     def __init__(self, params):
@@ -597,16 +638,17 @@ class CollisionBox:
         self.Point2 = [int(params[3]), int(params[4])]
         self.tag = params[5]
 
+
 class SurfaceMatchLine(Enum):
     Unknow = 0
     Elements = 100
-        
+
     AnimationInterval = 200
     AnimationPattern = 201
     AnimationPatternNew = 202
     AnimationPatternAlternative = 203
     AnimationOptionExclusive = 204
-        
+
     CollisionBoxes = 300
 
     OffectPointX = 401
@@ -614,30 +656,42 @@ class SurfaceMatchLine(Enum):
     OffectKinokoPointX = 403
     OffectKinokoPointY = 404
 
+    @staticmethod
     def matchLine(line):
+
         # Element
         # element[ID],[PaintType],[filename],[X],[Y]
-        res = re.match(r'^element(\d+),(base|overlay|overlayfast|replace|interpolate|asis|move|bind|add|reduce|insert),(\w+.png),(\d+),(\d+)$', line)
+        res = re.match(
+            r'^element(\d+),(base|overlay|overlayfast|replace|interpolate|asis|move|bind|add|reduce|insert),(\w+.png),(\d+),(\d+)$',
+            line)
         if res is not None: return SurfaceMatchLine.Elements, res.groups()
 
         # Animation Interval
         # [aID]interval,[interval]
-        res = re.match(r'^(?:animation)?(\d+).?interval,(sometimes|rarely|random,\d+|periodic,\d+[.][0-9]*|always|runonce|never|yen-e|talk,\d+|bind)$', line)
+        res = re.match(
+            r'^(?:animation)?(\d+).?interval,(sometimes|rarely|random,\d+|periodic,\d+[.][0-9]*|always|runonce|never|yen-e|talk,\d+|bind)$',
+            line)
         if res is not None: return SurfaceMatchLine.AnimationInterval, res.groups()
 
         # Animation Pattern Alternative
         # [aID]pattern[pID],[surfaceID],[time],[methodType],[[aID1], [aID2], ...]
-        res = re.match(r'^(\d+)pattern(\d+),(\-?\d+),(\d+),(insert|start|stop|alternativestart|alternativestop),(?:[\[\(]?((?:\d+[\.\,])*\d+)[\]\)]?)$', line)
+        res = re.match(
+            r'^(\d+)pattern(\d+),(\-?\d+),(\d+),(insert|start|stop|alternativestart|alternativestop),(?:[\[\(]?((?:\d+[\.\,])*\d+)[\]\)]?)$',
+            line)
         if res is not None: return SurfaceMatchLine.AnimationPatternAlternative, res.groups()
 
         # Animation Pattern Normal
         # [aID]pattern[pID],[surfaceID],[time],[methodType],[X],[Y]
-        res = re.match(r'^(\d+)pattern(\d+),(\-?\d+),(\d+),(base|overlay|overlayfast|replace|interpolate|asis|move|bind|add|reduce),(\-?\d+),(\-?\d+)$', line)
+        res = re.match(
+            r'^(\d+)pattern(\d+),(\-?\d+),(\d+),(base|overlay|overlayfast|replace|interpolate|asis|move|bind|add|reduce),(\-?\d+),(\-?\d+)$',
+            line)
         if res is not None: return SurfaceMatchLine.AnimationPattern, res.groups()
 
         # Animation Pattern New
         # animation[aID].pattern[pID],[methodType],[surfaceID],[time],[X],[Y]
-        res = re.match(r'^animation(\d+).pattern(\d+),(base|overlay|overlayfast|replace|interpolate|asis|move|bind|add|reduce),(\-?\d+),(\d+),(\-?\d+),(\-?\d+)$', line)
+        res = re.match(
+            r'^animation(\d+).pattern(\d+),(base|overlay|overlayfast|replace|interpolate|asis|move|bind|add|reduce),(\-?\d+),(\d+),(\-?\d+),(\-?\d+)$',
+            line)
         if res is not None: return SurfaceMatchLine.AnimationPatternNew, res.groups()
 
         # Animation Option exclusive
@@ -671,8 +725,10 @@ class SurfaceMatchLine(Enum):
         if res is not None: return SurfaceMatchLine.OffectKinokoPointY, res.groups()
 
         # Unknow
-        return SurfaceMatchLine.Unknow,None
+        return SurfaceMatchLine.Unknow, None
+
     pass
+
 
 class AuthorInfo:
     def __init__(self):
@@ -681,11 +737,12 @@ class AuthorInfo:
         self.updateurl = ''
         self.readme = ''
 
-class ShellMenu:
+
+class ShellMenuStyle:
     def __init__(self):
         self.hidden = False
         self.menuitem = {}
-        
+
         self.font_family = ''
         self.font_size = -1
 
@@ -703,6 +760,7 @@ class ShellMenu:
         self.sidebar_image = ''
         self.sidebar_alignment = 'lefttop'
 
+
 class BindGroup:
     def __init__(self, aID, type, title, image=''):
         self.aID = aID
@@ -711,8 +769,9 @@ class BindGroup:
         self.image = image
         self.default = False
 
-    def setDefault(self, bool):
-        self.default = False if bool == '0' else True
+    def setDefault(self, boolean):
+        self.default = False if boolean == '0' else True
+
 
 class ShellSetting:
     def __init__(self):
@@ -725,7 +784,8 @@ class ShellSetting:
 
     def addBingGroup(self, aID, bindgroup):
         self.bindgroups[aID] = bindgroup
-        
+
+
 class Surface:
     def __init__(self, name, values):
         self.name = name
@@ -738,22 +798,22 @@ class Surface:
         self._load_surface(values)
         pass
 
-    def _load_surface(self,values):
+    def _load_surface(self, values):
         for line in values:
-            if line == "" :
+            if line == "":
                 continue
 
-            type, params = SurfaceMatchLine.matchLine(line)
-            if type == SurfaceMatchLine.Unknow:
+            matchtype, params = SurfaceMatchLine.matchLine(line)
+            if matchtype == SurfaceMatchLine.Unknow:
                 logging.warning("NO Match Line: %s", line)
 
-            elif type == SurfaceMatchLine.Elements:
+            elif matchtype == SurfaceMatchLine.Elements:
                 self.elements[int(params[0])] = Element(params)
 
-            elif type == SurfaceMatchLine.CollisionBoxes:
+            elif matchtype == SurfaceMatchLine.CollisionBoxes:
                 self.CollisionBoxes[int(params[0])] = CollisionBox(params)
 
-            elif type == SurfaceMatchLine.AnimationInterval:
+            elif matchtype == SurfaceMatchLine.AnimationInterval:
                 aid = int(params[0])
                 ani = Animation(aid, self.animations) if aid not in self.animations else self.animations[aid]
                 if ',' in params[1]:
@@ -765,40 +825,40 @@ class Surface:
                     ani.intervalValue = 0
                 self.animations[aid] = ani
 
-            elif type == SurfaceMatchLine.AnimationPattern:
+            elif matchtype == SurfaceMatchLine.AnimationPattern:
                 aid = int(params[0])
                 ani = Animation(aid, self.animations) if aid not in self.animations else self.animations[aid]
                 ani.patterns[int(params[1])] = Pattern(params, EPatternType.Normal)
                 self.animations[aid] = ani
-                
-            elif type == SurfaceMatchLine.AnimationPatternNew:
+
+            elif matchtype == SurfaceMatchLine.AnimationPatternNew:
                 aid = int(params[0])
                 ani = Animation(aid, self.animations) if aid not in self.animations else self.animations[aid]
                 ani.patterns[int(params[1])] = Pattern(params, EPatternType.New)
                 self.animations[aid] = ani
 
-            elif type == SurfaceMatchLine.AnimationPatternAlternative:
+            elif matchtype == SurfaceMatchLine.AnimationPatternAlternative:
                 aid = int(params[0])
-                ani = Animation() if aid not in self.animations else self.animations[aid]
+                ani = Animation(aid, self.animations) if aid not in self.animations else self.animations[aid]
                 ani.patterns[int(params[1])] = Pattern(params, EPatternType.Alternative)
                 self.animations[aid] = ani
 
-            elif type == SurfaceMatchLine.AnimationOptionExclusive:
+            elif matchtype == SurfaceMatchLine.AnimationOptionExclusive:
                 aid = int(params[0])
                 ani = Animation(aid, self.animations) if aid not in self.animations else self.animations[aid]
                 ani.exclusive = True
                 self.animations[aid] = ani
 
-            elif type == SurfaceMatchLine.OffectPointX:
+            elif matchtype == SurfaceMatchLine.OffectPointX:
                 self.offest1[0] = int(params[0])
 
-            elif type == SurfaceMatchLine.OffectPointY:
+            elif matchtype == SurfaceMatchLine.OffectPointY:
                 self.offest1[1] = int(params[0])
 
-            elif type == SurfaceMatchLine.OffectKinokoPointX:
+            elif matchtype == SurfaceMatchLine.OffectKinokoPointX:
                 self.offest2[0] = int(params[0])
 
-            elif type == SurfaceMatchLine.OffectKinokoPointY:
+            elif matchtype == SurfaceMatchLine.OffectKinokoPointY:
                 self.offest1[1] = int(params[0])
 
         pass
