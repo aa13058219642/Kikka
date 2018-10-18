@@ -11,7 +11,7 @@ import kikka
 from mainwindow import MainWindow
 
 
-class Core:
+class KikkaCore:
     _instance = None
     isDebug = False
 
@@ -25,13 +25,13 @@ class Core:
 
     @staticmethod
     def this():
-        if Core._instance is None:
-            Core._instance = object.__new__(Core)
-            Core._instance._init()
-        return Core._instance
+        if KikkaCore._instance is None:
+            KikkaCore._instance = object.__new__(KikkaCore)
+            KikkaCore._instance._init()
+        return KikkaCore._instance
 
     def _init(self):
-        self._app_state = Core.APP_STATE.HIDE
+        self._app_state = KikkaCore.APP_STATE.HIDE
         self._Timer_Run = None
         self._lasttime = 0
         pass
@@ -45,11 +45,11 @@ class Core:
         return self._app_state
 
     def hide(self):
-        self._app_state = Core.APP_STATE.HIDE
+        self._app_state = KikkaCore.APP_STATE.HIDE
         self._mainwindow.hide()
 
     def show(self):
-        self._app_state = Core.APP_STATE.SHOW
+        self._app_state = KikkaCore.APP_STATE.SHOW
         self._mainwindow.show()
 
     def start(self):
@@ -71,7 +71,7 @@ class Core:
             updatetime = (nowtime - self._lasttime) * 1000
 
             ret = kikka.shell.update(updatetime)
-            if ret == True:
+            if ret is True:
                 img = kikka.shell.getCurImage(self.isDebug)
                 self._mainwindow.setImage(img)
 

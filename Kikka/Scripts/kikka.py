@@ -1,20 +1,17 @@
 # coding=utf-8
 # This is all singletion classes reference
 
-import kikkaapp
-app = kikkaapp.KikkaApp.this()
+import kikka_app
+import kikka_memory
+import kikka_menu
+import kikka_shell
+import kikka_core
 
-import kikkamemory
-memory = kikkamemory.KikkaMemory.this()
-
-import kikkamenu
-menu = kikkamenu.KikkaMenu.this()
-
-import shell
-shell = shell.KikkaShell.this()
-
-import core as kikkacore
-core = kikkacore.Core.this()
+app = kikka_app.KikkaApp.this()
+memory = kikka_memory.KikkaMemory.this()
+menu = kikka_menu.KikkaMenu.this()
+shell = kikka_shell.KikkaShell.this()
+core = kikka_core.KikkaCore.this()
 
 
 

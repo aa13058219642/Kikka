@@ -65,7 +65,7 @@ class KikkaMenu:
         icon = QIcon(r"icon.ico")
         self._menu = Menu(parten, "Main")
 
-        from kikkaapp import KikkaApp
+        from kikka_app import KikkaApp
         callbackfunc = lambda: KikkaApp.this().exitApp()
         self._menu.addMenuItem("Exit", callbackfunc)
         self._menu.addSeparator()
