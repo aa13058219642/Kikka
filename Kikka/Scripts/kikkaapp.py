@@ -34,11 +34,13 @@ class KikkaApp(QApplication):
         logging.info("Hey~ Kikka here %s" % ("-"*20))
         if len(args[0]) >= 1 and "-c" in args[0]:
             self.isDebug = True
-            
+
+    def start(self):
         self.core = Core.get_instance()
         self.runGuardThread()
         self.core.start(self.isDebug)
         self.createTrayIcon()
+
 
     def createTrayIcon(self):
         icon = QIcon("icon.ico")

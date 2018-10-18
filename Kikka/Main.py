@@ -2,16 +2,20 @@ import sys
 import logging
 import logging.handlers
 
-from kikka import KikkaApp
+from kikkaapp import KikkaApp
 
 
-def runApp():
-    # logging level (low to hight): 
+def boot():
+    # logging level (low to hight):
     # CRITICAL, ERROR, WARNING, INFO, DEBUG, NOTSET
     initLogging(logging.INFO)
 
+    pass
+
+def runApp():
     try:
         app = KikkaApp.this()
+        app.start()
         sys.exit(app.exec_())
     except SystemExit:
         pass
@@ -37,4 +41,5 @@ def initLogging(level):
 
 
 if __name__ == '__main__':
+    boot()
     runApp()

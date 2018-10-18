@@ -60,10 +60,9 @@ class KikkaMenu:
         icon = QIcon(r"icon.ico")
         self._menu = Menu(parten, "Main")
 
-        text = "Exit"
-        from kikka import KikkaApp
+        from kikkaapp import KikkaApp
         callbackfunc = lambda:KikkaApp.this().exitApp()
-        self._menu.addMenuItem(text, callbackfunc)
+        self._menu.addMenuItem("Exit", callbackfunc)
         self._menu.addSeparator()
 
         # MenuItem state ######################################################################
@@ -169,6 +168,10 @@ class KikkaMenu:
         menu = Menu(self._menu, "MenuImage-verylarge")
         for i in range(100): text = " "*600; menu.addMenuItem(text)
         self._menu.addSubMenu(menu)
+
+        callbackfunc = lambda:KikkaApp.this().exitApp()
+        self._menu.addMenuItem("Exit", callbackfunc)
+        self._menu.addSeparator()
 
         self.isDebug = old
         return self._menu
