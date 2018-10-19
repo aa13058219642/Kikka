@@ -158,7 +158,7 @@ class MainWindow(QWidget):
 
     def setImage(self, image):
         # painter = QPainter(image)
-        image = QImage(r"C:\\test.png")
+        #image = QImage(r"C:\\test.png")
         pixmap = QPixmap().fromImage(image, Qt.AutoColor)
         self._pixmap = pixmap
         self._message = "132"

@@ -1,17 +1,18 @@
 # coding=utf-8
 import os
 import sqlite3
+import json
+import logging
 
 
-class KikkaMemory(object):
+class KikkaMemory:
     _instance = None
 
     def __init__(self, **kwargs):
         raise SyntaxError('KikkaMemory has only one, please use KikkaMemory.this()')
 
     def __del__(self):
-        self._cursor.close()
-        self._conn.close()
+        self.close()
 
     @staticmethod
     def this():
@@ -26,43 +27,72 @@ class KikkaMemory(object):
             self._createDB()
         else:
             self._openDB()
-
-        # self._update('key', 'kikka99988')
-        # print(self.getValue('key'))
-
         pass
 
-    def _createDB(self):
-        self._conn = sqlite3.connect(self._filepath)
-        self._cursor = self._conn.cursor()
-        sql = 'CREATE TABLE IF NOT EXISTS T_DICT(__key__ text, __value__ text)'
-        self._cursor.execute(sql)
-        self._conn.commit()
+    def close(self):
+        self._cursor.close()
+        self._conn.close()
 
     def _openDB(self):
         self._conn = sqlite3.connect(self._filepath)
         self._cursor = self._conn.cursor()
+        logging.info("inited kikka memory")
 
     def _query(self, sql):
         return self._cursor.execute(sql)
 
-    def setValue(self, key, value):
-        if self.getValue(key) is not None:
-            sql = 'UPDATE T_DICT SET __value__=? WHERE __key__=?'
-            values = (str(value), str(key))
-        else:
-            sql = 'INSERT INTO T_DICT values(?,?)'
-            values = (str(key), str(value))
+    def set(self, key, value, systemkey=False):
+        old_value = self.getString(key, None, systemkey)
+        if old_value is not None:
+            if old_value == value: return
 
-        self._cursor.execute(sql, values)
+            if systemkey is True: key = "__%s__" % key
+            sql = 'insert or replace into T_DICT(__KEY__, __VALUE__) values(?, ?)'
+            parameter = [str(key), str(value)]
+            self._cursor.execute(sql, parameter)
+            self._conn.commit()
+
+    def getString(self, key, default=None, systemkey=False):
+        result = default
+
+        if systemkey is True: key = "__%s__" % key
+        sql = 'select __VALUE__ from T_DICT where __KEY__=?'
+        sql_result = self._cursor.execute(sql, [key])
+        f = sql_result.fetchall()
+        if len(f) != 0: result = f[0][0]
+
+        return result
+
+    def getInteger(self, key, default=0, systemkey=False):
+        return int(self.getString(key, default, systemkey))
+
+    def _createDB(self):
+        self._conn = sqlite3.connect(self._filepath)
+        self._cursor = self._conn.cursor()
+        sql = 'create table if not exists T_DICT(__KEY__ text primary key not null, __VALUE__ text)'
+        self._cursor.execute(sql)
+
+        data = self._getDefautData()
+        sql = 'insert into T_DICT(__KEY__, __VALUE__) values(?, ?)'
+        self._conn.executemany(sql, data)
         self._conn.commit()
+        logging.info("crated kikka memory")
 
-    def getValue(self, key):
-        sql = 'SELECT __value__ FROM T_DICT WHERE __key__=?'
-        result = self._cursor.execute(sql, [key])
-        f = result.fetchall()
+    def _getDefautData(self):
+        s = '''
+        {
+            "__Version__":"1.0.0",
+            "__Author__": "A.A",
+            "__CurShell__": 1
+        }
+        '''
+        j = json.loads(s)
 
-        if len(f) == 0:
-            return None
-        else:
-            return f[0][0]
+        s = {}
+        for k, v in j.items():
+            s[str(k)] = str(v)
+
+        parameters = []
+        for k, v in s.items():
+            parameters.append((str(k), str(v)))
+        return parameters
