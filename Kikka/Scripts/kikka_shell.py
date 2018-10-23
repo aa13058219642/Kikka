@@ -57,7 +57,7 @@ class KikkaShell:
                 self.loadShell(shellpath)
 
         logging.info("shell count: %d", len(self.shells))
-        self.setCurShell(int(kikka.memory.getInteger('CurShell', 0)))
+        self.setCurShell(int(kikka.memory.readDeepMemory('CurShell', 0)))
 
     def getCurShell(self):
 
@@ -79,7 +79,7 @@ class KikkaShell:
         if 0 <= index < len(self.shells):
             self.curShell = index
             kikka.menu.setMenuStyle(self.getCurShell().getShellMenuStyle())
-            kikka.memory.set('CurShell', index, True)
+            kikka.memory.writeDeepMemory('CurShell', index)
         else:
             logging.warning("setCurShell: index NOT in shells list")
 

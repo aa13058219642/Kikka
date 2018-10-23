@@ -1,8 +1,9 @@
 # coding=utf-8
 import os
 import sys
-from win32api import GetSystemMetrics
+import hashlib
 
+from win32api import GetSystemMetrics
 from PyQt5.QtCore import QSize
 from PyQt5.QtGui import QImage
 
@@ -64,5 +65,20 @@ def getScreenResolution():
 
 def getDefaultImage():
     return QImage(QSize(1, 1))
+
+
+def getMD5(s):
+    md5 = hashlib.md5()
+    md5.update(s.encode())
+    return md5.hexdigest()
+
+
+def getShortMD5(s):
+    md5 = hashlib.md5()
+    md5.update(s.encode())
+    return md5.hexdigest()[8:24]
+
+
+
 
 

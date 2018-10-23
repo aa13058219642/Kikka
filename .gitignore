@@ -5,7 +5,7 @@
 /WinForms
 /Kikka/Resources/Shell
 kikka.log*
-
+*.[Mm]emory
 
 __pycache__/
 .idea/
