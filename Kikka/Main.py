@@ -16,11 +16,13 @@ def init():
 
     # set debug
     if '-c' in sys.argv:
+        kikka.memory.isDebug = True
         kikka.app.isDebug = True
         kikka.core.isDebug = True
 
     # start
     shellpath = kikkahelper.getPath(kikkahelper.PATH_SHELL)
+    kikka.memory.awake()
     kikka.shell.loadAllShell(shellpath)
     kikka.menu.getTestMenu()
     kikka.core.start()

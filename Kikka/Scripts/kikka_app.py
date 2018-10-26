@@ -84,7 +84,10 @@ class KikkaApp:
         kikkaHere = False
         pids = psutil.pids()
         for pid in pids:
-            p = psutil.Process(pid)
+            try:
+                p = psutil.Process(pid)
+            except psutil.NoSuchProcess:
+                continue
             if p.name() == 'Kikka.exe':
                 kikkaHere = True
         return kikkaHere

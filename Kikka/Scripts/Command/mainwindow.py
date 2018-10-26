@@ -6,6 +6,8 @@ from PyQt5.QtGui import QPixmap, QPainter, QColor, QImage
 from PyQt5.QtWidgets import QWidget
 
 from mouseevent import MouseEvent
+from dialogwindow import Dialog
+import kikka
 
 
 class MainWindow(QWidget):
@@ -19,21 +21,29 @@ class MainWindow(QWidget):
         self.setAcceptDrops(True)
 
         self.CollisionBoxes = {}
-
-        pixmap = QPixmap(1, 1)
-        self._pixmap = pixmap
-        self._message = ""
-        self._color = QColor.black
-        self._alignment = Qt.AlignLeft
-
-        self.setFixedSize(self._pixmap.size())
-        self.setMask(self._pixmap.mask())
-
         self._isMoving = False
         self._boxes = {}
         self._movepos = QPoint(0, 0)
         self._mousepos = QPoint(0, 0)
         self._menu = None
+
+        pixmap = QPixmap(500, 500)
+        self._pixmap = pixmap
+        self._message = ""
+        self._color = QColor.black
+        self._alignment = Qt.AlignLeft
+
+        #self.resize(500, 500)
+        self.setFixedSize(self._pixmap.size())  # <----------------------
+        self.setMask(self._pixmap.mask())
+
+        # size and position
+        rect = kikka.memory.read('KikkaRect', [])
+        if len(rect) > 0:
+            self.move(rect[0], rect[1])
+            self.resize(rect[2], rect[3])
+
+        self._dialog = Dialog(self)
 
     def setMenu(self, kikkamenu):
         self._menu = kikkamenu
@@ -91,8 +101,7 @@ class MainWindow(QWidget):
         logging.debug("%s %s (%d, %d)", event, page_sizes[button], x, y)
 
     def mousePressEvent(self, event):
-        btn = event.buttons()
-        self._mouseLogging("mousePressEvent", btn, event.globalPos().x(), event.globalPos().y())
+        self._mouseLogging("mousePressEvent", event.buttons(), event.globalPos().x(), event.globalPos().y())
         self._movepos = event.globalPos() - self.pos()
         if event.buttons() == Qt.LeftButton:
             self._isMoving = True
@@ -103,13 +112,13 @@ class MainWindow(QWidget):
             if boxevent != '': MouseEvent.event_selector(MouseEvent.MouseDown, boxevent)
 
     def mouseMoveEvent(self, event):
-        # logging.info("mouseMoveEvent##################")
-        btn = event.buttons()
-        self._mouseLogging("mouseMoveEvent", btn, event.globalPos().x(), event.globalPos().y())
+        self._mouseLogging("mouseMoveEvent", event.buttons(), event.globalPos().x(), event.globalPos().y())
 
         self._mousepos = event.pos()
         if self._isMoving and event.buttons() == Qt.LeftButton:
             self.move(event.globalPos() - self._movepos)
+            self._dialog.updatePosition()
+
             event.accept()
         else:
             self._isMoving = False
@@ -119,11 +128,16 @@ class MainWindow(QWidget):
             if boxevent != '':
                 MouseEvent.event_selector(MouseEvent.MouseMove, boxevent)
 
+    def mouseReleaseEvent(self, event):
+        self._mouseLogging("mouseReleaseEvent", event.buttons(), event.globalPos().x(), event.globalPos().y())
+        self._isMoving = False
+        kikka.memory.write('KikkaRect', [self.pos().x(), self.pos().y(), self.size().width(), self.size().height()])
+
     def mouseDoubleClickEvent(self, event):
-        btn = event.buttons()
-        # self._mouseLogging("mouseDoubleClickEvent", btn, event.globalPos().x(), event.globalPos().y())
-        if btn == Qt.LeftButton:
+        self._mouseLogging("mouseDoubleClickEvent", event.buttons(), event.globalPos().x(), event.globalPos().y())
+        if event.buttons() == Qt.LeftButton:
             self._isMoving = False
+            self._dialog.show()
 
         if self._isMoving is False:
             boxevent = self._boxCollision()
@@ -155,10 +169,12 @@ class MainWindow(QWidget):
     def paintEvent(self, event):
         painter = QPainter(self)
         painter.drawPixmap(self.rect(), self._pixmap)
+        painter.setPen(Qt.green)
+        painter.drawRect(QRect(0, 0, self.size().width()-1, self.size().height()-1))
 
     def setImage(self, image):
         # painter = QPainter(image)
-        #image = QImage(r"C:\\test.png")
+        # image = QImage(r"C:\\test.png")
         pixmap = QPixmap().fromImage(image, Qt.AutoColor)
         self._pixmap = pixmap
         self._message = "132"
@@ -167,7 +183,6 @@ class MainWindow(QWidget):
     
         self.setFixedSize(self._pixmap.size())
         self.setMask(self._pixmap.mask())
-    
         self.repaint()
 
 

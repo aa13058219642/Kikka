@@ -18,6 +18,7 @@ import kikkahelper
 
 class KikkaMemory:
     _instance = None
+    isDebug = False
 
     def __init__(self, **kwargs):
         raise SyntaxError('KikkaMemory has only one, please use KikkaMemory.this()')
@@ -30,7 +31,10 @@ class KikkaMemory:
         return KikkaMemory._instance
 
     def _init(self):
-        self._filepath = 'Kikka.memory'
+        pass
+
+    def awake(self):
+        self._filepath = 'Kikka.memory' if self.isDebug is False else 'Kikka.db'
         memoryEsists = os.path.exists(self._filepath)
         self._deepmemory = DeepMemory(sqlite3.connect(self._filepath))
 
@@ -104,15 +108,19 @@ class DeepMemory:
             f = sql_result.fetchall()
             if len(f) != 0:
                 if readtype != f[0][1]:
-                    logging.warning('Permission denied')
-                    return
+                    logging.warning('read error: Permission denied')
+                    return default
                 if readtype == self.TYPE_DEEP: value = self.decrypt(f[0][0], False)
                 elif readtype == self.TYPE_INITIAL: value = self.decrypt(f[0][0], True)
                 else: value = f[0][0]
+            else:
+                return default
 
             if isinstance(default, str) is True: return str(value)
             elif isinstance(default, int) is True: return int(value)
             elif isinstance(default, float) is True: return float(value)
+            elif isinstance(default, list) is True: return json.loads(value)
+            elif isinstance(default, dict) is True: return json.loads(value)
             else: return default
 
         except ValueError:
@@ -121,13 +129,14 @@ class DeepMemory:
 
     def write(self, key, value, writetype, _key=''):
         try:
+            value = str(value) if isinstance(value, (list, dict)) is False else json.dumps(value)
             if writetype == self.TYPE_NORMAL:
-                value = str(value)
+                pass
             elif writetype == self.TYPE_DEEP:
-                value = self.encrypt(str(value))
+                value = self.encrypt(value)
                 key = "_%s_" % key
             elif writetype == self.TYPE_INITIAL:
-                value = self.encrypt(str(value), _key)
+                value = self.encrypt(value, _key)
                 key = "__%s__" % key
             else:
                 return
