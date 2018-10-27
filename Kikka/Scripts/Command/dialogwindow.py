@@ -176,7 +176,6 @@ class Dialog(QWidget):
         pass
 
     def resizeEvent(self, a0: QtGui.QResizeEvent):
-        logging.info("resizeEvent")
         self.getBackgroundImage()
 
     def paintEvent(self, event):

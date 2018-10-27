@@ -1,0 +1,22 @@
+
+
+
+
+QPushButton{
+	border-style: solid;
+	background-color: #FF0000;
+	padding: 3px;
+} 
+
+QPushButton:hover{
+	text-decoration: underline;
+} 
+
+
+
+
+
+
+
+
+

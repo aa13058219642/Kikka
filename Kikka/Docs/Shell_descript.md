@@ -12,7 +12,7 @@ Shell的基本配置文件。
 #### 示例
 
 ```
-charset,Shift_JIS
+charset,utf-8
 type,shell
 name,master
 
@@ -64,9 +64,8 @@ kero.menuitem3,2
 
 #### 字段
 ##### charset,[String]
-- 字符集。 推荐utf-8，Shift_JIS。
+- 字符集。 推荐utf-8
 - 默认值：utf-8
-
 
 ##### name,[String]
 - Shell名称
@@ -195,6 +194,10 @@ kero.menuitem3,2
 - 其他Shell的屏幕坐标Y
 - 默认值：ghost的descript设定
 
+##### sakura.balloon.default, [string]
+- 本体对话框的ID
+- 默认值：无
+
 ##### sakura.balloon.offsetx,[int]
 - 本体对话框相对本体Shell的偏移X
 - 默认值：ghost的descript設定
@@ -202,6 +205,10 @@ kero.menuitem3,2
 ##### sakura.balloon.offsety,[int]
 - 本体对话框相对本体Shell的偏移Y
 - 默认值：ghost的descript設定
+
+##### kero.balloon.default, [string]
+- 使魔对话框的ID
+- 默认值：无
 
 ##### kero.balloon.offsetx,[int]
 - 使魔对话框相对使魔Shell的偏移X
