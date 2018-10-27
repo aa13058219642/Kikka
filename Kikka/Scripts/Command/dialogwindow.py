@@ -21,11 +21,13 @@ class Dialog(QWidget):
         # self.setAcceptDrops(True)
 
         self._isChangeSizeMode = False
-        self._backgroundSource = None
-        self._backgroundImage = None
-        self._backgroundPixmap = None
-        self._backgroundMask = None
-        self._backgroundRect = None
+        self._bgSource = None
+        self._bgImage = None
+        self._bgPixmap = None
+        self._bgMask = None
+        self._bgRect = None
+        self._bgClipW = None
+        self._bgClipH = None
 
         self.setBackgroundImage()
         style = '''
@@ -128,7 +130,7 @@ class Dialog(QWidget):
             self.setWindowFlag(Qt.FramelessWindowHint, True)
             self.setWindowOpacity(1)
             self.setEnabled(True)
-            self.setMask(self._backgroundMask)
+            self.setMask(self._bgMask)
             self.show()
             self.move(pos.x(), pos.y())
 
@@ -179,20 +181,24 @@ class Dialog(QWidget):
 
     def paintEvent(self, event):
         painter = QPainter(self)
-        painter.drawPixmap(self.rect(), self._backgroundPixmap)
+        painter.drawPixmap(self.rect(), self._bgPixmap)
         super().paintEvent(event)
 
-    def setBackgroundImage(self, image=None):
-        self._backgroundSource = QImage(r"C:\\d2.png")
-        w0 = self._backgroundSource.size().width() // 3
-        h0 = self._backgroundSource.size().height() // 3
-        sw = [w0, w0, w0]
-        sh = [h0, h0, h0]
+    def setBackgroundImage(self, image=None, clipW=None, clipH=None):
+        # self._backgroundSource = QImage(r"C:\\d2.png")
+        # self._backgroundClipW = [60, 3, 60]
+        # self._backgroundClipH = [60, 3, 60]
+
+        self._bgSource = QImage(r"C:\\d4.png")
+        self._bgClipW = [45, 15, 180, 15, 45]
+        self._bgClipH = [45, 15, 90, 15, 45]
 
         srect = []
-        for y in range(3):
+        sw = self._bgClipW
+        sh = self._bgClipH
+        for y in range(len(self._bgClipH)):
             sr = []
-            for x in range(3):
+            for x in range(len(self._bgClipW)):
                 pt = QPoint(0, 0)
                 if x > 0: pt.setX(sr[x-1].x() + sw[x-1])
                 if y > 0: pt.setY(srect[y-1][0].y() + sh[y-1])
@@ -202,26 +208,46 @@ class Dialog(QWidget):
             srect.append(sr)
         pass  # exit for
 
-        self._backgroundRect = srect
+        self._bgRect = srect
+        self.setMinimumSize(self._bgSource.size())
 
     def getBackgroundImage(self):
-        #logging.info("getBackgroundImage: (%d, %d)" % (sz.width(), sz.height()))
-
-        self._backgroundImage = QImage(self.size(), QImage.Format_ARGB32)
-        pixmap = QPixmap().fromImage(self._backgroundSource, Qt.AutoColor)
-
-        # ssw = self._backgroundSource.size().width()
-        # bsh = self._backgroundSource.size().height()
-
-        w0 = self._backgroundSource.size().width() // 3
-        h0 = self._backgroundSource.size().height() // 3
-        dw = [w0, self.size().width()-w0*2, w0]
-        dh = [h0, self.size().height()-h0*2, h0]
+        # logging.info("getBackgroundImage: (%d, %d)" % (sz.width(), sz.height()))
 
         drect = []
-        for y in range(3):
+        if len(self._bgClipW) == 3:
+            dw = [self._bgClipW[0],
+                  self.size().width() - self._bgClipW[0] - self._bgClipW[2],
+                  self._bgClipW[2]]
+        elif len(self._bgClipW) == 5:
+            sw = self.size().width() - self._bgClipW[0] - self._bgClipW[2] - self._bgClipW[4]
+            dw = [self._bgClipW[0],
+                  sw//2,
+                  self._bgClipW[2],
+                  sw - sw//2,
+                  self._bgClipW[4]]
+        else:
+            sw = self.size().width() // 3
+            dw = [sw, self.size().width() - sw*2, sw]
+
+        if len(self._bgClipH) == 3:
+            dh = [self._bgClipH[0],
+                  self.size().height() - self._bgClipH[0] - self._bgClipH[2],
+                  self._bgClipH[2]]
+        elif len(self._bgClipH) == 5:
+            sh = self.size().height() - self._bgClipH[0] - self._bgClipH[2] - self._bgClipH[4]
+            dh = [self._bgClipH[0],
+                  sh//2,
+                  self._bgClipH[2],
+                  sh - sh//2,
+                  self._bgClipH[4]]
+        else:
+            sh = self.size().height() // 3
+            dh = [sh, self.size().height() - sh*2, sh]
+
+        for y in range(len(self._bgClipH)):
             dr = []
-            for x in range(3):
+            for x in range(len(self._bgClipW)):
                 pt = QPoint(0, 0)
                 if x > 0: pt.setX(dr[x-1].x() + dw[x-1])
                 if y > 0: pt.setY(drect[y-1][0].y() + dh[y-1])
@@ -231,18 +257,19 @@ class Dialog(QWidget):
             drect.append(dr)
         pass  # exit for
 
-        p = QPainter(self._backgroundImage)
+        self._bgImage = QImage(self.size(), QImage.Format_ARGB32)
+        pixmap = QPixmap().fromImage(self._bgSource, Qt.AutoColor)
+        p = QPainter(self._bgImage)
         p.setCompositionMode(QPainter.CompositionMode_Source)
 
         # if self._isChangeSizeMode is True:
         #     p.fillRect(self.rect(), Qt.black)
-
-        for y in range(3):
-            for x in range(3):
-                p.drawPixmap(drect[y][x], pixmap, self._backgroundRect[y][x])
+        for y in range(len(self._bgClipH)):
+            for x in range(len(self._bgClipW)):
+                p.drawPixmap(drect[y][x], pixmap, self._bgRect[y][x])
         p.end()
 
-        self._backgroundPixmap = QPixmap().fromImage(self._backgroundImage, Qt.AutoColor)
-        self._backgroundMask = self._backgroundPixmap.mask()
+        self._bgPixmap = QPixmap().fromImage(self._bgImage, Qt.AutoColor)
+        self._bgMask = self._bgPixmap.mask()
         pass
 
