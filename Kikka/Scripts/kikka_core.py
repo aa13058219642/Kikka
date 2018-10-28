@@ -34,6 +34,9 @@ class KikkaCore:
         self._app_state = KikkaCore.APP_STATE.HIDE
         self._Timer_Run = None
         self._lasttime = 0
+        self.isNeedUpdate = True
+        self._timer_interval = 10
+        self._Timer_Run = QTimer()
         pass
 
     def getMainWindow(self):
@@ -60,35 +63,46 @@ class KikkaCore:
         self.setSurface(0)
 
         self._lasttime = time.clock()
-        self._Timer_Run = QTimer()
+
         self._Timer_Run.timeout.connect(self.run)
-        self._Timer_Run.start(10)
+        self._Timer_Run.start(self._timer_interval)
         self.show()
+
+    def setTimerInterval(self, interval):
+        self._timer_interval = interval
+        self._Timer_Run.setInterval(interval)
+
+    def getTimerInterval(self):
+        return self._timer_interval
 
     def run(self):
         try:
             nowtime = time.clock() 
             updatetime = (nowtime - self._lasttime) * 1000
 
-            ret = kikka.shell.update(updatetime)
-            if ret is True:
-                img = kikka.shell.getCurImage(self.isDebug)
+            if self.isNeedUpdate is False:
+                self.isNeedUpdate = kikka.shell.update(updatetime)
+
+            if self.isNeedUpdate is True:
+                img = kikka.shell.getCurImage()
                 self._mainwindow.setImage(img)
 
             self._lasttime = nowtime
         except Exception as e:
             logging.exception('Core.run: run time error')
             raise SyntaxError('run time error')
+
+        self.isNeedUpdate = False
         pass
 
     def setSurface(self, index):
         kikka.shell.getCurShell().setSurfaces(index)
 
-        img = kikka.shell.getCurImage(self.isDebug)
+        img = kikka.shell.getCurImage()
         self._mainwindow.setImage(img)
-        
-        boxes = kikka.shell.getCollisionBoxes()
-        self._mainwindow.setBoxes(boxes)
+
+        shell = kikka.shell.getCurShell()
+        self._mainwindow.setBoxes(shell.getCollisionBoxes(), shell.getOffset())
 
     def _createTrayIcon(self):
         qapp = QApplication.instance()
@@ -113,3 +127,6 @@ class KikkaCore:
     def updateMenu(self):
         QApplication.instance().trayIcon.setContextMenu(kikka.menu.getMenu())
         self._mainwindow.setMenu(kikka.menu)
+
+    def update(self):
+        self.isNeedUpdate = True

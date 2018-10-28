@@ -5,7 +5,7 @@ import logging.handlers
 from PyQt5.QtWidgets import QApplication
 
 
-def init():
+def awake():
     # logging level (low to hight):
     # CRITICAL, ERROR, WARNING, INFO, DEBUG, NOTSET
     setLogging(logging.INFO)
@@ -24,7 +24,11 @@ def init():
     shellpath = kikkahelper.getPath(kikkahelper.PATH_SHELL)
     kikka.memory.awake()
     kikka.shell.loadAllShell(shellpath)
-    kikka.menu.getTestMenu()
+
+    import mainmenu
+    # kikka.menu.setMenu(mainmenu.createTestMenu())
+    kikka.menu.setMenu(mainmenu.createMainMenu())
+    #kikka.menu.getTestMenu()
     kikka.core.start()
     kikka.app.start()
 
@@ -53,13 +57,13 @@ def setLogging(level):
 
 def run():
     try:
-        app = QApplication(sys.argv)
-        init()
-        sys.exit(app.exec_())
+        qapp = QApplication(sys.argv)
+        awake()
+        sys.exit(qapp.exec_())
     except SystemExit:
         pass
     except Exception:
-        logging.exception('KikkaApp: run time error')
+        logging.exception('Kikka: run time error')
         raise SyntaxError('run time error')
 
 

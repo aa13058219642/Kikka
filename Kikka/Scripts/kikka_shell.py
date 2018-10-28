@@ -15,6 +15,7 @@ import kikka
 
 class KikkaShell:
     _instance = None
+    isDebug = True
 
     def __init__(self, **kwargs):
         raise SyntaxError('The class is Singletion, please use ShellManager.this() or kikka.shell_manager')
@@ -30,7 +31,7 @@ class KikkaShell:
         self.shells = []
         self.isNeedUpdate = True
         self.shelldir = ''
-        self.curShell = 0
+        self.curShellIndex = -1
 
     def loadShell(self, shellpath):
         shell = Shell(shellpath)
@@ -57,29 +58,33 @@ class KikkaShell:
                 self.loadShell(shellpath)
 
         logging.info("shell count: %d", len(self.shells))
-        self.setCurShell(int(kikka.memory.readDeepMemory('CurShell', 0)))
+        self.setCurShell(kikka.memory.readDeepMemory('CurShell', 0))
 
     def getCurShell(self):
 
-        return self.shells[self.curShell]
+        return self.shells[self.curShellIndex] if self.curShellIndex != -1 else None
 
     def update(self, updatetime):
         shell = self.getCurShell()
         return shell.update(updatetime)
 
-    def getCurImage(self, isDebug=False):
+    def getCurImage(self):
         shell = self.getCurShell()
-        return shell.getCurImage(isDebug)
-
-    def getCollisionBoxes(self):
-        shell = self.getCurShell()
-        return shell.getCollisionBoxes()
+        return shell.getCurImage()
 
     def setCurShell(self, index):
-        if 0 <= index < len(self.shells):
-            self.curShell = index
-            kikka.menu.setMenuStyle(self.getCurShell().getShellMenuStyle())
+        if self.curShellIndex != index and 0 <= index < len(self.shells):
+            shell = self.getCurShell()
+            if shell is not None: shell.clearShell()
+
+            self.curShellIndex = index
+            shell = self.getCurShell()
+            shell.loadShell()
+            shell.setSurfaces(0)
+            kikka.menu.setMenuStyle(shell.getShellMenuStyle())
             kikka.memory.writeDeepMemory('CurShell', index)
+
+            logging.info("change shell to %s" % self.shells[index].name)
         else:
             logging.warning("setCurShell: index NOT in shells list")
 
@@ -117,14 +122,15 @@ class Shell:
         self._pngs = {}
         self.surfaces = {}
         self.isLoaded = False
+        pass
 
     def loadShell(self):
         if self.isLoaded is False:
             logging.info("load shell: %s", self.name)
-
             self._load_surfaces()
 
             # load PNG
+            self._loadPNGindex()
             for filename, _ in self._pngs.items():
                 p = os.path.join(self.shellpath, filename)
                 if p == self.shellmenustyle.background_image \
@@ -133,6 +139,7 @@ class Shell:
                     continue
                 self._pngs[filename] = QImage(p)
 
+            self._updatetime = time.clock()
             self.isLoaded = True
         pass
 
@@ -326,9 +333,9 @@ class Shell:
                         self.shellmenustyle.menuitem[mid] = -1
                 elif key[1] == 'balloon':
                     if key[2] == 'offsetx':
-                        self.setting.balloon_offset[0] = int(value[0])
+                        self.setting.balloon_offset.setX(int(value[0]))
                     elif key[2] == 'offsety':
-                        self.setting.balloon_offset[1] = int(value[0])
+                        self.setting.balloon_offset.setY(int(value[0]))
                     elif key[2] == 'alignment':
                         self.setting.balloon_alignment = value[0]
                     else:
@@ -339,6 +346,14 @@ class Shell:
                         self.setting.bindoption[value[0]] = value[1]
                     else:
                         self._IgnoreParams(keys, values)
+                elif 'defaultx' in key[1]:
+                    self.setting.offset.setX(int(value[0]))
+                elif 'defaulty' in key[1]:
+                    self.setting.offset.setY(int(value[0]))
+                elif 'defaultleft' in key[1]:
+                    self.setting.position.setX(int(value[0]))
+                elif 'defaulttop' in key[1]:
+                    self.setting.position.setY(int(value[0]))
                 else:
                     self._IgnoreParams(keys, values)
 
@@ -392,25 +407,40 @@ class Shell:
         pass
 
     def setSurfaces(self, surfacesID):
-        if self.isLoaded is False:
-            self.loadShell()
+        old = self._CurfaceID
+        try:
+            if self.isLoaded is False:
+                self.loadShell()
 
-        if surfacesID in self.surfaces:
-            old = self._CurfaceID
-            self._CurfaceID = surfacesID
-            surface = self.surfaces[surfacesID]
+            if surfacesID in self.surfaces:
+                self._CurfaceID = surfacesID
+                surface = self.surfaces[surfacesID]
 
-            base_image_name = "surface%04d.png" % surfacesID if 0 not in surface.elements else surface.elements[
-                0].filename
+                self._base_image = QImage(500, 500, QImage.Format_ARGB32)
+                painter = QPainter(self._base_image)
+                painter.setCompositionMode(QPainter.CompositionMode_Source)
+                painter.fillRect(self._base_image.rect(), Qt.transparent)
 
-            if base_image_name in self._pngs:
-                self._base_image = self._pngs[base_image_name]
+                painter.setCompositionMode(QPainter.CompositionMode_SourceOver)
+                if len(surface.elements) > 0:
+                    for i, ele in surface.elements.items():
+                        fn = ele.filename
+                        if fn in self._pngs:
+                            painter.drawImage(self.setting.offset + ele.offset, self._pngs[fn])
+                else:
+                    fn = "surface%04d.png" % surfacesID
+                    if fn in self._pngs:
+                        painter.drawImage(self.setting.offset, self._pngs[fn])
+                painter.end()
+                self._base_image.save("_base_image.png")
             else:
-                logging.warning("Shell.setSurfaces: png %s NOT found!" % base_image_name)
-                self.setSurfaces(old)
-        else:
+                raise ValueError
+        except ValueError:
             logging.warning("Shell.setSurfaces: surfaceID: %d NOT exist" % surfacesID)
-            self.setSurfaces(0)
+            self.setSurfaces(old)
+        finally:
+            kikka.core.update()
+        pass
 
     def _getSurfacePath(self, surfacesID):
 
@@ -428,33 +458,44 @@ class Shell:
 
         return isNeedUpdate
 
-    def getCurImage(self, isDebug=False):
+    def getCurImage(self):
         img = QImage(self._base_image)
+
         painter = QPainter(img)
+        #painter.setCompositionMode(QPainter.CompositionMode_SourceIn)
 
         surface = self.surfaces[self._CurfaceID]
         for aid, ani in surface.animations.items():
             id, x, y = ani.getCurSurfaceData()
             if id == -1: continue
 
-            face = QImage(self._getSurfacePath(id))
-            painter.drawImage(QPoint(x, y), face)
+            # face = QImage(self._getSurfacePath(id))
+            image_name = "surface%04d.png" % id
+            face = self._pngs[image_name]
 
-        if isDebug is True:
+            painter.drawImage(self.setting.offset + QPoint(x, y), face)
+
+        if kikka.shell.isDebug is True:
             # logging.info("debug draw")
             for cid, col in surface.CollisionBoxes.items():
                 painter.setPen(Qt.red)
-                rect = QRect(QPoint(col.Point1[0], col.Point1[1]), QPoint(col.Point2[0], col.Point2[1]))
+                rect = QRect(col.Point1, col.Point2)
+                rect.moveTopLeft(col.Point1 + self.setting.offset)
                 painter.drawRect(rect)
                 painter.fillRect(rect, QColor(255, 255, 255, 64))
                 painter.setPen(Qt.black)
                 painter.drawText(rect, Qt.AlignCenter, col.tag)
 
+            painter.setPen(Qt.red)
+            painter.drawRect(QRect(0, 0, img.width()-1, img.height()-1))
         return img
 
     def getCollisionBoxes(self):
         surface = self.surfaces[self._CurfaceID]
         return surface.CollisionBoxes
+
+    def getOffset(self):
+        return self.setting.offset
 
     def getShellMenuStyle(self):
         return self.shellmenustyle
@@ -484,6 +525,7 @@ class Animation:
         self.isRuning = False
 
     def randomSatrt(self):
+        timer_interval = kikka.core.getTimerInterval()
         if self.interval == 'never' \
                 or self.interval == 'talk' \
                 or self.interval == 'bind' \
@@ -492,16 +534,17 @@ class Animation:
             return False
 
         elif self.interval == 'sometimes':
-            # 30% per second = 0.3 / 1000
-            return True if random.random() < 0.0003 else False
+            # 30% per second
+            r = random.random()
+            return True if r < 0.0003 * timer_interval else False
 
         elif self.interval == 'rarely':
-            # 10% per second = 0.1 / 1000
-            return True if random.random() < 0.0001 else False
+            # 10% per second
+            return True if random.random() < 0.0001 * timer_interval else False
 
         elif self.interval == 'random':
-            # n% per second = n / 1000
-            return True if random.random() < self.intervalValue / 1000 else False
+            # n% per second
+            return True if random.random() < self.intervalValue / 1000 * timer_interval else False
 
         elif self.interval == 'periodic':
             now = time.clock()
@@ -517,7 +560,6 @@ class Animation:
         pass
 
     def _animationControl(self):
-
         for pid, pattern in self.patterns.items():
             m_type = self.patterns[0].methodType
             if m_type == 'alternativestart' \
@@ -536,6 +578,7 @@ class Animation:
         if self.isRuning is False:
             if self.randomSatrt() is True:
                 # self._animationControl()
+                self.start()
                 self.isRuning = True
                 isNeedUpdate = True
 
@@ -563,7 +606,7 @@ class Animation:
 
                 self.curPattern += 1
                 if self.curPattern >= len(self.patterns) - 1:
-                    self.curPattern = -1
+                    # self.curPattern = -1
                     self.updatetime = 0
                     self.isRuning = False
                     isNeedUpdate = True
@@ -572,18 +615,21 @@ class Animation:
             isNeedUpdate = True
 
         if self.curPattern >= len(self.patterns) - 1:
-            self.curPattern = -1
+            self.curPattern -= 1
             self.updatetime = 0
             self.isRuning = False
             isNeedUpdate = True
         return isNeedUpdate
 
     def getCurSurfaceData(self):
-        if self.isRuning is False or self.curPattern == -1:
+        # if self.isRuning is False or self.curPattern == -1:
+        #     return -1, 0, 0
+        if self.curPattern == -1:
             return -1, 0, 0
-
-        pattern = self.patterns[self.curPattern]
-        return pattern.surfaceID, pattern.offset[0], pattern.offset[1]
+        elif self.curPattern in self.patterns:
+            pattern = self.patterns[self.curPattern]
+            return pattern.surfaceID, pattern.offset[0], pattern.offset[1]
+        return -1, 0, 0
 
 
 class EPatternType(Enum):
@@ -629,14 +675,14 @@ class Element:
         self.ID = int(params[0])
         self.PaintType = params[1]
         self.filename = params[2]
-        self.offset = [int(params[3]), int(params[4])]
+        self.offset = QPoint(int(params[3]), int(params[4]))
 
 
 class CollisionBox:
     def __init__(self, params):
         self.ID = int(params[0])
-        self.Point1 = [int(params[1]), int(params[2])]
-        self.Point2 = [int(params[3]), int(params[4])]
+        self.Point1 = QPoint(int(params[1]), int(params[2]))
+        self.Point2 = QPoint(int(params[3]), int(params[4]))
         self.tag = params[5]
 
 
@@ -777,8 +823,9 @@ class BindGroup:
 class ShellSetting:
     def __init__(self):
         self.name = ''
-        self.offset = [0, 0]
-        self.balloon_offset = [0, 0]
+        self.offset = QPoint(100, 100)
+        self.position = QPoint(0, 0)
+        self.balloon_offset = QPoint(0, 0)
         self.balloon_alignment = 'lefttop'
         self.bindoption = {}
         self.bindgroups = {}

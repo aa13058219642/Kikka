@@ -38,11 +38,11 @@ int __stdcall WinMain(HINSTANCE hInstance,
 	if (!strcmp(lpCmdLine, "-c"))
 	{
 		//debug
-		system("set PYTHONPATH=Scripts;Scripts/Bin;Scripts/Moudles;Resources; & Python\\python.exe Main.py & pause");
+		system("set PYTHONPATH=Scripts;Scripts/Bin;Scripts/Moudles;Scripts/Command;Resources; & Python\\python.exe Main.py & pause");
 	}
 	else
 	{
-		SetEnvironmentVariable(TEXT("PYTHONPATH"), TEXT("Scripts;Scripts/Bin;Scripts/Moudles;Resources;"));
+		SetEnvironmentVariable(TEXT("PYTHONPATH"), TEXT("Scripts;Scripts/Bin;Scripts/Moudles;Scripts/Command;Resources;"));
 		TCHAR commandLine[] = TEXT("Python\\python.exe Main.py");
 		STARTUPINFO si = { sizeof(si) };
 		PROCESS_INFORMATION pi;

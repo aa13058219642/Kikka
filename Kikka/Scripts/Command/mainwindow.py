@@ -79,10 +79,11 @@ class MainWindow(QWidget):
     # ##############################################################################################################
     # Event
 
-    def setBoxes(self, boxes):
+    def setBoxes(self, boxes, offset):
         self._boxes = {}
         for cid, col in boxes.items():
-            rect = QRect(QPoint(col.Point1[0], col.Point1[1]), QPoint(col.Point2[0], col.Point2[1]))
+            rect = QRect(col.Point1, col.Point2)
+            rect.moveTopLeft(col.Point1 + offset)
             self._boxes[cid] = (rect, col.tag)
 
     def _boxCollision(self):

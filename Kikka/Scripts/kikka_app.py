@@ -56,11 +56,11 @@ class KikkaApp:
                 if result: kikka.core.hide()
                 else: kikka.core.show()
 
-            result = self._watchKikkaExeProgress()
-            if self.isDebug is False and result != self._hasKikkaExe:
-                self._hasKikkaExe = result
-                logging.warning("Kikka.exe lost")
-                self.exitApp()
+            if self.isDebug is False:
+                result = self._watchKikkaExeProgress()
+                if result is False:
+                    logging.warning("Kikka.exe lost")
+                    self.exitApp()
 
             time.sleep(0.5)
         # exit while
