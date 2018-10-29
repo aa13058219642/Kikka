@@ -12,7 +12,6 @@ def awake():
 
     # init all Singletion class
     import kikka
-    import kikkahelper
 
     # set debug
     if '-c' in sys.argv:
@@ -21,7 +20,7 @@ def awake():
         kikka.core.isDebug = True
 
     # start
-    shellpath = kikkahelper.getPath(kikkahelper.PATH_SHELL)
+    shellpath = kikka.helper.getPath(kikka.helper.PATH_SHELL)
     kikka.memory.awake()
     kikka.shell.loadAllShell(shellpath)
 

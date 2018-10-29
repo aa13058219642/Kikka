@@ -13,7 +13,7 @@ from sympy import nextprime
 from struct import pack
 from Crypto.Cipher import AES
 
-import kikkahelper
+import kikka
 
 
 class KikkaMemory:
@@ -75,7 +75,7 @@ class DeepMemory:
         # Memory key ID
         self._key0 = 228671358270678769733151434401261
         self._key = 609416633504213051421056566850573
-        self._dkey = nextprime(int(kikkahelper.getShortMD5(self._name)[:-2], 16))
+        self._dkey = nextprime(int(kikka.helper.getShortMD5(self._name)[:-2], 16))
 
     def __del__(self):
         self._cursor.close()
@@ -159,7 +159,7 @@ class DeepMemory:
         pass
 
     def encrypt(self, message, key=''):
-        e = self._dkey if key == '' else nextprime(int(kikkahelper.getShortMD5(key)[:-2], 16))
+        e = self._dkey if key == '' else nextprime(int(kikka.helper.getShortMD5(key)[:-2], 16))
         n = self._key if key == '' else self._key0
 
         kl = self._byte_size(n)

@@ -6,7 +6,6 @@ from PyQt5.QtCore import Qt, QRect, QPoint, QSize
 from PyQt5.QtGui import QPixmap, QPainter, QColor, QImage, QPalette, QBrush
 from PyQt5.QtWidgets import QWidget, QPushButton, QStackedLayout, QVBoxLayout, QHBoxLayout, QLabel, QGridLayout
 
-import kikkahelper
 import kikka
 
 
@@ -155,7 +154,7 @@ class Dialog(QWidget):
                                               self.size().height()])
         pass
 
-        sw, sh = kikkahelper.getScreenResolution()
+        sw, sh = kikka.helper.getScreenResolution()
         if x + self.width() > sw or x < 0:
             x = int(p_pos.x()*2 + p_size.width() - x - self.width())
             if x + self.width() > sw: x = p_pos.x() - self.width()

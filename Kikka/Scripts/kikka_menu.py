@@ -8,7 +8,7 @@ from PyQt5.QtWidgets import QMenu, QStyle, QStyleOptionMenuItem, QStyleOption, Q
 from PyQt5.QtWidgets import QAction
 from PyQt5.QtGui import QIcon, QImage, QPainter, QFont, QPalette, QColor
 
-import kikkahelper
+import kikka.helper
 
 
 class KikkaMenu:
@@ -191,19 +191,19 @@ class MenuStyle:
         if os.path.exists(shellmenu.background_image):
             self.bg_image = QImage(shellmenu.background_image)
         else:
-            self.bg_image = kikkahelper.getDefaultImage()
+            self.bg_image = kikka.helper.getDefaultImage()
             logging.warning("Menu background image NOT found: %s" % (shellmenu.background_image))
 
         if os.path.exists(shellmenu.foreground_image):
             self.fg_image = QImage(shellmenu.foreground_image)
         else:
-            self.fg_image = kikkahelper.getDefaultImage()
+            self.fg_image = kikka.helper.getDefaultImage()
             logging.warning("Menu foreground image NOT found: %s" % (shellmenu.foreground_image))
 
         if os.path.exists(shellmenu.sidebar_image):
             self.side_image = QImage(shellmenu.sidebar_image)
         else:
-            self.side_image = kikkahelper.getDefaultImage()
+            self.side_image = kikka.helper.getDefaultImage()
             logging.warning("Menu sidebar image NOT found: %s" % (shellmenu.sidebar_image))
 
         # font and color
@@ -297,7 +297,7 @@ class Menu(QMenu):
 
     def confirmMenuSize(self, item, text=''):
         s = self.sizeHint()
-        w, h = kikkahelper.getScreenResolution()
+        w, h = kikka.helper.getScreenResolution()
 
         if text == '': text = item.text()
         if KikkaMenu.isDebug and s.height() > h:
@@ -306,7 +306,7 @@ class Menu(QMenu):
             logging.warning("the Menu_Width out of Screen_Width, too menu item text too long when add: %s" % text)
 
     def setPosition(self, pos):
-        w, h = kikkahelper.getScreenResolution()
+        w, h = kikka.helper.getScreenResolution()
         if pos.y() + self.height() > h: pos.setY(h - self.height())
         if pos.y() < 0: pos.setY(0)
 
