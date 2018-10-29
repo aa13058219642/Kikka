@@ -3,7 +3,7 @@ import sys
 from PIL import Image
 
 
-class File():
+class File:
     def __init__(self,filename,filepath):
         self.filepath=filepath
         self.filetype=''
