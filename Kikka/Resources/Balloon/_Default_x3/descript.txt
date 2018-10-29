@@ -1,0 +1,11 @@
+charset,utf-8
+type,balloon
+name,default
+id,default
+craftman,A.A
+
+minimumsize,300,210
+clip.width,3,[30,10,30]
+clip.height,3,[30,10,30]
+flipbackground,1
+noflipcenter,0

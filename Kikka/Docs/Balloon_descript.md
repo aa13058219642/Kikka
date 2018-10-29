@@ -18,8 +18,8 @@ craftman,A.A
 craftmanurl,http://ssp.shillest.net/ukadoc/manual/index.html
 
 minimumsize,300,210
-clip.width,3,[30,10,30]
-clip.height,3,[30,10,30]
+clip.width,3,30,10,30
+clip.height,3,30,10,30
 flipbackground,1
 noflipcenter,0
 ```
@@ -65,8 +65,8 @@ noflipcenter,0
 
 ##### clip.height, [3|5], [int...]
 - 纵向分割方式，3份或者5份
- - 分成3份时，中间的部分将会被拉伸，其余部分不变 (例如：clipheight, 3, [30, 10, 30])
- - 分成5份时，第2、4份将会被拉伸，其余部分不变(例如：clipheight, 5, [30, 10, 100, 10, 30])
+ - 分成3份时，中间的部分将会被拉伸，其余部分不变 (例如：clipheight, 3, 30, 10, 30)
+ - 分成5份时，第2、4份将会被拉伸，其余部分不变(例如：clipheight, 5, 30, 10, 100, 10, 30)
 - 默认值：分成3等份
 
 ##### flipbackground, [0|1]

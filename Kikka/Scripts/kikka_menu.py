@@ -8,7 +8,7 @@ from PyQt5.QtWidgets import QMenu, QStyle, QStyleOptionMenuItem, QStyleOption, Q
 from PyQt5.QtWidgets import QAction
 from PyQt5.QtGui import QIcon, QImage, QPainter, QFont, QPalette, QColor
 
-import kikka.helper
+import kikka
 
 
 class KikkaMenu:
