@@ -90,6 +90,7 @@ class KikkaShell:
 
 class Shell:
     def __init__(self, shellpath):
+        self.shellpath = shellpath  # root path of this shell
         self.name = ''
         self.id = ''
         self.type = ''
@@ -99,13 +100,12 @@ class Shell:
         self.setting = ShellSetting()
 
         self._pngs = {}
-        self.shellpath = shellpath  # root path of this shell
+        self._base_image = None
         self.surfaces = {}
         self.isInitialized = False
         self.isLoaded = False
         self._updatetime = 0
         self._CurfaceID = 0
-
         # path check
         if os.path.exists(shellpath):
             descript_path = os.path.join(self.shellpath, 'descript.txt')
@@ -152,7 +152,7 @@ class Shell:
 
     def _open_descript(self, descript_path):
         map = {}
-        charset = kikkahelper.checkEncoding(descript_path)
+        charset = kikka.helper.checkEncoding(descript_path)
 
         f = open(descript_path, 'r', encoding=charset)
         for line in f:
@@ -176,7 +176,7 @@ class Shell:
         map = {}
         surfaceID = []
         is_load_key = True
-        charset = kikkahelper.checkEncoding(surfaces_path)
+        charset = kikka.helper.checkEncoding(surfaces_path)
 
         f = open(surfaces_path, 'r', encoding=charset)
         for line in f:
@@ -430,8 +430,13 @@ class Shell:
                     fn = "surface%04d.png" % surfacesID
                     if fn in self._pngs:
                         painter.drawImage(self.setting.offset, self._pngs[fn])
+                # self._base_image.save("_base_image.png")
                 painter.end()
-                self._base_image.save("_base_image.png")
+
+                # start 'runonce' and 'always' animation
+                for aid, ani in surface.animations.items():
+                    if ani.interval in ['runonce', 'always']:
+                        ani.start()
             else:
                 raise ValueError
         except ValueError:
@@ -461,19 +466,18 @@ class Shell:
         img = QImage(self._base_image)
 
         painter = QPainter(img)
-        #painter.setCompositionMode(QPainter.CompositionMode_SourceIn)
 
         surface = self.surfaces[self._CurfaceID]
         for aid, ani in surface.animations.items():
-            id, x, y = ani.getCurSurfaceData()
-            if id == -1: continue
+            fid, x, y = ani.getCurSurfaceData()
+            # logging.info("aid=%d pid=%d faceid=%d xy=(%d, %d)" % (aid, ani.curPattern, fid, x, y))
+            if fid == -1: continue
 
-            # face = QImage(self._getSurfacePath(id))
-            image_name = "surface%04d.png" % id
+            image_name = "surface%04d.png" % fid
             face = self._pngs[image_name]
-
             painter.drawImage(self.setting.offset + QPoint(x, y), face)
 
+        # logging.info("--getCurImage end--------")
         if kikka.shell.isDebug is True:
             # logging.info("debug draw")
             for cid, col in surface.CollisionBoxes.items():
@@ -517,118 +521,127 @@ class Animation:
     def start(self):
         if self.isRuning is False:
             self.isRuning = True
-            self.updatetime = 0
+            self.updatetime = time.clock()
             self.curPattern = -1
 
     def stop(self):
         self.isRuning = False
 
-    def randomSatrt(self):
+    def randomStart(self):
+        isNeedStart = False
         timer_interval = kikka.core.getTimerInterval()
         if self.interval == 'never' \
                 or self.interval == 'talk' \
                 or self.interval == 'bind' \
                 or self.interval == 'yen-e' \
                 or self.interval == 'runonce':
-            return False
+            isNeedStart = False
 
         elif self.interval == 'sometimes':
             # 30% per second
             r = random.random()
-            return True if r < 0.0003 * timer_interval else False
+            isNeedStart = True if r < 0.0003 * timer_interval else False
 
         elif self.interval == 'rarely':
             # 10% per second
-            return True if random.random() < 0.0001 * timer_interval else False
+            isNeedStart = True if random.random() < 0.0001 * timer_interval else False
 
         elif self.interval == 'random':
             # n% per second
-            return True if random.random() < self.intervalValue / 1000 * timer_interval else False
+            isNeedStart = True if random.random() < self.intervalValue / 1000 * timer_interval else False
 
         elif self.interval == 'periodic':
             now = time.clock()
             if now - self._lasttime >= self.intervalValue:
                 self._lasttime = now
-                return True
+                isNeedStart = True
             else:
-                return False
+                isNeedStart = False
 
         elif self.interval == 'always':
-            return True
+            isNeedStart = True
 
+        # start animation
+        if isNeedStart is True:
+            for pid, pattern in self.patterns.items():
+                self._animationControl(pattern)
+            self.start()
+
+        return isNeedStart
         pass
 
-    def _animationControl(self):
-        for pid, pattern in self.patterns.items():
-            m_type = self.patterns[0].methodType
-            if m_type == 'alternativestart' \
-                    or m_type == 'start' \
-                    or m_type == 'insert':
-                r = random.choice(self.patterns[0].aid)
-                if r in self._parent: self._parent[r].start()
-            elif m_type == 'alternativestop' \
-                    or m_type == 'stop':
-                for aid in self.patterns[0].aid:
-                    if aid in self._parent: self._parent[aid].stop()
+    def _animationControl(self, pattern):
+        if pattern.bindAnimation != -1:
+            # this pattern is run a animation and the animation is running
+            return
+
+        if pattern.methodType in ['alternativestart', 'start', 'insert']:
+            r = random.choice(self.patterns[0].aid)
+            if r in self._parent:
+                self._parent[r].start()
+                pattern.bindAnimation = r
+
+        elif pattern.methodType in ['alternativestop', 'stop']:
+            for aid in self.patterns[0].aid:
+                if aid in self._parent:
+                    self._parent[aid].stop()
+                    pattern.bindAnimation = -1
+        pass
 
     def update(self, updatetime):
         isNeedUpdate = False
-
-        if self.isRuning is False:
-            if self.randomSatrt() is True:
-                # self._animationControl()
-                self.start()
-                self.isRuning = True
-                isNeedUpdate = True
-
-            elif self._lasttime == 0 and self.interval == 'runonce':
-                self._lasttime = time.clock()
-                self.isRuning = True
-                isNeedUpdate = True
-
+        if self.isRuning is False and self.randomStart() is True:
+            isNeedUpdate = True
             return isNeedUpdate
 
-        self.updatetime += updatetime
-        if self.updatetime > self.patterns[self.curPattern + 1].time:
-            self.curPattern += 1
-            while self.patterns[self.curPattern].time == 0:
-                m_type = self.patterns[self.curPattern].methodType
-                if m_type == 'alternativestart' \
-                        or m_type == 'start' \
-                        or m_type == 'insert':
-                    r = random.choice(self.patterns[0].aid)
-                    if r in self._parent: self._parent[r].start()
-                elif m_type == 'alternativestop' \
-                        or m_type == 'stop':
-                    for aid in self.patterns[0].aid:
-                        if aid in self._parent: self._parent[aid].stop()
-
+        # updating pattern
+        if self.isRuning is True:
+            self.updatetime += updatetime
+            if self.curPattern < len(self.patterns) - 1 \
+            and self.updatetime > self.patterns[self.curPattern + 1].time:
+                isNeedUpdate = True
                 self.curPattern += 1
-                if self.curPattern >= len(self.patterns) - 1:
-                    # self.curPattern = -1
-                    self.updatetime = 0
-                    self.isRuning = False
-                    isNeedUpdate = True
-                    return isNeedUpdate
-            self.updatetime -= self.patterns[self.curPattern].time
-            isNeedUpdate = True
+                self.updatetime -= self.patterns[self.curPattern].time
 
-        if self.curPattern >= len(self.patterns) - 1:
-            self.curPattern -= 1
-            self.updatetime = 0
-            self.isRuning = False
-            isNeedUpdate = True
+                # skip time==0 pattern
+                while self.curPattern < len(self.patterns) \
+                        and self.patterns[self.curPattern].time == 0:
+                    self._animationControl(self.patterns[self.curPattern])
+                    self.curPattern += 1
+        pass  # end if
+
+        # if run to last Pattern, stop animation
+        if self.curPattern > len(self.patterns) - 1:
+            self.curPattern = len(self.patterns) - 1
+
+            hasBindAnimationIsRuning = False
+            for pid, pattern in self.patterns.items():
+                if pattern.bindAnimation != -1 \
+                and self._parent[pattern.bindAnimation].isRuning is True:
+                    hasBindAnimationIsRuning = True
+                else:
+                    pattern.bindAnimation = -1
+
+            # stop self when all pattern bindAnimation is stop
+            if hasBindAnimationIsRuning is False:
+                self.updatetime = 0
+                self.isRuning = False
+                isNeedUpdate = True
+
+            if self.interval == 'always':
+                self.start()
         return isNeedUpdate
 
     def getCurSurfaceData(self):
-        # if self.isRuning is False or self.curPattern == -1:
-        #     return -1, 0, 0
-        if self.curPattern == -1:
-            return -1, 0, 0
-        elif self.curPattern in self.patterns:
+        if self.curPattern in self.patterns:
             pattern = self.patterns[self.curPattern]
-            return pattern.surfaceID, pattern.offset[0], pattern.offset[1]
-        return -1, 0, 0
+            if pattern.isControlPattern():
+                return -1, 0, 0
+            else:
+                return pattern.surfaceID, pattern.offset[0], pattern.offset[1]
+        else:
+            return -1, 0, 0
+        pass
 
 
 class EPatternType(Enum):
@@ -639,6 +652,7 @@ class EPatternType(Enum):
 
 class Pattern:
     def __init__(self, params, matchtype=EPatternType.Normal):
+        self.bindAnimation = -1
         if matchtype == EPatternType.Normal:
             self.ID = int(params[1])
             self.methodType = params[4]
@@ -666,6 +680,8 @@ class Pattern:
             else:
                 self.aid = [int(params[5])]
 
+    def isControlPattern(self):
+        return self.methodType in ['alternativestart', 'start', 'insert', 'alternativestop', 'stop']
     pass
 
 

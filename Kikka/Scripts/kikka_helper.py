@@ -9,6 +9,7 @@ from PyQt5.QtGui import QImage
 
 
 class KikkaHelper:
+    _instance = None
     PATH_ROOT = 0
     PATH_SCRIPTS = 1
     PATH_BIN = 11
