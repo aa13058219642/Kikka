@@ -332,3 +332,4 @@ class Balloon:
         self._bgMask = self._bgPixmap.mask()
         return self._bgPixmap, self._bgMask
         pass
+

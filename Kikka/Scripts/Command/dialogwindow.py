@@ -1,3 +1,4 @@
+# coding=utf-8
 import sys
 import logging
 
@@ -8,6 +9,7 @@ from PyQt5.QtWidgets import QWidget, QPushButton, QStackedLayout, QVBoxLayout, Q
 
 import kikka
 from kikka_balloon import Balloon
+
 
 class Dialog(QWidget):
     def __init__(self, parent: QWidget, balloon: Balloon):
@@ -22,6 +24,7 @@ class Dialog(QWidget):
         self.nid = parent.nid
         self._isChangeSizeMode = False
         self.balloon = balloon
+        self.isFlip = False
 
         self._bgSource = None
         self._bgImage = None
@@ -31,7 +34,6 @@ class Dialog(QWidget):
         self._bgClipW = None
         self._bgClipH = None
 
-        self.setBackgroundImage()
         style = '''
         QPushButton{
             border-style: solid;
@@ -157,16 +159,22 @@ class Dialog(QWidget):
                                               self.size().height()])
         pass
 
+        flip = False
         sw, sh = kikka.helper.getScreenResolution()
         if x + self.width() > sw or x < 0:
+            flip = True
             x = int(p_pos.x()*2 + p_size.width() - x - self.width())
-            if x + self.width() > sw: x = p_pos.x() - self.width()
-            if x < 0: x = p_pos.x() + p_size.width()
+            if x + self.width() > sw:
+                x = p_pos.x() - self.width()
+            if x < 0:
+                x = p_pos.x() + p_size.width()
+        if self.isFlip != flip:
+            self.isFlip = flip
+            if self.balloon is not None:
+                self._bgPixmap, self._bgMask = self.balloon.getBalloonImage(self.size(), self.isFlip)
+                self.repaint()
 
         super().move(x, y)
-        if self.balloon is not None:
-            self._bgPixmap, self._bgMask = self.balloon.getBalloonImage(self.size())
-        # self.getBackgroundImage()
         pass
 
     def show(self):
@@ -181,102 +189,12 @@ class Dialog(QWidget):
 
     def resizeEvent(self, a0: QtGui.QResizeEvent):
         if self.balloon is not None:
-            self._bgPixmap, self._bgMask = self.balloon.getBalloonImage(self.size())
-        # self.getBackgroundImage()
+            self._bgPixmap, self._bgMask = self.balloon.getBalloonImage(self.size(), self.isFlip)
 
     def paintEvent(self, event):
         painter = QPainter(self)
         painter.drawPixmap(self.rect(), self._bgPixmap)
         super().paintEvent(event)
-
-    def setBackgroundImage(self, image=None, clipW=None, clipH=None):
-        # self._backgroundSource = QImage(r"C:\\d2.png")
-        # self._backgroundClipW = [60, 3, 60]
-        # self._backgroundClipH = [60, 3, 60]
-
-        self._bgSource = QImage(r"C:\\d4.png")
-        self._bgClipW = [45, 15, 180, 15, 45]
-        self._bgClipH = [45, 15, 90, 15, 45]
-
-        srect = []
-        sw = self._bgClipW
-        sh = self._bgClipH
-        for y in range(len(self._bgClipH)):
-            sr = []
-            for x in range(len(self._bgClipW)):
-                pt = QPoint(0, 0)
-                if x > 0: pt.setX(sr[x-1].x() + sw[x-1])
-                if y > 0: pt.setY(srect[y-1][0].y() + sh[y-1])
-                sz = QSize(sw[x], sh[y])
-                sr.append(QRect(pt, sz))
-                pass
-            srect.append(sr)
-        pass  # exit for
-
-        self._bgRect = srect
-        self.setMinimumSize(self._bgSource.size())
-
-    def getBackgroundImage(self):
-        # logging.info("getBackgroundImage: (%d, %d)" % (sz.width(), sz.height()))
-
-        drect = []
-        if len(self._bgClipW) == 3:
-            dw = [self._bgClipW[0],
-                  self.size().width() - self._bgClipW[0] - self._bgClipW[2],
-                  self._bgClipW[2]]
-        elif len(self._bgClipW) == 5:
-            sw = self.size().width() - self._bgClipW[0] - self._bgClipW[2] - self._bgClipW[4]
-            dw = [self._bgClipW[0],
-                  sw//2,
-                  self._bgClipW[2],
-                  sw - sw//2,
-                  self._bgClipW[4]]
-        else:
-            sw = self.size().width() // 3
-            dw = [sw, self.size().width() - sw*2, sw]
-
-        if len(self._bgClipH) == 3:
-            dh = [self._bgClipH[0],
-                  self.size().height() - self._bgClipH[0] - self._bgClipH[2],
-                  self._bgClipH[2]]
-        elif len(self._bgClipH) == 5:
-            sh = self.size().height() - self._bgClipH[0] - self._bgClipH[2] - self._bgClipH[4]
-            dh = [self._bgClipH[0],
-                  sh//2,
-                  self._bgClipH[2],
-                  sh - sh//2,
-                  self._bgClipH[4]]
-        else:
-            sh = self.size().height() // 3
-            dh = [sh, self.size().height() - sh*2, sh]
-
-        for y in range(len(self._bgClipH)):
-            dr = []
-            for x in range(len(self._bgClipW)):
-                pt = QPoint(0, 0)
-                if x > 0: pt.setX(dr[x-1].x() + dw[x-1])
-                if y > 0: pt.setY(drect[y-1][0].y() + dh[y-1])
-                sz = QSize(dw[x], dh[y])
-                dr.append(QRect(pt, sz))
-                pass
-            drect.append(dr)
-        pass  # exit for
-
-        self._bgImage = QImage(self.size(), QImage.Format_ARGB32)
-        pixmap = QPixmap().fromImage(self._bgSource, Qt.AutoColor)
-        p = QPainter(self._bgImage)
-        p.setCompositionMode(QPainter.CompositionMode_Source)
-
-        # if self._isChangeSizeMode is True:
-        #     p.fillRect(self.rect(), Qt.black)
-        for y in range(len(self._bgClipH)):
-            for x in range(len(self._bgClipW)):
-                p.drawPixmap(drect[y][x], pixmap, self._bgRect[y][x])
-        p.end()
-
-        self._bgPixmap = QPixmap().fromImage(self._bgImage, Qt.AutoColor)
-        self._bgMask = self._bgPixmap.mask()
-        pass
 
     def setBalloon(self, balloon):
         self.balloon = balloon
