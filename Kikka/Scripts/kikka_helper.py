@@ -16,6 +16,7 @@ class KikkaHelper:
     PATH_MOUDLES = 12
     PATH_RESOURCES = 2
     PATH_SHELL = 21
+    PATH_BALLOON = 22
 
     def __init__(self, **kwargs):
         raise SyntaxError('The class is Singletion, please use KikkaHelper.this() or kikka.helper')
@@ -44,6 +45,7 @@ class KikkaHelper:
         elif tag == KikkaHelper.PATH_MOUDLES: path = os.path.join(sys.path[0], 'Scripts/Moudles')
         elif tag == KikkaHelper.PATH_RESOURCES: path = os.path.join(sys.path[0], 'Resources')
         elif tag == KikkaHelper.PATH_SHELL: path = os.path.join(sys.path[0], 'Resources/Shell')
+        elif tag == KikkaHelper.PATH_BALLOON: path = os.path.join(sys.path[0], 'Resources/Balloon')
         return path
 
     @staticmethod

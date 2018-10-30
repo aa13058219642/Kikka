@@ -7,11 +7,10 @@ from PyQt5.QtGui import QPixmap, QPainter, QColor, QImage, QPalette, QBrush
 from PyQt5.QtWidgets import QWidget, QPushButton, QStackedLayout, QVBoxLayout, QHBoxLayout, QLabel, QGridLayout
 
 import kikka
-
+from kikka_balloon import Balloon
 
 class Dialog(QWidget):
-    def __init__(self, parent):
-        self._parent = parent
+    def __init__(self, parent: QWidget, balloon: Balloon):
         QWidget.__init__(self)
         self.setWindowFlags(Qt.Tool | Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint)
         self.setAttribute(Qt.WA_TranslucentBackground)
@@ -19,7 +18,11 @@ class Dialog(QWidget):
         # self.setMouseTracking(True)
         # self.setAcceptDrops(True)
 
+        self._parent = parent
+        self.nid = parent.nid
         self._isChangeSizeMode = False
+        self.balloon = balloon
+
         self._bgSource = None
         self._bgImage = None
         self._bgPixmap = None
@@ -161,7 +164,9 @@ class Dialog(QWidget):
             if x < 0: x = p_pos.x() + p_size.width()
 
         super().move(x, y)
-        self.getBackgroundImage()
+        if self.balloon is not None:
+            self._bgPixmap, self._bgMask = self.balloon.getBalloonImage(self.size())
+        # self.getBackgroundImage()
         pass
 
     def show(self):
@@ -175,7 +180,9 @@ class Dialog(QWidget):
         pass
 
     def resizeEvent(self, a0: QtGui.QResizeEvent):
-        self.getBackgroundImage()
+        if self.balloon is not None:
+            self._bgPixmap, self._bgMask = self.balloon.getBalloonImage(self.size())
+        # self.getBackgroundImage()
 
     def paintEvent(self, event):
         painter = QPainter(self)
@@ -270,4 +277,9 @@ class Dialog(QWidget):
         self._bgPixmap = QPixmap().fromImage(self._bgImage, Qt.AutoColor)
         self._bgMask = self._bgPixmap.mask()
         pass
+
+    def setBalloon(self, balloon):
+        self.balloon = balloon
+        self.setMinimumSize(balloon.minimumsize)
+
 

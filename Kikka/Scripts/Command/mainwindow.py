@@ -11,9 +11,9 @@ import kikka
 
 
 class MainWindow(QWidget):
-    def __init__(self, isDebug=False):
+    def __init__(self, nid):
         QWidget.__init__(self)
-        self._isDebug = isDebug
+        self.nid = nid
         self.setWindowFlags(Qt.Tool | Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint)
         self.setAttribute(Qt.WA_TranslucentBackground)
         self.setAttribute(Qt.WA_DeleteOnClose)
@@ -29,9 +29,6 @@ class MainWindow(QWidget):
 
         pixmap = QPixmap(500, 500)
         self._pixmap = pixmap
-        self._message = ""
-        self._color = QColor.black
-        self._alignment = Qt.AlignLeft
 
         #self.resize(500, 500)
         self.setFixedSize(self._pixmap.size())  # <----------------------
@@ -43,7 +40,7 @@ class MainWindow(QWidget):
             self.move(rect[0], rect[1])
             self.resize(rect[2], rect[3])
 
-        self._dialog = Dialog(self)
+        #self._dialog = Dialog(self)
 
     def setMenu(self, kikkamenu):
         self._menu = kikkamenu
@@ -96,8 +93,6 @@ class MainWindow(QWidget):
         return ''
     
     def _mouseLogging(self, event, button, x, y):
-        if self._isDebug is False:
-            return
         page_sizes = dict((n, x) for x, n in vars(Qt).items() if isinstance(n, Qt.MouseButton))
         logging.debug("%s %s (%d, %d)", event, page_sizes[button], x, y)
 
@@ -113,12 +108,13 @@ class MainWindow(QWidget):
             if boxevent != '': MouseEvent.event_selector(MouseEvent.MouseDown, boxevent)
 
     def mouseMoveEvent(self, event):
-        self._mouseLogging("mouseMoveEvent", event.buttons(), event.globalPos().x(), event.globalPos().y())
+        # self._mouseLogging("mouseMoveEvent", event.buttons(), event.globalPos().x(), event.globalPos().y())
 
         self._mousepos = event.pos()
         if self._isMoving and event.buttons() == Qt.LeftButton:
             self.move(event.globalPos() - self._movepos)
-            self._dialog.updatePosition()
+            #self._dialog.updatePosition()
+            kikka.core.getDialog(self.nid).updatePosition()
 
             event.accept()
         else:
@@ -138,7 +134,8 @@ class MainWindow(QWidget):
         self._mouseLogging("mouseDoubleClickEvent", event.buttons(), event.globalPos().x(), event.globalPos().y())
         if event.buttons() == Qt.LeftButton:
             self._isMoving = False
-            self._dialog.show()
+            kikka.core.getDialog(self.nid).show()
+            # self._dialog.show()
 
         if self._isMoving is False:
             boxevent = self._boxCollision()
@@ -175,13 +172,10 @@ class MainWindow(QWidget):
 
     def setImage(self, image):
         # painter = QPainter(image)
-        # image = QImage(r"C:\\test.png")
+        image = QImage(r"C:\\test.png")
         pixmap = QPixmap().fromImage(image, Qt.AutoColor)
         self._pixmap = pixmap
-        self._message = "132"
-        self._color = QColor.black
-        self._alignment = Qt.AlignLeft
-    
+
         self.setFixedSize(self._pixmap.size())
         self.setMask(self._pixmap.mask())
         self.repaint()

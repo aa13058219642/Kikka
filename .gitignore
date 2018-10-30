@@ -6,6 +6,7 @@
 /Kikka/Resources/Shell
 kikka.log*
 *.[Mm]emory
+*.db
 
 __pycache__/
 .idea/

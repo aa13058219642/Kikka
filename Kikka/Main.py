@@ -13,16 +13,16 @@ def awake():
     # init all Singletion class
     import kikka
 
-    # set debug
+    # set debug mode
     if '-c' in sys.argv:
         kikka.memory.isDebug = True
         kikka.app.isDebug = True
         kikka.core.isDebug = True
 
     # start
-    shellpath = kikka.helper.getPath(kikka.helper.PATH_SHELL)
     kikka.memory.awake()
-    kikka.shell.loadAllShell(shellpath)
+    kikka.shell.loadAllShell(kikka.helper.getPath(kikka.helper.PATH_SHELL))
+    kikka.balloon.loadAllBalloon(kikka.helper.getPath(kikka.helper.PATH_BALLOON))
 
     import mainmenu
     # kikka.menu.setMenu(mainmenu.createTestMenu())

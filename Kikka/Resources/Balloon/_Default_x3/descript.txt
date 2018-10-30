@@ -1,11 +1,11 @@
 charset,utf-8
 type,balloon
-name,default
-id,default
+name,_Default_x3
+id,_Default_x3
 craftman,A.A
 
 minimumsize,300,210
-clip.width,3,[30,10,30]
-clip.height,3,[30,10,30]
+clip.width,3,41,41,41
+clip.height,3,41,41,41
 flipbackground,1
 noflipcenter,0

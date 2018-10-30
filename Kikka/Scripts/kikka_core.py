@@ -9,7 +9,7 @@ from PyQt5.QtCore import QTimer
 
 import kikka
 from mainwindow import MainWindow
-
+from dialogwindow import Dialog
 
 class KikkaCore:
     _instance = None
@@ -37,11 +37,21 @@ class KikkaCore:
         self.isNeedUpdate = True
         self._timer_interval = 10
         self._Timer_Run = QTimer()
+        self._mainwindows = []
+        self._dialogs = []
         pass
 
-    def getMainWindow(self):
+    def getMainWindow(self, nid):
+        if 0 <= nid < len(self._mainwindows):
+            return self._mainwindows[nid]
+        else:
+            return None
 
-        return self._mainwindow
+    def getDialog(self, nid):
+        if 0 <= nid < len(self._dialogs):
+            return self._dialogs[nid]
+        else:
+            return None
 
     def getAppState(self):
 
@@ -49,21 +59,27 @@ class KikkaCore:
 
     def hide(self):
         self._app_state = KikkaCore.APP_STATE.HIDE
-        self._mainwindow.hide()
+        for window in self._mainwindows:
+            window.hide()
+        for dialog in self._dialogs:
+            dialog.hide()
 
     def show(self):
         self._app_state = KikkaCore.APP_STATE.SHOW
-        self._mainwindow.show()
+        for window in self._mainwindows:
+            window.show()
 
     def start(self):
         # self._app_state = APP_STATE.SHOW
         self._createTrayIcon()
 
-        self._mainwindow = MainWindow(self.isDebug)
-        self.setSurface(0)
+        window = MainWindow(kikka.KIKKA)
+        self._mainwindows.append(window)
+        dialog = Dialog(window, kikka.balloon.getCurrentBalloon())
+        self._dialogs.append(dialog)
+        self.setSurface(kikka.KIKKA, 0)
 
         self._lasttime = time.clock()
-
         self._Timer_Run.timeout.connect(self.run)
         self._Timer_Run.start(self._timer_interval)
         self.show()
@@ -85,7 +101,7 @@ class KikkaCore:
 
             if self.isNeedUpdate is True:
                 img = kikka.shell.getCurImage()
-                self._mainwindow.setImage(img)
+                self._mainwindows[kikka.KIKKA].setImage(img)
 
             self._lasttime = nowtime
         except Exception as e:
@@ -95,14 +111,14 @@ class KikkaCore:
         self.isNeedUpdate = False
         pass
 
-    def setSurface(self, index):
-        kikka.shell.getCurShell().setSurfaces(index)
+    def setSurface(self, nid, surfaceID):
+        kikka.shell.getCurShell().setSurfaces(surfaceID)
 
         img = kikka.shell.getCurImage()
-        self._mainwindow.setImage(img)
+        self._mainwindows[nid].setImage(img)
 
         shell = kikka.shell.getCurShell()
-        self._mainwindow.setBoxes(shell.getCollisionBoxes(), shell.getOffset())
+        self._mainwindows[nid].setBoxes(shell.getCollisionBoxes(), shell.getOffset())
 
     def _createTrayIcon(self):
         qapp = QApplication.instance()
@@ -126,7 +142,7 @@ class KikkaCore:
 
     def updateMenu(self):
         QApplication.instance().trayIcon.setContextMenu(kikka.menu.getMenu())
-        self._mainwindow.setMenu(kikka.menu)
+        self._mainwindows[kikka.KIKKA].setMenu(kikka.menu)
 
     def update(self):
         self.isNeedUpdate = True
