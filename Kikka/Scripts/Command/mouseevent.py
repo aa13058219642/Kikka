@@ -37,7 +37,7 @@ def getEventList():
 
 def head_touch():
     logging.info("head_touch")
-    kikka.core.setSurface(0)
+    kikka.core.setSurface(0, 0, 0)
     pass
 
 
@@ -53,7 +53,7 @@ def head_doubleclick():
 
 def face_touch():
     logging.info("face_touch")
-    kikka.core.setSurface(33)
+    kikka.core.setSurface(0, 0, 33)
     pass
 
 

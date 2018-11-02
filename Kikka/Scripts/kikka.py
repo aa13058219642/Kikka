@@ -9,6 +9,9 @@ import kikka_core
 import kikka_helper
 import kikka_balloon
 
+SAKURA = 0
+KERO = 1
+
 KIKKA = 0
 TOWA = 1
 

@@ -6,7 +6,8 @@ import time
 import win32gui
 import ctypes
 
-from PyQt5.QtWidgets import QApplication
+from PyQt5.QtGui import QIcon
+from PyQt5.QtWidgets import QApplication, QSystemTrayIcon
 
 import kikka
 
@@ -33,6 +34,7 @@ class KikkaApp:
 
     def start(self):
         self._createGuardThread()
+        self._createTrayIcon()
 
     def exitApp(self):
         logging.info("Bye Bye~")
@@ -91,3 +93,23 @@ class KikkaApp:
             if p.name() == 'Kikka.exe':
                 kikkaHere = True
         return kikkaHere
+
+    def _createTrayIcon(self):
+        qapp = QApplication.instance()
+        icon = QIcon("icon.ico")
+        qapp.setWindowIcon(icon)
+
+        qapp.trayIcon = QSystemTrayIcon(qapp)
+        qapp.trayIcon.setIcon(icon)
+        qapp.trayIcon.setContextMenu(kikka.menu.getMenu())
+        qapp.trayIcon.show()
+        qapp.trayIcon.activated.connect(self._trayIconActivated)
+
+    def _trayIconActivated(self, reason):
+        if reason == QSystemTrayIcon.DoubleClick:
+            core = kikka.core
+            if core.getAppState() == core.APP_STATE.HIDE:
+                core.show()
+            else:
+                core.hide()
+        pass

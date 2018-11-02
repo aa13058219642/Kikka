@@ -11,8 +11,9 @@ import kikka
 
 
 class MainWindow(QWidget):
-    def __init__(self, nid):
+    def __init__(self, parent, nid):
         QWidget.__init__(self)
+        self._parent = parent
         self.nid = nid
         self.setWindowFlags(Qt.Tool | Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint)
         self.setAttribute(Qt.WA_TranslucentBackground)
@@ -25,10 +26,8 @@ class MainWindow(QWidget):
         self._boxes = {}
         self._movepos = QPoint(0, 0)
         self._mousepos = QPoint(0, 0)
+        self._pixmap = QPixmap(500, 500)
         self._menu = None
-
-        pixmap = QPixmap(500, 500)
-        self._pixmap = pixmap
 
         #self.resize(500, 500)
         self.setFixedSize(self._pixmap.size())  # <----------------------
@@ -45,8 +44,28 @@ class MainWindow(QWidget):
     def setMenu(self, kikkamenu):
         self._menu = kikkamenu
 
-    def contextMenuEvent(self, event):
-        self._menu.show(event.globalPos())
+    def setBoxes(self, boxes, offset):
+        self._boxes = {}
+        for cid, col in boxes.items():
+            rect = QRect(col.Point1, col.Point2)
+            rect.moveTopLeft(col.Point1 + offset)
+            self._boxes[cid] = (rect, col.tag)
+
+    def _boxCollision(self):
+        mx = self._mousepos.x()
+        my = self._mousepos.y()
+        for cid, box in self._boxes.items():
+            rect = box[0]
+            if rect.contains(mx, my) is True:
+                return box[1]
+        return ''
+    
+    def _mouseLogging(self, event, button, x, y):
+        page_sizes = dict((n, x) for x, n in vars(Qt).items() if isinstance(n, Qt.MouseButton))
+        logging.debug("%s %s (%d, %d)", event, page_sizes[button], x, y)
+
+    # ##############################################################################################################
+    # Event
 
     # def eventFilter(self, obj, event):
     #     text = ''
@@ -73,28 +92,8 @@ class MainWindow(QWidget):
     #     logging.info("%s %d %s"%("MainWindow", event.type(), text))
     #     return False
 
-    # ##############################################################################################################
-    # Event
-
-    def setBoxes(self, boxes, offset):
-        self._boxes = {}
-        for cid, col in boxes.items():
-            rect = QRect(col.Point1, col.Point2)
-            rect.moveTopLeft(col.Point1 + offset)
-            self._boxes[cid] = (rect, col.tag)
-
-    def _boxCollision(self):
-        mx = self._mousepos.x()
-        my = self._mousepos.y()
-        for cid, box in self._boxes.items():
-            rect = box[0]
-            if rect.contains(mx, my) is True:
-                return box[1]
-        return ''
-    
-    def _mouseLogging(self, event, button, x, y):
-        page_sizes = dict((n, x) for x, n in vars(Qt).items() if isinstance(n, Qt.MouseButton))
-        logging.debug("%s %s (%d, %d)", event, page_sizes[button], x, y)
+    def contextMenuEvent(self, event):
+        self._menu.show(event.globalPos())
 
     def mousePressEvent(self, event):
         self._mouseLogging("mousePressEvent", event.buttons(), event.globalPos().x(), event.globalPos().y())
@@ -114,8 +113,8 @@ class MainWindow(QWidget):
         if self._isMoving and event.buttons() == Qt.LeftButton:
             self.move(event.globalPos() - self._movepos)
             #self._dialog.updatePosition()
-            kikka.core.getDialog(self.nid).updatePosition()
-
+            #kikka.core.getDialog(self.nid).updatePosition()
+            self._parent.getDialog(self.nid).updatePosition()
             event.accept()
         else:
             self._isMoving = False
@@ -172,7 +171,7 @@ class MainWindow(QWidget):
 
     def setImage(self, image):
         # painter = QPainter(image)
-        image = QImage(r"C:\\test.png")
+        # image = QImage(r"C:\\test.png")
         pixmap = QPixmap().fromImage(image, Qt.AutoColor)
         self._pixmap = pixmap
 

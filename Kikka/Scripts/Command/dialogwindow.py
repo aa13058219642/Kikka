@@ -12,7 +12,7 @@ from kikka_balloon import Balloon
 
 
 class Dialog(QWidget):
-    def __init__(self, parent: QWidget, balloon: Balloon):
+    def __init__(self, parent, nid):
         QWidget.__init__(self)
         self.setWindowFlags(Qt.Tool | Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint)
         self.setAttribute(Qt.WA_TranslucentBackground)
@@ -21,9 +21,10 @@ class Dialog(QWidget):
         # self.setAcceptDrops(True)
 
         self._parent = parent
-        self.nid = parent.nid
+        self._shellwindow = self._parent.getMainWindow(nid)
+        self.nid = nid
         self._isChangeSizeMode = False
-        self.balloon = balloon
+        #self.balloon = balloon
         self.isFlip = False
 
         self._bgSource = None
@@ -123,7 +124,7 @@ class Dialog(QWidget):
             self.activateWindow()
         else:
             sz = QSize(self.geometry().size())
-            p_pos = self._parent.pos()
+            p_pos = self._parent.getMainWindow(self.nid).pos()
             geometry = QPoint(self.geometry().x(), self.geometry().y())
             pos = QPoint(self.pos().x(), self.pos().y())
             kikka.memory.write('DialogRect', [geometry.x() - p_pos.x(),
@@ -142,8 +143,9 @@ class Dialog(QWidget):
         if self._isChangeSizeMode is True:
             return
 
-        p_pos = self._parent.pos()
-        p_size = self._parent.size()
+        shellwindow = self._parent.getMainWindow(self.nid)
+        p_pos = shellwindow.pos()
+        p_size = shellwindow.size()
         rect = kikka.memory.read('DialogRect', [])
         if len(rect) > 0:
             x = rect[0] + p_pos.x()
@@ -170,8 +172,10 @@ class Dialog(QWidget):
                 x = p_pos.x() + p_size.width()
         if self.isFlip != flip:
             self.isFlip = flip
-            if self.balloon is not None:
-                self._bgPixmap, self._bgMask = self.balloon.getBalloonImage(self.size(), self.isFlip)
+            balloon = self._parent.getBalloon()
+            if balloon is not None:
+                self._bgPixmap, self._bgMask = balloon.getBalloonImage(self.size(), self.isFlip)
+                self.setMinimumSize(balloon.minimumsize)
                 self.repaint()
 
         super().move(x, y)
@@ -188,8 +192,9 @@ class Dialog(QWidget):
         pass
 
     def resizeEvent(self, a0: QtGui.QResizeEvent):
-        if self.balloon is not None:
-            self._bgPixmap, self._bgMask = self.balloon.getBalloonImage(self.size(), self.isFlip)
+        balloon = self._parent.getBalloon()
+        if balloon is not None:
+            self._bgPixmap, self._bgMask = balloon.getBalloonImage(self.size(), self.isFlip)
 
     def paintEvent(self, event):
         painter = QPainter(self)

@@ -87,6 +87,9 @@ class KikkaShell:
         else:
             logging.warning("setCurShell: index NOT in shells list")
 
+    def getShell(self, index):
+        return self.shells[index]
+
 
 class Shell:
     def __init__(self, shellpath):
@@ -99,7 +102,7 @@ class Shell:
         self.shellmenustyle = ShellMenuStyle()
         self.setting = ShellSetting()
 
-        self._pngs = {}
+        self.pngs = {}
         self._base_image = None
         self.surfaces = {}
         self.isInitialized = False
@@ -118,7 +121,7 @@ class Shell:
         pass
 
     def clearShell(self):
-        self._pngs = {}
+        self.pngs = {}
         self.surfaces = {}
         self.isLoaded = False
         pass
@@ -130,13 +133,13 @@ class Shell:
 
             # load PNG
             self._loadPNGindex()
-            for filename, _ in self._pngs.items():
+            for filename, _ in self.pngs.items():
                 p = os.path.join(self.shellpath, filename)
                 if p == self.shellmenustyle.background_image \
                         or p == self.shellmenustyle.foreground_image \
                         or p == self.shellmenustyle.sidebar_image:
                     continue
-                self._pngs[filename] = QImage(p)
+                self.pngs[filename] = QImage(p)
 
             self._updatetime = time.clock()
             self.isLoaded = True
@@ -147,7 +150,7 @@ class Shell:
             for filename in filenames:
                 a = filename[len(filename) - 4:]
                 if filename[len(filename) - 4:] == '.png':
-                    self._pngs[filename] = None
+                    self.pngs[filename] = None
         pass
 
     def _open_descript(self, descript_path):
@@ -405,6 +408,12 @@ class Shell:
         print('unknow shell params: %s,%s' % (key, values))
         pass
 
+    def getSurface(self, surfacesID):
+        if surfacesID in self.surfaces:
+            return self.surfaces[surfacesID]
+        else:
+            return None
+
     def setSurfaces(self, surfacesID):
         old = self._CurfaceID
         try:
@@ -424,12 +433,12 @@ class Shell:
                 if len(surface.elements) > 0:
                     for i, ele in surface.elements.items():
                         fn = ele.filename
-                        if fn in self._pngs:
-                            painter.drawImage(self.setting.offset + ele.offset, self._pngs[fn])
+                        if fn in self.pngs:
+                            painter.drawImage(self.setting.offset + ele.offset, self.pngs[fn])
                 else:
                     fn = "surface%04d.png" % surfacesID
-                    if fn in self._pngs:
-                        painter.drawImage(self.setting.offset, self._pngs[fn])
+                    if fn in self.pngs:
+                        painter.drawImage(self.setting.offset, self.pngs[fn])
                 # self._base_image.save("_base_image.png")
                 painter.end()
 
@@ -450,11 +459,11 @@ class Shell:
 
         return os.path.join(self.shellpath, "surface%04d.png" % surfacesID)
 
-    def update(self, updatetime):
+    def update(self, updatetime, surfacesID):
         isNeedUpdate = False
         self._updatetime += updatetime
 
-        surface = self.surfaces[self._CurfaceID]
+        surface = self.surfaces[surfacesID]
         for aid, ani in surface.animations.items():
             ret = ani.update(updatetime)
             if ret is True:
@@ -462,19 +471,19 @@ class Shell:
 
         return isNeedUpdate
 
-    def getCurImage(self):
+    def getImage(self, surfacesID):
         img = QImage(self._base_image)
 
         painter = QPainter(img)
 
-        surface = self.surfaces[self._CurfaceID]
+        surface = self.surfaces[surfacesID]
         for aid, ani in surface.animations.items():
             fid, x, y = ani.getCurSurfaceData()
             # logging.info("aid=%d pid=%d faceid=%d xy=(%d, %d)" % (aid, ani.curPattern, fid, x, y))
             if fid == -1: continue
 
             image_name = "surface%04d.png" % fid
-            face = self._pngs[image_name]
+            face = self.pngs[image_name]
             painter.drawImage(self.setting.offset + QPoint(x, y), face)
 
         # logging.info("--getCurImage end--------")
@@ -493,8 +502,8 @@ class Shell:
             painter.drawRect(QRect(0, 0, img.width()-1, img.height()-1))
         return img
 
-    def getCollisionBoxes(self):
-        surface = self.surfaces[self._CurfaceID]
+    def getCollisionBoxes(self, surfacesID):
+        surface = self.surfaces[surfacesID]
         return surface.CollisionBoxes
 
     def getOffset(self):
@@ -611,7 +620,7 @@ class Animation:
         pass  # end if
 
         # if run to last Pattern, stop animation
-        if self.curPattern > len(self.patterns) - 1:
+        if self.curPattern >= len(self.patterns) - 1:
             self.curPattern = len(self.patterns) - 1
 
             hasBindAnimationIsRuning = False
@@ -850,8 +859,8 @@ class ShellSetting:
 
 
 class Surface:
-    def __init__(self, name, values):
-        self.name = name
+    def __init__(self, id, values):
+        self.ID = id
         self.elements = {}
         self.animations = {}
         self.CollisionBoxes = {}
