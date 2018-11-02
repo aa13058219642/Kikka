@@ -4,7 +4,7 @@ import logging
 
 from PyQt5 import QtGui
 from PyQt5.QtCore import Qt, QRect, QPoint, QSize
-from PyQt5.QtGui import QPixmap, QPainter, QColor, QImage, QPalette, QBrush
+from PyQt5.QtGui import QPixmap, QPainter
 from PyQt5.QtWidgets import QWidget, QPushButton, QStackedLayout, QVBoxLayout, QHBoxLayout, QLabel, QGridLayout
 
 import kikka
@@ -24,16 +24,12 @@ class Dialog(QWidget):
         self._shellwindow = self._parent.getMainWindow(nid)
         self.nid = nid
         self._isChangeSizeMode = False
-        #self.balloon = balloon
+        self.balloon = None
         self.isFlip = False
 
-        self._bgSource = None
         self._bgImage = None
         self._bgPixmap = None
         self._bgMask = None
-        self._bgRect = None
-        self._bgClipW = None
-        self._bgClipH = None
 
         style = '''
         QPushButton{
@@ -174,8 +170,9 @@ class Dialog(QWidget):
             self.isFlip = flip
             balloon = self._parent.getBalloon()
             if balloon is not None:
-                self._bgPixmap, self._bgMask = balloon.getBalloonImage(self.size(), self.isFlip)
-                self.setMinimumSize(balloon.minimumsize)
+                self._bgImage = self._parent.getBalloonImage(self.size(), self.isFlip)
+                self._bgPixmap = QPixmap().fromImage(self._bgImage, Qt.AutoColor)
+                self._bgMask = self._bgPixmap.mask()
                 self.repaint()
 
         super().move(x, y)
@@ -194,15 +191,19 @@ class Dialog(QWidget):
     def resizeEvent(self, a0: QtGui.QResizeEvent):
         balloon = self._parent.getBalloon()
         if balloon is not None:
-            self._bgPixmap, self._bgMask = balloon.getBalloonImage(self.size(), self.isFlip)
+            self._bgImage = self._parent.getBalloonImage(self.size(), self.isFlip)
+            self._bgPixmap = QPixmap().fromImage(self._bgImage, Qt.AutoColor)
+            self._bgMask = self._bgPixmap.mask()
 
     def paintEvent(self, event):
         painter = QPainter(self)
-        painter.drawPixmap(self.rect(), self._bgPixmap)
+        pixmap = QPixmap().fromImage(self._bgImage, Qt.AutoColor)
+        painter.drawPixmap(self.rect(), pixmap)
         super().paintEvent(event)
 
     def setBalloon(self, balloon):
         self.balloon = balloon
         self.setMinimumSize(balloon.minimumsize)
+        self.setStyleSheet(balloon.stylesheet)
 
 

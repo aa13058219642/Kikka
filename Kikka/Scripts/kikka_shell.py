@@ -6,8 +6,7 @@ import random
 import time
 from enum import Enum
 
-from PyQt5.QtCore import Qt, QPoint, QRect
-from PyQt5.QtGui import QImage, QPainter, QColor
+from PyQt5.QtCore import QPoint
 
 import kikka
 
@@ -27,10 +26,9 @@ class KikkaShell:
         return KikkaShell._instance
 
     def _init(self):
-        self.shells = []
+        self._shells = []
         self.isNeedUpdate = True
         self.shelldir = ''
-        self.curShellIndex = -1
 
     def loadShell(self, shellpath):
         shell = Shell(shellpath)
@@ -38,14 +36,14 @@ class KikkaShell:
             return
 
         isExist = False
-        for s in self.shells:
+        for s in self._shells:
             if shell.id == s.id and shell.name == s.name:
                 isExist = True
                 break
 
         if not isExist:
             logging.info("scan shell: %s", shell.name)
-            self.shells.append(shell)
+            self._shells.append(shell)
         pass
 
     def loadAllShell(self, shelldir):
@@ -56,39 +54,23 @@ class KikkaShell:
                 shellpath = os.path.join(parent, dirname)
                 self.loadShell(shellpath)
 
-        logging.info("shell count: %d", len(self.shells))
-        self.setCurShell(kikka.memory.readDeepMemory('CurShell', 0))
-
-    def getCurShell(self):
-
-        return self.shells[self.curShellIndex] if self.curShellIndex != -1 else None
+        logging.info("shell count: %d", len(self._shells))
 
     def update(self, updatetime):
         shell = self.getCurShell()
         return shell.update(updatetime)
 
-    def getCurImage(self):
-        shell = self.getCurShell()
-        return shell.getCurImage()
-
-    def setCurShell(self, index):
-        if self.curShellIndex != index and 0 <= index < len(self.shells):
-            shell = self.getCurShell()
-            if shell is not None: shell.clearShell()
-
-            self.curShellIndex = index
-            shell = self.getCurShell()
-            shell.loadShell()
-            shell.setSurfaces(0)
-            kikka.menu.setMenuStyle(shell.getShellMenuStyle())
-            kikka.memory.writeDeepMemory('CurShell', index)
-
-            logging.info("change shell to %s" % self.shells[index].name)
-        else:
-            logging.warning("setCurShell: index NOT in shells list")
-
     def getShell(self, index):
-        return self.shells[index]
+        if 0 <= index < len(self._shells):
+            shell = self._shells[index]
+            shell.load()
+            return shell
+        else:
+            logging.error("getShell: index NOT in shell list")
+            raise ValueError
+
+    def getShellCount(self):
+        return len(self._shells)
 
 
 class Shell:
@@ -102,45 +84,26 @@ class Shell:
         self.shellmenustyle = ShellMenuStyle()
         self.setting = ShellSetting()
 
-        self.pngs = {}
+        self.pnglist = []
         self._base_image = None
-        self.surfaces = {}
+        self._surfaces = {}
         self.isInitialized = False
         self.isLoaded = False
         self._updatetime = 0
         self._CurfaceID = 0
+
         # path check
         if os.path.exists(shellpath):
-            descript_path = os.path.join(self.shellpath, 'descript.txt')
-            if not os.path.exists(descript_path): return
-            descript_map = self._open_descript(descript_path)
+            descript_map = self._open_descript()
             self._load_descript(descript_map)
             self._loadPNGindex()
             self.isInitialized = True
-
         pass
 
-    def clearShell(self):
-        self.pngs = {}
-        self.surfaces = {}
-        self.isLoaded = False
-        pass
-
-    def loadShell(self):
+    def load(self):
         if self.isLoaded is False:
             logging.info("load shell: %s", self.name)
             self._load_surfaces()
-
-            # load PNG
-            self._loadPNGindex()
-            for filename, _ in self.pngs.items():
-                p = os.path.join(self.shellpath, filename)
-                if p == self.shellmenustyle.background_image \
-                        or p == self.shellmenustyle.foreground_image \
-                        or p == self.shellmenustyle.sidebar_image:
-                    continue
-                self.pngs[filename] = QImage(p)
-
             self._updatetime = time.clock()
             self.isLoaded = True
         pass
@@ -148,12 +111,15 @@ class Shell:
     def _loadPNGindex(self):
         for parent, dirnames, filenames in os.walk(self.shellpath):
             for filename in filenames:
-                a = filename[len(filename) - 4:]
                 if filename[len(filename) - 4:] == '.png':
-                    self.pngs[filename] = None
+                    self.pnglist.append(filename)
         pass
 
-    def _open_descript(self, descript_path):
+    def _open_descript(self):
+        descript_path = os.path.join(self.shellpath, 'descript.txt')
+        if not os.path.exists(descript_path):
+            return
+
         map = {}
         charset = kikka.helper.checkEncoding(descript_path)
 
@@ -402,68 +368,24 @@ class Shell:
             i = i + 1
 
         for key, values in surfaces_map.items():
-            self.surfaces[key] = Surface(key, values)
+            self._surfaces[key] = Surface(key, values)
 
     def _IgnoreParams(self, key, values):
         print('unknow shell params: %s,%s' % (key, values))
         pass
 
     def getSurface(self, surfacesID):
-        if surfacesID in self.surfaces:
-            return self.surfaces[surfacesID]
+        if surfacesID in self._surfaces:
+            return self._surfaces[surfacesID]
         else:
-            return None
-
-    def setSurfaces(self, surfacesID):
-        old = self._CurfaceID
-        try:
-            if self.isLoaded is False:
-                self.loadShell()
-
-            if surfacesID in self.surfaces:
-                self._CurfaceID = surfacesID
-                surface = self.surfaces[surfacesID]
-
-                self._base_image = QImage(500, 500, QImage.Format_ARGB32)
-                painter = QPainter(self._base_image)
-                painter.setCompositionMode(QPainter.CompositionMode_Source)
-                painter.fillRect(self._base_image.rect(), Qt.transparent)
-
-                painter.setCompositionMode(QPainter.CompositionMode_SourceOver)
-                if len(surface.elements) > 0:
-                    for i, ele in surface.elements.items():
-                        fn = ele.filename
-                        if fn in self.pngs:
-                            painter.drawImage(self.setting.offset + ele.offset, self.pngs[fn])
-                else:
-                    fn = "surface%04d.png" % surfacesID
-                    if fn in self.pngs:
-                        painter.drawImage(self.setting.offset, self.pngs[fn])
-                # self._base_image.save("_base_image.png")
-                painter.end()
-
-                # start 'runonce' and 'always' animation
-                for aid, ani in surface.animations.items():
-                    if ani.interval in ['runonce', 'always']:
-                        ani.start()
-            else:
-                raise ValueError
-        except ValueError:
-            logging.warning("Shell.setSurfaces: surfaceID: %d NOT exist" % surfacesID)
-            self.setSurfaces(old)
-        finally:
-            kikka.core.update()
-        pass
-
-    def _getSurfacePath(self, surfacesID):
-
-        return os.path.join(self.shellpath, "surface%04d.png" % surfacesID)
+            logging.error("setCurShell: index NOT in shells list")
+            raise ValueError
 
     def update(self, updatetime, surfacesID):
         isNeedUpdate = False
         self._updatetime += updatetime
 
-        surface = self.surfaces[surfacesID]
+        surface = self._surfaces[surfacesID]
         for aid, ani in surface.animations.items():
             ret = ani.update(updatetime)
             if ret is True:
@@ -471,39 +393,8 @@ class Shell:
 
         return isNeedUpdate
 
-    def getImage(self, surfacesID):
-        img = QImage(self._base_image)
-
-        painter = QPainter(img)
-
-        surface = self.surfaces[surfacesID]
-        for aid, ani in surface.animations.items():
-            fid, x, y = ani.getCurSurfaceData()
-            # logging.info("aid=%d pid=%d faceid=%d xy=(%d, %d)" % (aid, ani.curPattern, fid, x, y))
-            if fid == -1: continue
-
-            image_name = "surface%04d.png" % fid
-            face = self.pngs[image_name]
-            painter.drawImage(self.setting.offset + QPoint(x, y), face)
-
-        # logging.info("--getCurImage end--------")
-        if kikka.shell.isDebug is True:
-            # logging.info("debug draw")
-            for cid, col in surface.CollisionBoxes.items():
-                painter.setPen(Qt.red)
-                rect = QRect(col.Point1, col.Point2)
-                rect.moveTopLeft(col.Point1 + self.setting.offset)
-                painter.drawRect(rect)
-                painter.fillRect(rect, QColor(255, 255, 255, 64))
-                painter.setPen(Qt.black)
-                painter.drawText(rect, Qt.AlignCenter, col.tag)
-
-            painter.setPen(Qt.red)
-            painter.drawRect(QRect(0, 0, img.width()-1, img.height()-1))
-        return img
-
     def getCollisionBoxes(self, surfacesID):
-        surface = self.surfaces[surfacesID]
+        surface = self._surfaces[surfacesID]
         return surface.CollisionBoxes
 
     def getOffset(self):
@@ -650,6 +541,84 @@ class Animation:
                 return pattern.surfaceID, pattern.offset[0], pattern.offset[1]
         else:
             return -1, 0, 0
+        pass
+
+
+class Surface:
+    def __init__(self, id, values):
+        self.ID = id
+        self.elements = {}
+        self.animations = {}
+        self.CollisionBoxes = {}
+        self.offest1 = [0, 0]
+        self.offest2 = [0, 0]
+
+        self._load_surface(values)
+        pass
+
+    def _load_surface(self, values):
+        for line in values:
+            if line == "":
+                continue
+
+            matchtype, params = SurfaceMatchLine.matchLine(line)
+            if matchtype == SurfaceMatchLine.Unknow:
+                logging.warning("NO Match Line: %s", line)
+
+            elif matchtype == SurfaceMatchLine.Elements:
+                self.elements[int(params[0])] = Element(params)
+
+            elif matchtype == SurfaceMatchLine.CollisionBoxes:
+                self.CollisionBoxes[int(params[0])] = CollisionBox(params)
+
+            elif matchtype == SurfaceMatchLine.AnimationInterval:
+                aid = int(params[0])
+                ani = Animation(aid, self.animations) if aid not in self.animations else self.animations[aid]
+                if ',' in params[1]:
+                    p = params[1].split(',')
+                    ani.interval = p[0]
+                    ani.intervalValue = float(p[1])
+                else:
+                    ani.interval = params[1]
+                    ani.intervalValue = 0
+                self.animations[aid] = ani
+
+            elif matchtype == SurfaceMatchLine.AnimationPattern:
+                aid = int(params[0])
+                ani = Animation(aid, self.animations) if aid not in self.animations else self.animations[aid]
+                ani.patterns[int(params[1])] = Pattern(params, EPatternType.Normal)
+                self.animations[aid] = ani
+
+            elif matchtype == SurfaceMatchLine.AnimationPatternNew:
+                aid = int(params[0])
+                ani = Animation(aid, self.animations) if aid not in self.animations else self.animations[aid]
+                ani.patterns[int(params[1])] = Pattern(params, EPatternType.New)
+                self.animations[aid] = ani
+
+            elif matchtype == SurfaceMatchLine.AnimationPatternAlternative:
+                aid = int(params[0])
+                ani = Animation(aid, self.animations) if aid not in self.animations else self.animations[aid]
+                ani.patterns[int(params[1])] = Pattern(params, EPatternType.Alternative)
+                self.animations[aid] = ani
+
+            elif matchtype == SurfaceMatchLine.AnimationOptionExclusive:
+                aid = int(params[0])
+                ani = Animation(aid, self.animations) if aid not in self.animations else self.animations[aid]
+                ani.exclusive = True
+                self.animations[aid] = ani
+
+            elif matchtype == SurfaceMatchLine.OffectPointX:
+                self.offest1[0] = int(params[0])
+
+            elif matchtype == SurfaceMatchLine.OffectPointY:
+                self.offest1[1] = int(params[0])
+
+            elif matchtype == SurfaceMatchLine.OffectKinokoPointX:
+                self.offest2[0] = int(params[0])
+
+            elif matchtype == SurfaceMatchLine.OffectKinokoPointY:
+                self.offest1[1] = int(params[0])
+
         pass
 
 
@@ -857,80 +826,3 @@ class ShellSetting:
     def addBingGroup(self, aID, bindgroup):
         self.bindgroups[aID] = bindgroup
 
-
-class Surface:
-    def __init__(self, id, values):
-        self.ID = id
-        self.elements = {}
-        self.animations = {}
-        self.CollisionBoxes = {}
-        self.offest1 = [0, 0]
-        self.offest2 = [0, 0]
-
-        self._load_surface(values)
-        pass
-
-    def _load_surface(self, values):
-        for line in values:
-            if line == "":
-                continue
-
-            matchtype, params = SurfaceMatchLine.matchLine(line)
-            if matchtype == SurfaceMatchLine.Unknow:
-                logging.warning("NO Match Line: %s", line)
-
-            elif matchtype == SurfaceMatchLine.Elements:
-                self.elements[int(params[0])] = Element(params)
-
-            elif matchtype == SurfaceMatchLine.CollisionBoxes:
-                self.CollisionBoxes[int(params[0])] = CollisionBox(params)
-
-            elif matchtype == SurfaceMatchLine.AnimationInterval:
-                aid = int(params[0])
-                ani = Animation(aid, self.animations) if aid not in self.animations else self.animations[aid]
-                if ',' in params[1]:
-                    p = params[1].split(',')
-                    ani.interval = p[0]
-                    ani.intervalValue = float(p[1])
-                else:
-                    ani.interval = params[1]
-                    ani.intervalValue = 0
-                self.animations[aid] = ani
-
-            elif matchtype == SurfaceMatchLine.AnimationPattern:
-                aid = int(params[0])
-                ani = Animation(aid, self.animations) if aid not in self.animations else self.animations[aid]
-                ani.patterns[int(params[1])] = Pattern(params, EPatternType.Normal)
-                self.animations[aid] = ani
-
-            elif matchtype == SurfaceMatchLine.AnimationPatternNew:
-                aid = int(params[0])
-                ani = Animation(aid, self.animations) if aid not in self.animations else self.animations[aid]
-                ani.patterns[int(params[1])] = Pattern(params, EPatternType.New)
-                self.animations[aid] = ani
-
-            elif matchtype == SurfaceMatchLine.AnimationPatternAlternative:
-                aid = int(params[0])
-                ani = Animation(aid, self.animations) if aid not in self.animations else self.animations[aid]
-                ani.patterns[int(params[1])] = Pattern(params, EPatternType.Alternative)
-                self.animations[aid] = ani
-
-            elif matchtype == SurfaceMatchLine.AnimationOptionExclusive:
-                aid = int(params[0])
-                ani = Animation(aid, self.animations) if aid not in self.animations else self.animations[aid]
-                ani.exclusive = True
-                self.animations[aid] = ani
-
-            elif matchtype == SurfaceMatchLine.OffectPointX:
-                self.offest1[0] = int(params[0])
-
-            elif matchtype == SurfaceMatchLine.OffectPointY:
-                self.offest1[1] = int(params[0])
-
-            elif matchtype == SurfaceMatchLine.OffectKinokoPointX:
-                self.offest2[0] = int(params[0])
-
-            elif matchtype == SurfaceMatchLine.OffectKinokoPointY:
-                self.offest1[1] = int(params[0])
-
-        pass

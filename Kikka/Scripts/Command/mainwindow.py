@@ -6,7 +6,6 @@ from PyQt5.QtGui import QPixmap, QPainter, QColor, QImage
 from PyQt5.QtWidgets import QWidget
 
 from mouseevent import MouseEvent
-from dialogwindow import Dialog
 import kikka
 
 
@@ -21,28 +20,17 @@ class MainWindow(QWidget):
         self.setMouseTracking(True)
         self.setAcceptDrops(True)
 
-        self.CollisionBoxes = {}
         self._isMoving = False
         self._boxes = {}
         self._movepos = QPoint(0, 0)
         self._mousepos = QPoint(0, 0)
-        self._pixmap = QPixmap(500, 500)
-        self._menu = None
-
-        #self.resize(500, 500)
-        self.setFixedSize(self._pixmap.size())  # <----------------------
-        self.setMask(self._pixmap.mask())
+        self._pixmap = None
 
         # size and position
         rect = kikka.memory.read('KikkaRect', [])
         if len(rect) > 0:
             self.move(rect[0], rect[1])
             self.resize(rect[2], rect[3])
-
-        #self._dialog = Dialog(self)
-
-    def setMenu(self, kikkamenu):
-        self._menu = kikkamenu
 
     def setBoxes(self, boxes, offset):
         self._boxes = {}
@@ -93,7 +81,7 @@ class MainWindow(QWidget):
     #     return False
 
     def contextMenuEvent(self, event):
-        self._menu.show(event.globalPos())
+        self._parent.showMenu(event.globalPos())
 
     def mousePressEvent(self, event):
         self._mouseLogging("mousePressEvent", event.buttons(), event.globalPos().x(), event.globalPos().y())
@@ -112,8 +100,6 @@ class MainWindow(QWidget):
         self._mousepos = event.pos()
         if self._isMoving and event.buttons() == Qt.LeftButton:
             self.move(event.globalPos() - self._movepos)
-            #self._dialog.updatePosition()
-            #kikka.core.getDialog(self.nid).updatePosition()
             self._parent.getDialog(self.nid).updatePosition()
             event.accept()
         else:
@@ -133,8 +119,7 @@ class MainWindow(QWidget):
         self._mouseLogging("mouseDoubleClickEvent", event.buttons(), event.globalPos().x(), event.globalPos().y())
         if event.buttons() == Qt.LeftButton:
             self._isMoving = False
-            kikka.core.getDialog(self.nid).show()
-            # self._dialog.show()
+            self._parent.getDialog(self.nid).show()
 
         if self._isMoving is False:
             boxevent = self._boxCollision()
@@ -170,7 +155,6 @@ class MainWindow(QWidget):
         painter.drawRect(QRect(0, 0, self.size().width()-1, self.size().height()-1))
 
     def setImage(self, image):
-        # painter = QPainter(image)
         # image = QImage(r"C:\\test.png")
         pixmap = QPixmap().fromImage(image, Qt.AutoColor)
         self._pixmap = pixmap
@@ -178,15 +162,4 @@ class MainWindow(QWidget):
         self.setFixedSize(self._pixmap.size())
         self.setMask(self._pixmap.mask())
         self.repaint()
-
-
-
-
-
-
-
-
-
-
-
 

@@ -3,14 +3,12 @@ import logging
 import time
 from enum import Enum
 
-from PyQt5.QtGui import QIcon
-from PyQt5.QtWidgets import QSystemTrayIcon, QApplication
+from PyQt5.QtWidgets import QApplication
 from PyQt5.QtCore import QTimer
 
 import kikka
-from mainwindow import MainWindow
-from dialogwindow import Dialog
 from ghost import Gohst
+
 
 class KikkaCore:
     _instance = None
@@ -38,22 +36,8 @@ class KikkaCore:
         self.isNeedUpdate = True
         self._timer_interval = 10
         self._Timer_Run = QTimer()
-        self._mainwindows = []
-        self._dialogs = []
         self._ghosts = []
         pass
-
-    def getMainWindow(self, nid):
-        if 0 <= nid < len(self._mainwindows):
-            return self._mainwindows[nid]
-        else:
-            return None
-
-    def getDialog(self, nid):
-        if 0 <= nid < len(self._dialogs):
-            return self._dialogs[nid]
-        else:
-            return None
 
     def getAppState(self):
 
@@ -61,29 +45,17 @@ class KikkaCore:
 
     def hide(self):
         self._app_state = KikkaCore.APP_STATE.HIDE
-        for window in self._mainwindows:
-            window.hide()
-        for dialog in self._dialogs:
-            dialog.hide()
+        for g in self._ghosts:
+            g.hide()
 
     def show(self):
         self._app_state = KikkaCore.APP_STATE.SHOW
-        # for window in self._mainwindows:
-        #     window.show()
         for g in self._ghosts:
             g.show()
 
-
     def start(self):
         # self._app_state = APP_STATE.SHOW
-        # window = MainWindow(kikka.KIKKA)
-        # self._mainwindows.append(window)
-        # dialog = Dialog(window, kikka.balloon.getCurrentBalloon())
-        # self._dialogs.append(dialog)
-        # self.setSurface(kikka.KIKKA, 0)
-
         self._ghosts.append(Gohst(kikka.KIKKA, 1, 0))
-
 
         self._lasttime = time.clock()
         self._Timer_Run.timeout.connect(self.run)
@@ -102,12 +74,6 @@ class KikkaCore:
             nowtime = time.clock() 
             updatetime = (nowtime - self._lasttime) * 1000
 
-            # if self.isNeedUpdate is False:
-            #     self.isNeedUpdate = kikka.shell.update(updatetime)
-
-            #if self.isNeedUpdate is True:
-                #img = kikka.shell.getImage()
-                #self._mainwindows[kikka.KIKKA].setImage(img)
             self._ghosts[kikka.KIKKA].update(updatetime)
 
             self._lasttime = nowtime
@@ -120,13 +86,9 @@ class KikkaCore:
 
     def setSurface(self, gid, nid, surfaceID):
         self._ghosts[gid].setSurface(nid, surfaceID)
-        # kikka.shell.getCurShell().setSurfaces(surfaceID)
-        #
-        # img = kikka.shell.getImage()
-        # self._mainwindows[nid].setImage(img)
-        #
-        # shell = kikka.shell.getCurShell()
-        # self._mainwindows[nid].setBoxes(shell.getCollisionBoxes(), shell.getOffset())
+
+    def setShell(self, gid, shellID):
+        self._ghosts[gid].setShell(shellID)
 
     def updateMenu(self):
         QApplication.instance().trayIcon.setContextMenu(kikka.menu.getMenu())

@@ -1,14 +1,9 @@
 # coding=utf-8
 import os
-import re
 import logging
-import random
-import time
-from enum import Enum
 
 import kikka
 from PyQt5.QtCore import Qt, QRect, QPoint, QSize
-from PyQt5.QtGui import QImage, QPixmap, QPainter
 from kikka_shell import AuthorInfo
 
 
@@ -27,10 +22,9 @@ class KikkaBalloon:
         return KikkaBalloon._instance
 
     def _init(self):
-        self.balloons = []
+        self._balloons = []
         self.isNeedUpdate = True
-        self.shelldir = ''
-        self.currentBalloonIndex = -1
+        self.balloondir = ''
 
     def loadBalloon(self, balloonpath):
         balloon = Balloon(balloonpath)
@@ -38,14 +32,14 @@ class KikkaBalloon:
             return
 
         isExist = False
-        for s in self.balloons:
+        for s in self._balloons:
             if balloon.id == s.id and balloon.name == s.name:
                 isExist = True
                 break
 
         if not isExist:
             logging.info("scan balloon: %s", balloon.name)
-            self.balloons.append(balloon)
+            self._balloons.append(balloon)
         pass
 
     def loadAllBalloon(self, balloondir):
@@ -56,42 +50,19 @@ class KikkaBalloon:
                 balloonpath = os.path.join(parent, dirname)
                 self.loadBalloon(balloonpath)
 
-        logging.info("balloon count: %d", len(self.balloons))
-        self.setCurrentBalloon(kikka.memory.readDeepMemory('CurrentBalloon', 1))
-
-    def getCurrentBalloon(self):
-
-        return self.balloons[self.currentBalloonIndex] if self.currentBalloonIndex != -1 else None
-
-    def setCurrentBalloon(self, index):
-        if self.currentBalloonIndex != index and 0 <= index < len(self.balloons):
-            balloon = self.getCurrentBalloon()
-            if balloon is not None: balloon.clear()
-
-            self.currentBalloonIndex = index
-            balloon = self.getCurrentBalloon()
-            balloon.load()
-            # kikka.menu.setMenuStyle(balloon.getShellMenuStyle())
-            kikka.memory.writeDeepMemory('CurrentBalloon', index)
-
-            logging.info("change balloon to %s" % self.balloons[index].name)
-        else:
-            logging.warning("setCurrentBalloon: index NOT in balloons list")
-
-    def getCurrentBalloonImage(self, size: QSize):
-        balloon = self.getCurrentBalloon()
-        if balloon is not None:
-            return balloon.getBalloonImage(size)
-        else:
-            return None
+        logging.info("balloon count: %d", len(self._balloons))
 
     def getBalloon(self, index):
-        if 0 <= self.currentBalloonIndex < len(self.balloons):
-            balloon = self.balloons[self.currentBalloonIndex]
+        if 0 <= index < len(self._balloons):
+            balloon = self._balloons[index]
             balloon.load()
             return balloon
         else:
-            return None
+            logging.error("getBalloon: index NOT in balloon list")
+            raise ValueError
+
+    def getBalloonCount(self):
+        return len(self._balloons)
 
 
 class Balloon:
@@ -103,15 +74,7 @@ class Balloon:
         self.author = AuthorInfo()
         self.isInitialized = False
         self.isLoaded = False
-        self._pngs = {}
-
-        self.clipW = []
-        self.clipH = []
-        self._bgSource = None
-        self._bgImage = None
-        self._bgPixmap = None
-        self._bgMask = None
-        self._bgRect = None
+        self.pnglist = []
 
         self.minimumsize = QSize(200, 200)
         self.flipBackground = False
@@ -125,14 +88,6 @@ class Balloon:
         if self.isLoaded is False:
             logging.info("load balloon: %s", self.name)
             self._load_stylesheet()
-
-            # load PNG
-            for parent, dirnames, filenames in os.walk(self.balloonpath):
-                for filename in filenames:
-                    if filename[len(filename) - 4:] == '.png':
-                        p = os.path.join(self.balloonpath, filename)
-                        self._pngs[filename] = kikka.helper.getImage(p)
-            self._bgSource = self._pngs['background.png']
 
             # load rect
             srect = []
@@ -150,21 +105,9 @@ class Balloon:
                 srect.append(sr)
             pass  # exit for
 
-            self._bgRect = srect
+            self.bgRect = srect
             self.isLoaded = True
         pass
-
-    def clear(self):
-        self._pngs = {}
-        self.isLoaded = False
-        pass
-
-    # def _loadPNGindex(self):
-    #     for parent, dirnames, filenames in os.walk(self.balloonpath):
-    #         for filename in filenames:
-    #             if filename[len(filename) - 4:] == '.png':
-    #                 self._pngs[filename] = None
-    #     pass
 
     def _load_descript(self):
         # load descript
@@ -259,77 +202,3 @@ class Balloon:
     def _IgnoreParams(self, key, values):
         print('unknow shell params: %s,%s' % (key, values))
         pass
-
-    def getBalloonImage(self, size: QSize, flip=False):
-        if self.isLoaded is False:
-            self.load()
-
-        drect = []
-        # calculate destination rect
-        if len(self.clipW) == 3:
-            dw = [self.clipW[0],
-                  size.width() - self.clipW[0] - self.clipW[2],
-                  self.clipW[2]]
-        elif len(self.clipW) == 5:
-            sw = size.width() - self.clipW[0] - self.clipW[2] - self.clipW[4]
-            dw = [self.clipW[0],
-                  sw // 2,
-                  self.clipW[2],
-                  sw - sw // 2,
-                  self.clipW[4]]
-        else:
-            sw = size.width() // 3
-            dw = [sw, size.width() - sw*2, sw]
-
-        if len(self.clipH) == 3:
-            dh = [self.clipH[0],
-                  size.height() - self.clipH[0] - self.clipH[2],
-                  self.clipH[2]]
-        elif len(self.clipH) == 5:
-            sh = size.height() - self.clipH[0] - self.clipH[2] - self.clipH[4]
-            dh = [self.clipH[0],
-                  sh // 2,
-                  self.clipH[2],
-                  sh - sh // 2,
-                  self.clipH[4]]
-        else:
-            sh = size.height() // 3
-            dh = [sh, size.height() - sh*2, sh]
-
-        for y in range(len(self.clipH)):
-            dr = []
-            for x in range(len(self.clipW)):
-                pt = QPoint(0, 0)
-                if x > 0: pt.setX(dr[x-1].x() + dw[x-1])
-                if y > 0: pt.setY(drect[y-1][0].y() + dh[y-1])
-                sz = QSize(dw[x], dh[y])
-                dr.append(QRect(pt, sz))
-                pass
-            drect.append(dr)
-        pass  # exit for
-
-        # paint balloon image
-        self._bgImage = QImage(size, QImage.Format_ARGB32)
-        pixmap = QPixmap().fromImage(self._bgSource, Qt.AutoColor)
-        p = QPainter(self._bgImage)
-        p.setCompositionMode(QPainter.CompositionMode_Source)
-
-        for y in range(len(self.clipH)):
-            for x in range(len(self.clipW)):
-                p.drawPixmap(drect[y][x], pixmap, self._bgRect[y][x])
-        p.end()
-
-        # flip or not
-        if self.flipBackground is True and flip is True:
-            self._bgImage = self._bgImage.mirrored(True, False)
-            if self.noFlipCenter is True and len(self.clipW) == 5 and len(self.clipH) == 5:
-                p = QPainter(self._bgImage)
-                p.setCompositionMode(QPainter.CompositionMode_Source)
-                p.drawPixmap(drect[2][2], pixmap, self._bgRect[2][2])
-                p.end()
-
-        self._bgPixmap = QPixmap().fromImage(self._bgImage, Qt.AutoColor)
-        self._bgMask = self._bgPixmap.mask()
-        return self._bgPixmap, self._bgMask
-        pass
-

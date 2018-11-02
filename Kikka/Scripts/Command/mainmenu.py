@@ -13,11 +13,9 @@ def createMainMenu():
     mainmenu = Menu(parten, "Main")
 
     menu = Menu(mainmenu, "Shells")
-    shells = kikka.shell.shells
-    count = len(shells)
-    for i in range(count):
-        callbackfunc = lambda checked, a=i: kikka.shell.setCurShell(a)
-        menu.addMenuItem(shells[i].name, callbackfunc)
+    for i in range(kikka.shell.getShellCount()):
+        callbackfunc = lambda checked, a=i: kikka.core.setShell(0, a)
+        menu.addMenuItem(kikka.shell.getShell(i).name, callbackfunc)
     mainmenu.addSubMenu(menu)
 
     mainmenu.addSeparator()
