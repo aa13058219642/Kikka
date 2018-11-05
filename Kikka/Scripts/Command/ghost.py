@@ -77,9 +77,6 @@ class Gohst:
         self.shell.load()
         self._menustyle = MenuStyle(self.shell.shellmenustyle)
 
-        # self.setCurShell(kikka.memory.readDeepMemory('CurShell', 0))
-        # kikka.memory.writeDeepMemory('CurShell', index)
-
         self._shell_image = {}
         for filename in self.shell.pnglist:
             p = os.path.join(self.shell.shellpath, filename)
@@ -276,3 +273,11 @@ class Gohst:
                     isNeedUpdate = True
         return isNeedUpdate
 
+    def memoryRead(self, key, default, nid=0):
+        key = '%s_%d_%d' % (key, self.gid, nid)
+        return kikka.memory.readDeepMemory(key, default)
+
+    def menoryWrite(self, key, value, nid=0):
+        key = '%s_%d_%d' % (key, self.gid, nid)
+        kikka.memory.writeDeepMemory(key, value)
+        pass

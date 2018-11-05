@@ -10,9 +10,9 @@ import kikka
 
 
 class MainWindow(QWidget):
-    def __init__(self, parent, nid):
+    def __init__(self, ghost, nid):
         QWidget.__init__(self)
-        self._parent = parent
+        self._ghost = ghost
         self.nid = nid
         self.setWindowFlags(Qt.Tool | Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint)
         self.setAttribute(Qt.WA_TranslucentBackground)
@@ -27,7 +27,7 @@ class MainWindow(QWidget):
         self._pixmap = None
 
         # size and position
-        rect = kikka.memory.read('KikkaRect', [])
+        rect = self._ghost.memoryRead('KikkaRect', [], self.nid)
         if len(rect) > 0:
             self.move(rect[0], rect[1])
             self.resize(rect[2], rect[3])
@@ -81,7 +81,7 @@ class MainWindow(QWidget):
     #     return False
 
     def contextMenuEvent(self, event):
-        self._parent.showMenu(self.nid, event.globalPos())
+        self._ghost.showMenu(self.nid, event.globalPos())
 
     def mousePressEvent(self, event):
         self._mouseLogging("mousePressEvent", event.buttons(), event.globalPos().x(), event.globalPos().y())
@@ -100,7 +100,7 @@ class MainWindow(QWidget):
         self._mousepos = event.pos()
         if self._isMoving and event.buttons() == Qt.LeftButton:
             self.move(event.globalPos() - self._movepos)
-            self._parent.getDialog(self.nid).updatePosition()
+            self._ghost.getDialog(self.nid).updatePosition()
             event.accept()
         else:
             self._isMoving = False
@@ -113,13 +113,15 @@ class MainWindow(QWidget):
     def mouseReleaseEvent(self, event):
         self._mouseLogging("mouseReleaseEvent", event.buttons(), event.globalPos().x(), event.globalPos().y())
         self._isMoving = False
-        kikka.memory.write('KikkaRect', [self.pos().x(), self.pos().y(), self.size().width(), self.size().height()])
+        self._ghost.menoryWrite('KikkaRect',
+                                [self.pos().x(), self.pos().y(), self.size().width(), self.size().height()],
+                                self.nid)
 
     def mouseDoubleClickEvent(self, event):
         self._mouseLogging("mouseDoubleClickEvent", event.buttons(), event.globalPos().x(), event.globalPos().y())
         if event.buttons() == Qt.LeftButton:
             self._isMoving = False
-            self._parent.getDialog(self.nid).show()
+            self._ghost.getDialog(self.nid).show()
 
         if self._isMoving is False:
             boxevent = self._boxCollision()
@@ -155,7 +157,7 @@ class MainWindow(QWidget):
         painter.drawRect(QRect(0, 0, self.size().width()-1, self.size().height()-1))
 
     def setImage(self, image):
-        image = QImage(r"C:\\test.png")
+        # image = QImage(r"C:\\test.png")
         pixmap = QPixmap().fromImage(image, Qt.AutoColor)
         self._pixmap = pixmap
 
