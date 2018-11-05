@@ -275,9 +275,16 @@ class Gohst:
 
     def memoryRead(self, key, default, nid=0):
         key = '%s_%d_%d' % (key, self.gid, nid)
-        return kikka.memory.readDeepMemory(key, default)
+        if kikka.core.isDebug:
+            value = kikka.memory.read(key, default)
+        else:
+            value = kikka.memory.readDeepMemory(key, default)
+        return value
 
     def menoryWrite(self, key, value, nid=0):
         key = '%s_%d_%d' % (key, self.gid, nid)
-        kikka.memory.writeDeepMemory(key, value)
+        if kikka.core.isDebug:
+            kikka.memory.write(key, value)
+        else:
+            kikka.memory.writeDeepMemory(key, value)
         pass
