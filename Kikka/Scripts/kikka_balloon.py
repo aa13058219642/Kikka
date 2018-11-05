@@ -23,7 +23,6 @@ class KikkaBalloon:
 
     def _init(self):
         self._balloons = []
-        self.isNeedUpdate = True
         self.balloondir = ''
 
     def loadBalloon(self, balloonpath):

@@ -5,6 +5,21 @@ from enum import Enum
 import kikka
 
 
+class MouseEvent(Enum):
+    MouseDown = 0
+    MouseMove = 1
+    MouseUp = 2
+    MouseDoubleClick = 3
+    WheelEvent = 4
+
+    @staticmethod
+    def event_selector(event, boxtag):
+        e = getEventList()
+
+        if boxtag in e and event in e[boxtag]:
+            e[boxtag][event]()
+
+
 def getEventList():
     e = {}
 
@@ -97,19 +112,6 @@ def hand_doubleclick():
     pass
 
 
-class MouseEvent(Enum):
-    MouseDown = 0
-    MouseMove = 1
-    MouseUp = 2
-    MouseDoubleClick = 3
-    WheelEvent = 4
-
-    @staticmethod
-    def event_selector(event, boxtag):
-        e = getEventList()
-
-        if boxtag in e and event in e[boxtag]:
-            e[boxtag][event]()
 
 
 

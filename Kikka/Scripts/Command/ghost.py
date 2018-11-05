@@ -8,6 +8,8 @@ from PyQt5.QtGui import QImage, QPainter, QColor, QPixmap
 import kikka
 from mainwindow import MainWindow
 from dialogwindow import Dialog
+from kikka_menu import MenuStyle
+import mainmenu
 
 
 class Gohst:
@@ -22,6 +24,8 @@ class Gohst:
         self._balloon_base_image = None
         self._shell_image = {}
         self._balloon_image = {}
+        self._menus = []
+        self._menustyle = None
 
         self.setShell(shellID)
         self.setBalloon(balloonID)
@@ -38,8 +42,10 @@ class Gohst:
         for d in self._dialogs:
             d.hide()
 
-    def showMenu(self, pos):
-        kikka.menu.show(pos)
+    def showMenu(self, nid, pos):
+        if 0 <= nid < len(self._menus) and self._menus[nid] is not None:
+            self._menus[nid].setPosition(pos)
+            self._menus[nid].show()
         pass
 
     def addWindow(self, nid, surfaceID):
@@ -50,13 +56,27 @@ class Gohst:
         self._dialogs.append(dialog)
         self._surface_base_image.append(None)
         self._surfaces.append(None)
+        self._menus.append(kikka.menu.createKikkaMenu(self))
 
         self.setSurface(nid, surfaceID)
+
+    def getMainWindow(self, nid):
+        if 0 <= nid < len(self._mainwindows):
+            return self._mainwindows[nid]
+        else:
+            return None
+
+    def getDialog(self, nid):
+        if 0 <= nid < len(self._dialogs):
+            return self._dialogs[nid]
+        else:
+            return None
 
     def setShell(self, shellID):
         self.shell = kikka.shell.getShell(shellID)
         self.shell.load()
-        kikka.menu.setMenuStyle(self.shell.getShellMenuStyle())
+        self._menustyle = MenuStyle(self.shell.shellmenustyle)
+
         # self.setCurShell(kikka.memory.readDeepMemory('CurShell', 0))
         # kikka.memory.writeDeepMemory('CurShell', index)
 
@@ -72,6 +92,9 @@ class Gohst:
         for i in range(len(self._mainwindows)):
             self._mainwindows[i].setImage(self.getShellImage(i))
 
+    def getShell(self):
+        return self.shell
+
     def setBalloon(self, balloonID):
         self.balloon = kikka.balloon.getBalloon(balloonID)
 
@@ -82,23 +105,21 @@ class Gohst:
                     self._balloon_image[filename] = kikka.helper.getImage(p)
         self._balloon_base_image = self._balloon_image['background.png']
 
-    def getMainWindow(self, nid):
-        if 0 <= nid < len(self._mainwindows):
-            return self._mainwindows[nid]
-        else:
-            return None
-
-    def getDialog(self, nid):
-        if 0 <= nid < len(self._dialogs):
-            return self._dialogs[nid]
-        else:
-            return None
-
-    def getShell(self):
-        return self.shell
+        for i in range(len(self._dialogs)):
+            self._dialogs[i].repaint()
 
     def getBalloon(self):
         return self.balloon
+
+    def setMenu(self, nid, Menu):
+        if 0 <= nid < len(self._menus):
+            self._menus[nid] = Menu
+
+    def getMenu(self, nid):
+        if 0 <= nid < len(self._menus):
+            return self._menus[nid]
+        else:
+            return None
 
     def setSurface(self, nid, surfaceID):
         try:
@@ -123,16 +144,6 @@ class Gohst:
         except ValueError:
             logging.warning("Gohst.setSurfaces: surfaceID: %d NOT exist" % surfaceID)
         pass
-
-    def update(self, updatetime):
-        isNeedUpdate = False
-
-        for i in range(len(self._mainwindows)):
-            for aid, ani in self._surfaces[i].animations.items():
-                if ani.update(updatetime) is True:
-                    self._mainwindows[i].setImage(self.getShellImage(i))
-                    isNeedUpdate = True
-        return isNeedUpdate
 
     def _makeSurfaceBaseImage(self, surface):
         base_image = QImage(500, 500, QImage.Format_ARGB32)
@@ -165,8 +176,9 @@ class Gohst:
             if fid == -1: continue
 
             image_name = "surface%04d.png" % fid
-            face = self._shell_image[image_name]
-            painter.drawImage(self.shell.setting.offset + QPoint(x, y), face)
+            if image_name in self._shell_image:
+                face = self._shell_image[image_name]
+                painter.drawImage(self.shell.setting.offset + QPoint(x, y), face)
 
         # logging.info("--getCurImage end--------")
         if kikka.shell.isDebug is True:
@@ -250,3 +262,17 @@ class Gohst:
                 p.end()
 
         return img
+
+    def getMenuStyle(self):
+        return self._menustyle
+
+    def update(self, updatetime):
+        isNeedUpdate = False
+
+        for i in range(len(self._mainwindows)):
+            for aid, ani in self._surfaces[i].animations.items():
+                if ani.update(updatetime) is True:
+                    self._mainwindows[i].setImage(self.getShellImage(i))
+                    isNeedUpdate = True
+        return isNeedUpdate
+

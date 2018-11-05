@@ -170,9 +170,6 @@ class Dialog(QWidget):
             self.isFlip = flip
             balloon = self._parent.getBalloon()
             if balloon is not None:
-                self._bgImage = self._parent.getBalloonImage(self.size(), self.isFlip)
-                self._bgPixmap = QPixmap().fromImage(self._bgImage, Qt.AutoColor)
-                self._bgMask = self._bgPixmap.mask()
                 self.repaint()
 
         super().move(x, y)
@@ -191,9 +188,7 @@ class Dialog(QWidget):
     def resizeEvent(self, a0: QtGui.QResizeEvent):
         balloon = self._parent.getBalloon()
         if balloon is not None:
-            self._bgImage = self._parent.getBalloonImage(self.size(), self.isFlip)
-            self._bgPixmap = QPixmap().fromImage(self._bgImage, Qt.AutoColor)
-            self._bgMask = self._bgPixmap.mask()
+            self.repaint()
 
     def paintEvent(self, event):
         painter = QPainter(self)
@@ -206,4 +201,8 @@ class Dialog(QWidget):
         self.setMinimumSize(balloon.minimumsize)
         self.setStyleSheet(balloon.stylesheet)
 
-
+    def repaint(self):
+        self._bgImage = self._parent.getBalloonImage(self.size(), self.isFlip)
+        self._bgPixmap = QPixmap().fromImage(self._bgImage, Qt.AutoColor)
+        self._bgMask = self._bgPixmap.mask()
+        super().repaint()

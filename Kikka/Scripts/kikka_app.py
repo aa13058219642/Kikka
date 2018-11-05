@@ -101,15 +101,13 @@ class KikkaApp:
 
         qapp.trayIcon = QSystemTrayIcon(qapp)
         qapp.trayIcon.setIcon(icon)
-        qapp.trayIcon.setContextMenu(kikka.menu.getMenu())
         qapp.trayIcon.show()
         qapp.trayIcon.activated.connect(self._trayIconActivated)
 
     def _trayIconActivated(self, reason):
         if reason == QSystemTrayIcon.DoubleClick:
-            core = kikka.core
-            if core.getAppState() == core.APP_STATE.HIDE:
-                core.show()
+            if kikka.core.getAppState() == kikka.core.APP_STATE.HIDE:
+                kikka.core.show()
             else:
-                core.hide()
+                kikka.core.hide()
         pass

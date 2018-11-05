@@ -81,7 +81,7 @@ class MainWindow(QWidget):
     #     return False
 
     def contextMenuEvent(self, event):
-        self._parent.showMenu(event.globalPos())
+        self._parent.showMenu(self.nid, event.globalPos())
 
     def mousePressEvent(self, event):
         self._mouseLogging("mousePressEvent", event.buttons(), event.globalPos().x(), event.globalPos().y())
@@ -155,7 +155,7 @@ class MainWindow(QWidget):
         painter.drawRect(QRect(0, 0, self.size().width()-1, self.size().height()-1))
 
     def setImage(self, image):
-        # image = QImage(r"C:\\test.png")
+        image = QImage(r"C:\\test.png")
         pixmap = QPixmap().fromImage(image, Qt.AutoColor)
         self._pixmap = pixmap
 

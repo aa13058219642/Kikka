@@ -4,6 +4,7 @@
 /Tools
 /WinForms
 /Kikka/Resources/Shell
+/Main/output/*
 kikka.log*
 *.[Mm]emory
 *.db

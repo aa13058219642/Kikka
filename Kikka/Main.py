@@ -25,13 +25,14 @@ def awake():
     kikka.balloon.loadAllBalloon(kikka.helper.getPath(kikka.helper.PATH_BALLOON))
 
     import mainmenu
-    # kikka.menu.setMenu(mainmenu.createTestMenu())
-    kikka.menu.setMenu(mainmenu.createMainMenu())
-    #kikka.menu.getTestMenu()
     kikka.core.start()
     kikka.app.start()
 
-    kikka.core.updateMenu()
+    kikka.core.addGhost(kikka.KIKKA)
+
+    kikka.menu.setAppMenu(kikka.core.getGhost(kikka.KIKKA).getMenu(kikka.KIKKA))
+    kikka.core.show()
+
     pass
 
 

@@ -27,7 +27,6 @@ class KikkaShell:
 
     def _init(self):
         self._shells = []
-        self.isNeedUpdate = True
         self.shelldir = ''
 
     def loadShell(self, shellpath):

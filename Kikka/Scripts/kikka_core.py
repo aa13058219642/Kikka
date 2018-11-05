@@ -54,13 +54,9 @@ class KikkaCore:
             g.show()
 
     def start(self):
-        # self._app_state = APP_STATE.SHOW
-        self._ghosts.append(Gohst(kikka.KIKKA, 1, 0))
-
         self._lasttime = time.clock()
         self._Timer_Run.timeout.connect(self.run)
         self._Timer_Run.start(self._timer_interval)
-        self.show()
 
     def setTimerInterval(self, interval):
         self._timer_interval = interval
@@ -74,7 +70,8 @@ class KikkaCore:
             nowtime = time.clock() 
             updatetime = (nowtime - self._lasttime) * 1000
 
-            self._ghosts[kikka.KIKKA].update(updatetime)
+            for ghost in self._ghosts:
+                ghost.update(updatetime)
 
             self._lasttime = nowtime
         except Exception as e:
@@ -84,15 +81,22 @@ class KikkaCore:
         self.isNeedUpdate = False
         pass
 
-    def setSurface(self, gid, nid, surfaceID):
+    def addGhost(self, gid, shellID=1, balloonID=0):
+        self._ghosts.append(Gohst(gid, shellID, balloonID))
+
+    def getGhost(self, gid):
+        if 0 <= gid < len(self._ghosts):
+            return self._ghosts[gid]
+        else:
+            logging.error("getGhost: gid NOT in ghost list")
+            raise ValueError
+
+    def setGhostSurface(self, gid, nid, surfaceID):
         self._ghosts[gid].setSurface(nid, surfaceID)
 
-    def setShell(self, gid, shellID):
+    def setGhostShell(self, gid, shellID):
         self._ghosts[gid].setShell(shellID)
-
-    def updateMenu(self):
-        QApplication.instance().trayIcon.setContextMenu(kikka.menu.getMenu())
-        #self._mainwindows[kikka.KIKKA].setMenu(kikka.menu)
 
     def update(self):
         self.isNeedUpdate = True
+
