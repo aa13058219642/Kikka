@@ -4,7 +4,7 @@ import os
 from PyQt5 import QtCore
 
 from PyQt5.QtCore import QRect, QSize, Qt, QRectF, QPoint, QEvent
-from PyQt5.QtWidgets import QMenu, QStyle, QStyleOptionMenuItem, QStyleOption, QWidget, QApplication
+from PyQt5.QtWidgets import QMenu, QStyle, QStyleOptionMenuItem, QStyleOption, QWidget, QApplication, QActionGroup
 from PyQt5.QtWidgets import QAction
 from PyQt5.QtGui import QIcon, QImage, QPainter, QFont, QPalette, QColor
 
@@ -30,7 +30,11 @@ class KikkaMenu:
 
     @staticmethod
     def getMenu(gid, nid):
-        return kikka.core.getGhost(gid)
+        ghost = kikka.core.getGhost(gid)
+        if ghost is not None:
+            return ghost.getMenu(nid)
+        else:
+            return None
 
     @staticmethod
     def setAppMenu(menu):
@@ -40,20 +44,25 @@ class KikkaMenu:
     def createKikkaMenu(ghost):
         import kikka
 
-        from kikka_menu import Menu
         parten = QWidget(flags=Qt.Dialog)
         mainmenu = Menu(parten, ghost.gid, "Main")
 
         menu = Menu(mainmenu, ghost.gid, "Shells")
+        group1 = QActionGroup(parten)
         for i in range(kikka.shell.getShellCount()):
             callbackfunc = lambda checked, a=i: ghost.setShell(a)
-            menu.addMenuItem(kikka.shell.getShell(i).name, callbackfunc)
+            act = menu.addMenuItem(kikka.shell.getShell(i).name, callbackfunc, None, group1)
+            act.setCheckable(True)
+            act.setChecked(True)
         mainmenu.addSubMenu(menu)
 
         menu = Menu(mainmenu, ghost.gid, "Balloons")
+        group2 = QActionGroup(parten)
         for i in range(kikka.balloon.getBalloonCount()):
             callbackfunc = lambda checked, a=i: ghost.setBalloon(a)
-            menu.addMenuItem(kikka.balloon.getBalloon(i).name, callbackfunc)
+            act = menu.addMenuItem(kikka.balloon.getBalloon(i).name, callbackfunc, None, group2)
+            act.setCheckable(True)
+            act.setChecked(True)
         mainmenu.addSubMenu(menu)
 
         mainmenu.addSeparator()
@@ -65,7 +74,6 @@ class KikkaMenu:
 
     @staticmethod
     def createTestMenu():
-        from kikka_menu import Menu
         parten = QWidget(flags=Qt.Dialog)
         icon = QIcon(r"icon.ico")
         testmenu = Menu(parten, "Main")
@@ -284,7 +292,7 @@ class Menu(QMenu):
         self.setStyleSheet("QMenu { menu-scrollable: 1; }")
         self.setSeparatorsCollapsible(False)
 
-    def addMenuItem(self, text, callbackfunc=None, iconfilepath=None):
+    def addMenuItem(self, text, callbackfunc=None, iconfilepath=None, group=None):
         if iconfilepath is None:
             act = QAction(text, self._parent)
         elif os.path.exists(iconfilepath):
@@ -294,7 +302,11 @@ class Menu(QMenu):
 
         if callbackfunc is not None: act.triggered.connect(callbackfunc)
 
-        self.addAction(act)
+        if group is None:
+            self.addAction(act)
+        else:
+            self.addAction(group.addAction(act))
+
         self.confirmMenuSize(act)
         return act
 

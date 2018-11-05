@@ -76,6 +76,7 @@ class Gohst:
         self.shell = kikka.shell.getShell(shellID)
         self.shell.load()
         self._menustyle = MenuStyle(self.shell.shellmenustyle)
+        #self._menus[kikka.SAKURA].
 
         self._shell_image = {}
         for filename in self.shell.pnglist:
