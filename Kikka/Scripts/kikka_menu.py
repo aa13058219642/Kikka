@@ -1,7 +1,6 @@
 # coding=utf-8
 import logging
 import os
-from PyQt5 import QtCore
 
 from PyQt5.QtCore import QRect, QSize, Qt, QRectF, QPoint, QEvent
 from PyQt5.QtWidgets import QMenu, QStyle, QStyleOptionMenuItem, QStyleOption, QWidget, QApplication, QActionGroup
@@ -47,6 +46,7 @@ class KikkaMenu:
         parten = QWidget(flags=Qt.Dialog)
         mainmenu = Menu(parten, ghost.gid, "Main")
 
+        # shell list
         menu = Menu(mainmenu, ghost.gid, "Shells")
         group1 = QActionGroup(parten)
         for i in range(kikka.shell.getShellCount()):
@@ -56,6 +56,7 @@ class KikkaMenu:
             act.setChecked(True)
         mainmenu.addSubMenu(menu)
 
+        # balloon list
         menu = Menu(mainmenu, ghost.gid, "Balloons")
         group2 = QActionGroup(parten)
         for i in range(kikka.balloon.getBalloonCount()):
@@ -63,6 +64,18 @@ class KikkaMenu:
             act = menu.addMenuItem(kikka.balloon.getBalloon(i).name, callbackfunc, None, group2)
             act.setCheckable(True)
             act.setChecked(True)
+        mainmenu.addSubMenu(menu)
+
+        # debug option
+        menu = Menu(mainmenu, ghost.gid, "Debug")
+
+        def callbackfunction():
+            kikka.shell.isDebug = not kikka.shell.isDebug
+            kikka.core.repaint()
+
+        act = menu.addMenuItem("Show shell frame", callbackfunction)
+        act.setCheckable(True)
+        act.setChecked(kikka.shell.isDebug is True)
         mainmenu.addSubMenu(menu)
 
         mainmenu.addSeparator()
@@ -74,6 +87,10 @@ class KikkaMenu:
 
     @staticmethod
     def createTestMenu():
+        # test callback function
+        def _test_callback(index=0, title=''):
+            logging.info("MainMenu_callback: click [%d] %s" % (index, title))
+
         parten = QWidget(flags=Qt.Dialog)
         icon = QIcon(r"icon.ico")
         testmenu = Menu(parten, "Main")
@@ -192,11 +209,6 @@ class KikkaMenu:
         testmenu.addMenuItem("Exit", callbackfunc)
 
         return testmenu
-
-    @staticmethod
-    def _test_callback(index=0, title=''):
-        import logging
-        logging.info("MainMenu_callback: click [%d] %s" % (index, title))
 
 
 class MenuStyle:

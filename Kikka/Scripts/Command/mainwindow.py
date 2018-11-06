@@ -27,7 +27,7 @@ class MainWindow(QWidget):
         self._pixmap = None
 
         # size and position
-        rect = self._ghost.memoryRead('KikkaRect', [], self.nid)
+        rect = self._ghost.memoryRead('ShellRect', [], self.nid)
         if len(rect) > 0:
             self.move(rect[0], rect[1])
             self.resize(rect[2], rect[3])
@@ -92,11 +92,10 @@ class MainWindow(QWidget):
 
         if self._isMoving is False:
             boxevent = self._boxCollision()
-            if boxevent != '': MouseEvent.event_selector(MouseEvent.MouseDown, boxevent)
+            if boxevent != '': MouseEvent.event_selector(self._ghost.gid, self.nid, MouseEvent.MouseDown, boxevent)
 
     def mouseMoveEvent(self, event):
         # self._mouseLogging("mouseMoveEvent", event.buttons(), event.globalPos().x(), event.globalPos().y())
-
         self._mousepos = event.pos()
         if self._isMoving and event.buttons() == Qt.LeftButton:
             self.move(event.globalPos() - self._movepos)
@@ -108,12 +107,12 @@ class MainWindow(QWidget):
         if self._isMoving is False:
             boxevent = self._boxCollision()
             if boxevent != '':
-                MouseEvent.event_selector(MouseEvent.MouseMove, boxevent)
+                MouseEvent.event_selector(self._ghost.gid, self.nid, MouseEvent.MouseMove, boxevent)
 
     def mouseReleaseEvent(self, event):
         self._mouseLogging("mouseReleaseEvent", event.buttons(), event.globalPos().x(), event.globalPos().y())
         self._isMoving = False
-        self._ghost.menoryWrite('KikkaRect',
+        self._ghost.menoryWrite('ShellRect',
                                 [self.pos().x(), self.pos().y(), self.size().width(), self.size().height()],
                                 self.nid)
 
@@ -125,13 +124,13 @@ class MainWindow(QWidget):
 
         if self._isMoving is False:
             boxevent = self._boxCollision()
-            if boxevent != '': MouseEvent.event_selector(MouseEvent.MouseDoubleClick, boxevent)
+            if boxevent != '': MouseEvent.event_selector(self._ghost.gid, self.nid, MouseEvent.MouseDoubleClick, boxevent)
 
     def wheelEvent(self, event):
         # self._mouseLogging("wheelEvent", btn, event.pos().x(), event.pos().y())
         if self._isMoving is False:
             boxevent = self._boxCollision()
-            if boxevent != '': MouseEvent.event_selector(MouseEvent.WheelEvent, boxevent)
+            if boxevent != '': MouseEvent.event_selector(self._ghost.gid, self.nid, MouseEvent.WheelEvent, boxevent)
 
     def dragEnterEvent(self, event):
 
@@ -164,4 +163,3 @@ class MainWindow(QWidget):
         self.setFixedSize(self._pixmap.size())
         self.setMask(self._pixmap.mask())
         self.repaint()
-

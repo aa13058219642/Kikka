@@ -13,105 +13,11 @@ class MouseEvent(Enum):
     WheelEvent = 4
 
     @staticmethod
-    def event_selector(event, boxtag):
-        e = getEventList()
+    def event_selector(gid, nid, event, eventtag):
+        if gid == kikka.KIKKA: import ghost_kikka as ghost_event
+        elif gid == kikka.SSP: import ghost_ssp as ghost_event
+        else: import ghost_kikka as ghost_event
 
-        if boxtag in e and event in e[boxtag]:
-            e[boxtag][event]()
-
-
-def getEventList():
-    e = {}
-
-    name = 'Head'
-    e[name] = {}
-    e[name][MouseEvent.MouseDown] = head_click
-    e[name][MouseEvent.MouseMove] = head_touch
-    e[name][MouseEvent.MouseDoubleClick] = head_doubleclick
-
-    name = 'Face'
-    e[name] = {}
-    e[name][MouseEvent.MouseDown] = face_click
-    e[name][MouseEvent.MouseMove] = face_touch
-    e[name][MouseEvent.MouseDoubleClick] = face_doubleclick
-
-    name = 'Bust'
-    e[name] = {}
-    e[name][MouseEvent.MouseDown] = bust_click
-    e[name][MouseEvent.MouseMove] = bust_touch
-    e[name][MouseEvent.MouseDoubleClick] = bust_doubleclick
-
-    name = 'Hand'
-    e[name] = {}
-    e[name][MouseEvent.MouseDown] = hand_click
-    e[name][MouseEvent.MouseMove] = hand_touch
-    e[name][MouseEvent.MouseDoubleClick] = hand_doubleclick
-
-    return e
-
-
-def head_touch():
-    logging.info("head_touch")
-    kikka.core.setSurface(0, 0, 0)
-    pass
-
-
-def head_click():
-    logging.info("head_click")
-    pass
-
-
-def head_doubleclick():
-    logging.info("head_doubleclick")
-    pass
-
-
-def face_touch():
-    logging.info("face_touch")
-    kikka.core.setSurface(0, 0, 33)
-    pass
-
-
-def face_click():
-    logging.info("face_click")
-    pass
-
-
-def face_doubleclick():
-    logging.info("face_doubleclick")
-    pass
-
-
-def bust_touch():
-    logging.info("bust_touch")
-    pass
-
-
-def bust_click():
-    logging.info("bust_click")
-    pass
-
-
-def bust_doubleclick():
-    logging.info("bust_doubleclick")
-    pass
-
-
-def hand_touch():
-    logging.info("hand_touch")
-    pass
-
-
-def hand_click():
-    logging.info("hand_click")
-    pass
-
-
-def hand_doubleclick():
-    logging.info("hand_doubleclick")
-    pass
-
-
-
-
-
+        e = ghost_event.getEventList()
+        if eventtag in e and event in e[eventtag]:
+            e[eventtag][event](gid, nid)

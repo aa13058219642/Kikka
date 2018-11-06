@@ -3,7 +3,6 @@ import logging
 import time
 from enum import Enum
 
-from PyQt5.QtWidgets import QApplication
 from PyQt5.QtCore import QTimer
 
 import kikka
@@ -36,7 +35,7 @@ class KikkaCore:
         self.isNeedUpdate = True
         self._timer_interval = 10
         self._Timer_Run = QTimer()
-        self._ghosts = []
+        self._ghosts = {}
         pass
 
     def getAppState(self):
@@ -45,13 +44,31 @@ class KikkaCore:
 
     def hide(self):
         self._app_state = KikkaCore.APP_STATE.HIDE
-        for g in self._ghosts:
+        for _, g in self._ghosts.items():
             g.hide()
 
     def show(self):
         self._app_state = KikkaCore.APP_STATE.SHOW
-        for g in self._ghosts:
+        for _, g in self._ghosts.items():
             g.show()
+
+    def addGhost(self, gid, shellID=1, balloonID=0):
+        self._ghosts[gid] = (Gohst(gid, shellID, balloonID))
+
+    def getGhost(self, gid):
+        if gid in self._ghosts:
+            return self._ghosts[gid]
+        else:
+            logging.error("getGhost: gid NOT in ghost list")
+            raise ValueError
+
+    def setGhostSurface(self, gid, nid, surfaceID):
+        if gid in self._ghosts:
+            self._ghosts[gid].setSurface(nid, surfaceID)
+
+    def setGhostShell(self, gid, shellID):
+        if gid in self._ghosts:
+            self._ghosts[gid].setShell(shellID)
 
     def start(self):
         self._lasttime = time.clock()
@@ -67,10 +84,10 @@ class KikkaCore:
 
     def run(self):
         try:
-            nowtime = time.clock() 
+            nowtime = time.clock()
             updatetime = (nowtime - self._lasttime) * 1000
 
-            for ghost in self._ghosts:
+            for gid, ghost in self._ghosts.items():
                 ghost.update(updatetime)
 
             self._lasttime = nowtime
@@ -81,22 +98,6 @@ class KikkaCore:
         self.isNeedUpdate = False
         pass
 
-    def addGhost(self, gid, shellID=1, balloonID=0):
-        self._ghosts.append(Gohst(gid, shellID, balloonID))
-
-    def getGhost(self, gid):
-        if 0 <= gid < len(self._ghosts):
-            return self._ghosts[gid]
-        else:
-            logging.error("getGhost: gid NOT in ghost list")
-            raise ValueError
-
-    def setGhostSurface(self, gid, nid, surfaceID):
-        self._ghosts[gid].setSurface(nid, surfaceID)
-
-    def setGhostShell(self, gid, shellID):
-        self._ghosts[gid].setShell(shellID)
-
-    def update(self):
-        self.isNeedUpdate = True
-
+    def repaint(self):
+        for _, g in self._ghosts.items():
+            g.repaint()

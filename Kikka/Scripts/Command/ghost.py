@@ -29,8 +29,8 @@ class Gohst:
 
         self.setShell(shellID)
         self.setBalloon(balloonID)
-        self.addWindow(kikka.KIKKA, 0)
-        self.addWindow(kikka.TOWA, 10)
+        self.addWindow(kikka.SAKURA, 0)
+        self.addWindow(kikka.KERO, 10)
 
     def show(self):
         for w in self._mainwindows:
@@ -76,7 +76,6 @@ class Gohst:
         self.shell = kikka.shell.getShell(shellID)
         self.shell.load()
         self._menustyle = MenuStyle(self.shell.shellmenustyle)
-        #self._menus[kikka.SAKURA].
 
         self._shell_image = {}
         for filename in self.shell.pnglist:
@@ -273,6 +272,13 @@ class Gohst:
                     self._mainwindows[i].setImage(self.getShellImage(i))
                     isNeedUpdate = True
         return isNeedUpdate
+
+    def repaint(self):
+        for w in self._mainwindows:
+            w.setImage(self.getShellImage(w.nid))
+            w.repaint()
+        for d in self._dialogs:
+            d.repaint()
 
     def memoryRead(self, key, default, nid=0):
         key = '%s_%d_%d' % (key, self.gid, nid)
