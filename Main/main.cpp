@@ -35,14 +35,35 @@ int __stdcall WinMain(HINSTANCE hInstance,
 	}
 	fs.close();
 
-	if (!strcmp(lpCmdLine, "-c"))
+	fs.open("PYTHONPATH", ios::in);
+	string pythonpath = "";
+	if (fs)
 	{
-		//debug
-		system("set PYTHONPATH=Scripts;Scripts/Bin;Scripts/Moudles;Scripts/Command;Resources; & Python\\python.exe Main.py & pause");
+		while (!fs.eof())
+		{
+			char buf[1024];
+			fs.getline(buf, 1024);
+			pythonpath += buf;
+		}
 	}
 	else
 	{
-		SetEnvironmentVariable(TEXT("PYTHONPATH"), TEXT("Scripts;Scripts/Bin;Scripts/Moudles;Scripts/Command;Resources;"));
+		pythonpath = "Scripts;Scripts/Bin;Scripts/Moudles;Scripts/Command;Scripts/Ghost;Resources;";
+	}
+	fs.close();
+
+	if (!strcmp(lpCmdLine, "-c"))
+	{
+		//debug
+		string cmd = "set PYTHONPATH=";
+		cmd += pythonpath;
+		cmd += " & Python\\python.exe Main.py";
+		cmd += " & pause";
+		system(cmd.c_str());
+	}
+	else
+	{
+		SetEnvironmentVariable(TEXT("PYTHONPATH"), TEXT(pythonpath.c_str()));
 		TCHAR commandLine[] = TEXT("Python\\python.exe Main.py");
 		STARTUPINFO si = { sizeof(si) };
 		PROCESS_INFORMATION pi;

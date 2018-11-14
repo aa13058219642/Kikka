@@ -26,29 +26,6 @@
     <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="Scripts\Bin\helper.py">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="Scripts\Bin\kikka.py" />
-    <Compile Include="Scripts\Bin\kikkamemory.py">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="Scripts\Bin\mainwindow.py">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="Scripts\Bin\mouseevent.py">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="Scripts\Bin\shell.py">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="Scripts\Bin\systemmenu.py">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="Scripts\Main.py" />
-    <Compile Include="Scripts\Bin\core.py">
-      <SubType>Code</SubType>
-    </Compile>
     <Compile Include="Scripts\Moudles\Plus1\plus1.py">
       <SubType>Code</SubType>
     </Compile>
