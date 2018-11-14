@@ -1,3 +1,4 @@
+# coding=utf-8
 import sys
 import logging
 import logging.handlers
@@ -38,17 +39,17 @@ def awake():
 
 def setLogging(level):
     if level == logging.DEBUG or level == logging.NOTSET:
-        logging.basicConfig(level=level,
-                            format='%(asctime)s %(filename)s %(funcName)s[line:%(lineno)d] ''%(levelname)s: %(message)s')
+        fmt = '%(asctime)s | line:%(lineno)-4d %(filename)-20s %(funcName)-30s | %(levelname)-8s| %(message)s'
+        logging.basicConfig(level=level, format=fmt)
         file_handler = logging.handlers.RotatingFileHandler(
             'kikka.log', mode='a', maxBytes=5.01*1024*1024, backupCount=1, encoding='utf-8')
-        formatter = logging.Formatter('%(asctime)s %(filename)s%(funcName)s[line:%(lineno)d] %(levelname)s: %(message)s')
+        formatter = logging.Formatter(fmt)
     else:
-        logging.basicConfig(level=level,
-                            format='%(asctime)s %(filename)s[line:%(lineno)d] ''%(levelname)s: %(message)s')
+        fmt = '%(asctime)s | line:%(lineno)-4d %(filename)-20s | %(levelname)-8s| %(message)s'
+        logging.basicConfig(level=level, format=fmt)
         file_handler = logging.handlers.RotatingFileHandler(
             'kikka.log', mode='a', maxBytes=1.01*1024*1024, backupCount=1, encoding='utf-8')
-        formatter = logging.Formatter('%(asctime)s %(filename)s[line:%(lineno)d] %(levelname)s: %(message)s')
+        formatter = logging.Formatter(fmt)
 
     file_handler.setLevel(level)
     file_handler.setFormatter(formatter)
