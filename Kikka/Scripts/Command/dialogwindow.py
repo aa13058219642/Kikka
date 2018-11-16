@@ -23,7 +23,7 @@ class Dialog(QWidget):
         # self.setAcceptDrops(True)
 
         self._ghost = ghost
-        self._shellwindow = self._ghost.getMainWindow(nid)
+        self._shellwindow = self._ghost.getShellWindow(nid)
         self.nid = nid
         self._framelessWindowHint = True
         self.isFlip = False
@@ -49,7 +49,7 @@ class Dialog(QWidget):
             self.activateWindow()
         else:
             sz = QSize(self.geometry().size())
-            p_pos = self._ghost.getMainWindow(self.nid).pos()
+            p_pos = self._ghost.getShellWindow(self.nid).pos()
             geometry = QPoint(self.geometry().x(), self.geometry().y())
             pos = QPoint(self.pos().x(), self.pos().y())
             self._ghost.menoryWrite('DialogRect',
@@ -67,7 +67,7 @@ class Dialog(QWidget):
         if self._framelessWindowHint is False:
             return
 
-        shellwindow = self._ghost.getMainWindow(self.nid)
+        shellwindow = self._ghost.getShellWindow(self.nid)
         p_pos = shellwindow.pos()
         p_size = shellwindow.size()
         rect = self._ghost.memoryRead('DialogRect', [], self.nid)

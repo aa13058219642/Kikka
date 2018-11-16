@@ -6,9 +6,9 @@ from PyQt5.QtCore import Qt, QPoint, QRect, QSize, QRectF
 from PyQt5.QtGui import QImage, QPainter, QColor, QPixmap
 
 import kikka
-from mainwindow import MainWindow
+from shellwindow import ShellWindow
 from dialogwindow import Dialog
-from kikka_menu import MenuStyle
+from kikka_menu import MenuStyle, Menu
 
 
 class GhostBase:
@@ -18,24 +18,24 @@ class GhostBase:
         self.shell = None
         self.balloon = None
         self.eventlist = {}
-        self._mainwindows = []
-        self._dialogs = []
-        self._surfaces = []
-        self._surface_base_image = []
+        self._shellwindows = {}
+        self._dialogs = {}
+        self._surfaces = {}
+        self._surface_base_image = {}
         self._balloon_base_image = None
         self._shell_image = {}
         self._balloon_image = {}
-        self._menus = []
+        self._menus = {}
         self._menustyle = None
 
     def show(self):
-        for w in self._mainwindows:
+        for w in self._shellwindows.values():
             w.show()
 
     def hide(self):
-        for w in self._mainwindows:
+        for w in self._shellwindows.values():
             w.hide()
-        for d in self._dialogs:
+        for d in self._dialogs.values():
             d.hide()
 
     def showMenu(self, nid, pos):
@@ -44,23 +44,24 @@ class GhostBase:
             self._menus[nid].show()
         pass
 
-    def addWindow(self, nid, surfaceID):
-        window = MainWindow(self, nid)
+    def addWindow(self, nid, surfaceID=0):
+        window = ShellWindow(self, nid)
         dialog = Dialog(self, nid)
 
-        self._mainwindows.append(window)
-        self._dialogs.append(dialog)
-        self._surface_base_image.append(None)
-        self._surfaces.append(None)
-        self._menus.append(kikka.menu.createKikkaMenu(self))
+        self._shellwindows[nid] = window
+        self._dialogs[nid] = dialog
+        self._surface_base_image[nid] = None
+        self._surfaces[nid] = None
+        self._menus[nid] = kikka.menu.createSystemMenu(self)
 
         self.setSurface(nid, surfaceID)
         if self.balloon is not None:
             dialog.setBalloon(self.balloon)
+        return window
 
-    def getMainWindow(self, nid):
-        if 0 <= nid < len(self._mainwindows):
-            return self._mainwindows[nid]
+    def getShellWindow(self, nid):
+        if 0 <= nid < len(self._shellwindows):
+            return self._shellwindows[nid]
         else:
             return None
 
@@ -84,8 +85,8 @@ class GhostBase:
                 continue
             self._shell_image[filename] = kikka.helper.getImage(p)
 
-        for i in range(len(self._mainwindows)):
-            self._mainwindows[i].setImage(self.getShellImage(i))
+        for i in range(len(self._shellwindows)):
+            self._shellwindows[i].setImage(self.getShellImage(i))
 
     def getShell(self):
         return self.shell
@@ -111,7 +112,7 @@ class GhostBase:
         if 0 <= nid < len(self._menus):
             self._menus[nid] = Menu
 
-    def getMenu(self, nid=0):
+    def getMenu(self, nid=0) -> Menu:
         if 0 <= nid < len(self._menus):
             return self._menus[nid]
         else:
@@ -137,8 +138,8 @@ class GhostBase:
                     ani.start()
 
             img = self.getShellImage(nid)
-            self._mainwindows[nid].setImage(img)
-            self._mainwindows[nid].setBoxes(self.shell.getCollisionBoxes(surfaceID), self.shell.getOffset())
+            self._shellwindows[nid].setImage(img)
+            self._shellwindows[nid].setBoxes(self.shell.getCollisionBoxes(surfaceID), self.shell.getOffset())
         except ValueError:
             logging.warning("Gohst.setSurfaces: surfaceID: %d NOT exist" % surfaceID)
         pass
@@ -297,18 +298,19 @@ class GhostBase:
     def update(self, updatetime):
         isNeedUpdate = False
 
-        for i in range(len(self._mainwindows)):
-            for aid, ani in self._surfaces[i].animations.items():
+        for nid, w in self._shellwindows.items():
+            for aid, ani in self._surfaces[nid].animations.items():
                 if ani.update(updatetime) is True:
-                    self._mainwindows[i].setImage(self.getShellImage(i))
+                    w.setImage(self.getShellImage(nid))
                     isNeedUpdate = True
+
         return isNeedUpdate
 
     def repaint(self):
-        for w in self._mainwindows:
+        for w in self._shellwindows.values():
             w.setImage(self.getShellImage(w.nid))
             w.repaint()
-        for d in self._dialogs:
+        for d in self._dialogs.values():
             d.repaint()
 
     # #####################################################################################

@@ -10,6 +10,7 @@ import kikka
 from ghostevent import GhostEvent
 from kikka_shell import Surface
 from ghostbase import GhostBase
+from kikka_menu import Menu
 
 
 KIKKA = 0
@@ -20,16 +21,21 @@ class GhostKikka(GhostBase):
         GhostBase.__init__(self, gid, name)
         self.setShell(1)
         self.setBalloon(0)
-        self.addWindow(KIKKA, 0)
-        self.addWindow(TOWA, 10)
+        w_kikka = self.addWindow(KIKKA, 0)
+        w_towa = self.addWindow(TOWA, 10)
+
         self.initEvent()
+        self.initLayout()
+        self.initMenu()
 
+    def initMenu(self):
+        mainmenu = self.getMenu(KIKKA)
+        menu = Menu(mainmenu.parent(), self.gid, "kikka menu")
+        mainmenu.insertMenu(mainmenu.actions()[0], menu)
+
+    def initLayout(self):
         dlg = self.getDialog(KIKKA)
-        dlg.setLayout(self.getMainLayout(dlg))
-        self.repaint()
-        pass
 
-    def getMainLayout(self, parent):
         self._mainLayout = QVBoxLayout()
         self._mainLayout.setContentsMargins(0, 0, 0, 0)
         self._stackedLayout = QStackedLayout()
@@ -65,7 +71,7 @@ class GhostKikka(GhostBase):
             girdlayout = QGridLayout()
             self._girdlayouts.append(girdlayout)
 
-            page = QWidget(parent)
+            page = QWidget(dlg)
             page.setLayout(girdlayout)
             self._stackedLayout.addWidget(page)
 
@@ -84,8 +90,7 @@ class GhostKikka(GhostBase):
             but = QPushButton("move%d(%d)" % (i, 5))
             but.clicked.connect(callbackfunc)
             girdlayout.addWidget(but, 5, 0)
-
-        return self._mainLayout
+        dlg.setLayout(self._mainLayout)
 
     def initEvent(self):
         e = {}

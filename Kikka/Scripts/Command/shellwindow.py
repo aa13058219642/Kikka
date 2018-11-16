@@ -9,7 +9,7 @@ from ghostevent import GhostEvent
 import kikka
 
 
-class MainWindow(QWidget):
+class ShellWindow(QWidget):
     def __init__(self, ghost, nid):
         QWidget.__init__(self)
         self._ghost = ghost

@@ -40,7 +40,7 @@ class KikkaMenu:
         QApplication.instance().trayIcon.setContextMenu(menu)
 
     @staticmethod
-    def createKikkaMenu(ghost):
+    def createSystemMenu(ghost):
         import kikka
 
         parten = QWidget(flags=Qt.Dialog)
