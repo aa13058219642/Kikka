@@ -85,14 +85,16 @@ class GhostBase:
                 continue
             self._shell_image[filename] = kikka.helper.getImage(p)
 
-        for i in range(len(self._shellwindows)):
-            self._shellwindows[i].setImage(self.getShellImage(i))
+        for nid, w in self._shellwindows.items():
+            self.makeSurfaceBaseImage(nid, self._surfaces[nid].ID)
+            w.setImage(self.getShellImage(nid))
 
     def getShell(self):
         return self.shell
 
     def setBalloon(self, balloonID):
         self.balloon = kikka.balloon.getBalloon(balloonID)
+        self.balloon.load()
 
         for parent, dirnames, filenames in os.walk(self.balloon.balloonpath):
             for filename in filenames:
@@ -130,7 +132,7 @@ class GhostBase:
                 return
 
             self._surfaces[nid] = surface
-            self._surface_base_image[nid] = self._makeSurfaceBaseImage(surface)
+            self.makeSurfaceBaseImage(nid, surfaceID)
 
             # start 'runonce' and 'always' animation
             for aid, ani in surface.animations.items():
@@ -144,7 +146,8 @@ class GhostBase:
             logging.warning("Gohst.setSurfaces: surfaceID: %d NOT exist" % surfaceID)
         pass
 
-    def _makeSurfaceBaseImage(self, surface):
+    def makeSurfaceBaseImage(self, nid, surfaceID):
+        surface = self.shell.getSurface(surfaceID)
         base_image = QImage(500, 500, QImage.Format_ARGB32)
         painter = QPainter(base_image)
         painter.setCompositionMode(QPainter.CompositionMode_Source)
@@ -162,7 +165,8 @@ class GhostBase:
                 painter.drawImage(self.shell.setting.offset, self._shell_image[fn])
         painter.end()
         # self._base_image.save("_base_image.png")
-        return base_image
+        self._surface_base_image[nid] = base_image
+
 
     def getShellImage(self, nid):
         img = QImage(self._surface_base_image[nid])

@@ -54,7 +54,6 @@ class KikkaBalloon:
     def getBalloon(self, index):
         if 0 <= index < len(self._balloons):
             balloon = self._balloons[index]
-            balloon.load()
             return balloon
         else:
             logging.error("getBalloon: index NOT in balloon list")

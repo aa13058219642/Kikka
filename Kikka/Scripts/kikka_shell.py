@@ -62,7 +62,6 @@ class KikkaShell:
     def getShell(self, index):
         if 0 <= index < len(self._shells):
             shell = self._shells[index]
-            shell.load()
             return shell
         else:
             logging.error("getShell: index NOT in shell list")
@@ -94,9 +93,10 @@ class Shell:
         # path check
         if os.path.exists(shellpath):
             descript_map = self._open_descript()
-            self._load_descript(descript_map)
-            self._loadPNGindex()
-            self.isInitialized = True
+            if descript_map is not None:
+                self._load_descript(descript_map)
+                self._loadPNGindex()
+                self.isInitialized = True
         pass
 
     def load(self):
@@ -117,7 +117,7 @@ class Shell:
     def _open_descript(self):
         descript_path = os.path.join(self.shellpath, 'descript.txt')
         if not os.path.exists(descript_path):
-            return
+            return None
 
         map = {}
         charset = kikka.helper.checkEncoding(descript_path)
@@ -140,8 +140,8 @@ class Shell:
             map[key] = value
         return map
 
-    def _open_surfaces(self, surfaces_path):
-        map = {}
+    def _open_surfaces(self, surfaces_path, map=None):
+        newmap = {} if map is None else map
         surfaceID = []
         is_load_key = True
         charset = kikka.helper.checkEncoding(surfaces_path)
@@ -162,7 +162,7 @@ class Shell:
             if is_load_key is False:
                 # set value
                 for id in surfaceID:
-                    map[id].append(line)
+                    newmap[id].append(line)
             else:
                 # set ID
                 if 'descript' in line or 'alias' in line: continue
@@ -179,13 +179,13 @@ class Shell:
                             a = int(v[0])
                             b = int(v[1])
                             for id in range(a, b):
-                                if id in map:
+                                if id in newmap:
                                     surfaceID.remove(id)
-                                    map.pop(id)
+                                    newmap.pop(id)
                         else:
                             id = int(key)
                             surfaceID.remove(id)
-                            map.pop(id)
+                            newmap.pop(id)
                     else:
                         # add ID
                         if '-' in key:
@@ -193,17 +193,17 @@ class Shell:
                             a = int(v[0])
                             b = int(v[1])
                             for id in range(a, b):
-                                if id not in map:
+                                if id not in newmap:
                                     surfaceID.append(id)
-                                    map[id] = []
+                                    newmap[id] = []
                         else:
                             id = int(key)
-                            if id not in map:
+                            if id not in newmap:
                                 surfaceID.append(id)
-                                map[id] = []
+                                newmap[id] = []
         pass  # exit for
         f.close()
-        return map
+        return newmap
 
     def _load_descript(self, map):
         for keys, values in map.items():
@@ -363,7 +363,7 @@ class Shell:
         while 1:
             surfaces_path = os.path.join(self.shellpath, 'surfaces%d.txt' % i)
             if not os.path.exists(surfaces_path): break
-            surfaces_map = self._open_surfaces(surfaces_path)
+            surfaces_map = self._open_surfaces(surfaces_path, surfaces_map)
             i = i + 1
 
         for key, values in surfaces_map.items():
@@ -377,7 +377,7 @@ class Shell:
         if surfacesID in self._surfaces:
             return self._surfaces[surfacesID]
         else:
-            logging.error("setCurShell: index NOT in shells list")
+            logging.error("setCurShell: index[%d] NOT in shells list" % (surfacesID))
             raise ValueError
 
     def update(self, updatetime, surfacesID):
