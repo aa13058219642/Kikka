@@ -176,7 +176,7 @@ class MainWindow(QWidget):
         painter.drawPixmap(self.rect(), self._pixmap)
 
     def setImage(self, image):
-        image = QImage(r"C:\\test.png")
+        # image = QImage(r"C:\\test.png")
         pixmap = QPixmap().fromImage(image, Qt.AutoColor)
         self._pixmap = pixmap
 

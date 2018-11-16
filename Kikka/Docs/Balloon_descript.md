@@ -77,4 +77,5 @@ noflipcenter,0
 - 当翻转启用，并且clipwidth和clipheight都为5时。在水平翻转背景图片时不翻转中间部分
 - 默认值：0
 
-
+#####margin, [int], [int], [int], [int]
+- 边距（依次为左边距、上边距、右边距、下边距）
