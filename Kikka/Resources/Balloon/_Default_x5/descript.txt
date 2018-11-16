@@ -9,3 +9,5 @@ clip.width,5,45, 15, 180, 15, 45
 clip.height,5,45, 15, 90, 15, 45
 flipbackground,1
 noflipcenter,1
+
+margin,22,22,22,22

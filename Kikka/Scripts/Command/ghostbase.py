@@ -2,21 +2,22 @@
 import logging
 import os
 
-from PyQt5.QtCore import Qt, QPoint, QRect, QSize
+from PyQt5.QtCore import Qt, QPoint, QRect, QSize, QRectF
 from PyQt5.QtGui import QImage, QPainter, QColor, QPixmap
 
 import kikka
 from mainwindow import MainWindow
 from dialogwindow import Dialog
 from kikka_menu import MenuStyle
-import mainmenu
 
 
-class Gohst:
-    def __init__(self, gid, shellID, balloonID):
-        self.gid = gid
+class GhostBase:
+    def __init__(self, gid=-1, name=''):
+        self.gid = gid if gid != -1 else kikka.core.newGhostID()
+        self.name = name
         self.shell = None
         self.balloon = None
+        self.eventlist = {}
         self._mainwindows = []
         self._dialogs = []
         self._surfaces = []
@@ -26,11 +27,6 @@ class Gohst:
         self._balloon_image = {}
         self._menus = []
         self._menustyle = None
-
-        self.setShell(shellID)
-        self.setBalloon(balloonID)
-        self.addWindow(kikka.SAKURA, 0)
-        self.addWindow(kikka.KERO, 10)
 
     def show(self):
         for w in self._mainwindows:
@@ -59,6 +55,8 @@ class Gohst:
         self._menus.append(kikka.menu.createKikkaMenu(self))
 
         self.setSurface(nid, surfaceID)
+        if self.balloon is not None:
+            dialog.setBalloon(self.balloon)
 
     def getMainWindow(self, nid):
         if 0 <= nid < len(self._mainwindows):
@@ -103,6 +101,7 @@ class Gohst:
         self._balloon_base_image = self._balloon_image['background.png']
 
         for i in range(len(self._dialogs)):
+            self._dialogs[i].setBalloon(self.balloon)
             self._dialogs[i].repaint()
 
     def getBalloon(self):
@@ -112,11 +111,13 @@ class Gohst:
         if 0 <= nid < len(self._menus):
             self._menus[nid] = Menu
 
-    def getMenu(self, nid):
+    def getMenu(self, nid=0):
         if 0 <= nid < len(self._menus):
             return self._menus[nid]
         else:
             return None
+
+    # ###################################################################################
 
     def setSurface(self, nid, surfaceID):
         try:
@@ -166,6 +167,7 @@ class Gohst:
         img = QImage(self._surface_base_image[nid])
         painter = QPainter(img)
 
+        # draw surface and animations
         surface = self._surfaces[nid]
         for aid, ani in surface.animations.items():
             fid, x, y = ani.getCurSurfaceData()
@@ -177,9 +179,16 @@ class Gohst:
                 face = self._shell_image[image_name]
                 painter.drawImage(self.shell.setting.offset + QPoint(x, y), face)
 
-        # logging.info("--getCurImage end--------")
+        # debug draw
         if kikka.shell.isDebug is True:
-            # logging.info("debug draw")
+            painter.fillRect(QRect(0, 0, 200, 64), QColor(0, 0, 0, 64))
+            painter.setPen(Qt.green)
+            painter.drawRect(QRect(0, 0, img.width() - 1, img.height() - 1))
+            painter.drawText(3, 12, "MainWindow")
+            painter.drawText(3, 24, "Ghost: %d" % self.gid)
+            painter.drawText(3, 36, "Name: %s" % self.name)
+            painter.drawText(3, 48, "nid: %d" % nid)
+
             for cid, col in surface.CollisionBoxes.items():
                 painter.setPen(Qt.red)
                 rect = QRect(col.Point1, col.Point2)
@@ -189,11 +198,9 @@ class Gohst:
                 painter.setPen(Qt.black)
                 painter.drawText(rect, Qt.AlignCenter, col.tag)
 
-            painter.setPen(Qt.red)
-            painter.drawRect(QRect(0, 0, img.width() - 1, img.height() - 1))
         return img
 
-    def getBalloonImage(self, size: QSize, flip=False):
+    def getBalloonImage(self, size: QSize, flip=False, nid=-1):
         drect = []
         # calculate destination rect
         if len(self.balloon.clipW) == 3:
@@ -241,23 +248,47 @@ class Gohst:
         # paint balloon image
         img = QImage(size, QImage.Format_ARGB32)
         pixmap = QPixmap().fromImage(self._balloon_base_image, Qt.AutoColor)
-        p = QPainter(img)
-        p.setCompositionMode(QPainter.CompositionMode_Source)
+        painter = QPainter(img)
+        painter.setCompositionMode(QPainter.CompositionMode_Source)
 
         for y in range(len(self.balloon.clipH)):
             for x in range(len(self.balloon.clipW)):
-                p.drawPixmap(drect[y][x], pixmap, self.balloon.bgRect[y][x])
-        p.end()
+                painter.drawPixmap(drect[y][x], pixmap, self.balloon.bgRect[y][x])
+        painter.end()
 
         # flip or not
         if self.balloon.flipBackground is True and flip is True:
             img = img.mirrored(True, False)
             if self.balloon.noFlipCenter is True and len(self.balloon.clipW) == 5 and len(self.balloon.clipH) == 5:
-                p = QPainter(img)
-                p.setCompositionMode(QPainter.CompositionMode_Source)
-                p.drawPixmap(drect[2][2], pixmap, self.balloon.bgRect[2][2])
-                p.end()
+                painter = QPainter(img)
+                painter.setCompositionMode(QPainter.CompositionMode_Source)
+                painter.drawPixmap(drect[2][2], pixmap, self.balloon.bgRect[2][2])
+                painter.end()
 
+        # debug draw
+        if kikka.shell.isDebug is True:
+            painter = QPainter(img)
+            painter.fillRect(QRect(0, 0, 200, 64), QColor(0, 0, 0, 64))
+            painter.setPen(Qt.red)
+            for y in range(len(self.balloon.clipH)):
+                for x in range(len(self.balloon.clipW)):
+                    if x in (0, 2, 4) and y in (0, 2, 4):
+                        continue
+                    rectf = QRect(drect[y][x])
+                    text = "(%d, %d)\n%d x %d" % (rectf.x(), rectf.y(), rectf.width(), rectf.height())
+                    painter.drawText(rectf, Qt.AlignCenter, text)
+                if y > 0:
+                    painter.drawLine(drect[y][0].x(), drect[y][0].y(), drect[y][0].x() + img.width(), drect[y][0].y())
+
+            for x in range(1, len(self.balloon.clipW)):
+                painter.drawLine(drect[0][x].x(), drect[0][x].y(), drect[0][x].x(), drect[0][x].y() + img.height())
+
+            painter.setPen(Qt.green)
+            painter.drawRect(QRect(0, 0, img.width() - 1, img.height() - 1))
+            painter.drawText(3, 12, "DialogWindow")
+            painter.drawText(3, 24, "Ghost: %d" % self.gid)
+            painter.drawText(3, 36, "Name: %s" % self.name)
+            painter.drawText(3, 48, "nid: %d" % nid)
         return img
 
     def getMenuStyle(self):
@@ -280,6 +311,8 @@ class Gohst:
         for d in self._dialogs:
             d.repaint()
 
+    # #####################################################################################
+
     def memoryRead(self, key, default, nid=0):
         key = '%s_%d_%d' % (key, self.gid, nid)
         if kikka.core.isDebug:
@@ -295,3 +328,13 @@ class Gohst:
         else:
             kikka.memory.writeDeepMemory(key, value)
         pass
+
+    def event_selector(self, event, tag, **kwargs):
+        if 'gid' not in kwargs: kwargs['gid'] = self.gid
+
+        e = self.getEventList()
+        if event in e and tag in e[event]:
+            e[event][tag](**kwargs)
+
+    def getEventList(self):
+        return self.eventlist

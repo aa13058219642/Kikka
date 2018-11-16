@@ -2,10 +2,10 @@
 import logging
 
 from PyQt5.QtCore import Qt, QRect, QPoint
-from PyQt5.QtGui import QPixmap, QPainter, QColor, QImage
+from PyQt5.QtGui import QPixmap, QPainter, QColor, QImage, QFont
 from PyQt5.QtWidgets import QWidget
 
-from mouseevent import MouseEvent
+from ghostevent import GhostEvent
 import kikka
 
 
@@ -39,14 +39,19 @@ class MainWindow(QWidget):
             rect.moveTopLeft(col.Point1 + offset)
             self._boxes[cid] = (rect, col.tag)
 
-    def _boxCollision(self):
+    def _boxCollision(self, event):
+        if self._isMoving is True:
+            return
+
         mx = self._mousepos.x()
         my = self._mousepos.y()
         for cid, box in self._boxes.items():
             rect = box[0]
             if rect.contains(mx, my) is True:
-                return box[1]
-        return ''
+                tag = box[1]
+                self._ghost.event_selector(event, tag, nid=self.nid)
+                return
+        pass
     
     def _mouseLogging(self, event, button, x, y):
         page_sizes = dict((n, x) for x, n in vars(Qt).items() if isinstance(n, Qt.MouseButton))
@@ -90,9 +95,12 @@ class MainWindow(QWidget):
             self._isMoving = True
             event.accept()
 
-        if self._isMoving is False:
-            boxevent = self._boxCollision()
-            if boxevent != '': MouseEvent.event_selector(self._ghost.gid, self.nid, MouseEvent.MouseDown, boxevent)
+        self._boxCollision(GhostEvent.MouseDown)
+        # if self._isMoving is False:
+        #     eventtag = self._boxCollision()
+        #     if eventtag is not None:
+        #         self._ghost.event_selector(self.nid, GhostEvent.MouseDown, eventtag)
+        pass
 
     def mouseMoveEvent(self, event):
         # self._mouseLogging("mouseMoveEvent", event.buttons(), event.globalPos().x(), event.globalPos().y())
@@ -104,10 +112,12 @@ class MainWindow(QWidget):
         else:
             self._isMoving = False
 
-        if self._isMoving is False:
-            boxevent = self._boxCollision()
-            if boxevent != '':
-                MouseEvent.event_selector(self._ghost.gid, self.nid, MouseEvent.MouseMove, boxevent)
+        self._boxCollision(GhostEvent.MouseMove)
+        # if self._isMoving is False:
+        #     eventtag = self._boxCollision()
+        #     if eventtag is not None:
+        #         self._ghost.event_selector(self.nid, GhostEvent.MouseMove, eventtag)
+        pass
 
     def mouseReleaseEvent(self, event):
         self._mouseLogging("mouseReleaseEvent", event.buttons(), event.globalPos().x(), event.globalPos().y())
@@ -116,21 +126,33 @@ class MainWindow(QWidget):
                                 [self.pos().x(), self.pos().y(), self.size().width(), self.size().height()],
                                 self.nid)
 
+        self._boxCollision(GhostEvent.MouseUp)
+        # eventtag = self._boxCollision()
+        # if eventtag is not None:
+        #     self._ghost.event_selector(self.nid, GhostEvent.MouseUp, eventtag)
+        pass
+
     def mouseDoubleClickEvent(self, event):
         self._mouseLogging("mouseDoubleClickEvent", event.buttons(), event.globalPos().x(), event.globalPos().y())
         if event.buttons() == Qt.LeftButton:
             self._isMoving = False
             self._ghost.getDialog(self.nid).show()
 
-        if self._isMoving is False:
-            boxevent = self._boxCollision()
-            if boxevent != '': MouseEvent.event_selector(self._ghost.gid, self.nid, MouseEvent.MouseDoubleClick, boxevent)
+        self._boxCollision(GhostEvent.MouseDoubleClick)
+        # if self._isMoving is False:
+        #     eventtag = self._boxCollision()
+        #     if eventtag is not None:
+        #         self._ghost.event_selector(self.nid, GhostEvent.MouseDoubleClick, eventtag)
+        pass
 
     def wheelEvent(self, event):
         # self._mouseLogging("wheelEvent", btn, event.pos().x(), event.pos().y())
-        if self._isMoving is False:
-            boxevent = self._boxCollision()
-            if boxevent != '': MouseEvent.event_selector(self._ghost.gid, self.nid, MouseEvent.WheelEvent, boxevent)
+        self._boxCollision(GhostEvent.WheelEvent)
+        # if self._isMoving is False:
+        #     eventtag = self._boxCollision()
+        #     if eventtag is not None:
+        #         self._ghost.event_selector(self.nid, GhostEvent.WheelEvent, eventtag)
+        pass
 
     def dragEnterEvent(self, event):
 
@@ -152,11 +174,9 @@ class MainWindow(QWidget):
     def paintEvent(self, event):
         painter = QPainter(self)
         painter.drawPixmap(self.rect(), self._pixmap)
-        painter.setPen(Qt.green)
-        painter.drawRect(QRect(0, 0, self.size().width()-1, self.size().height()-1))
 
     def setImage(self, image):
-        # image = QImage(r"C:\\test.png")
+        image = QImage(r"C:\\test.png")
         pixmap = QPixmap().fromImage(image, Qt.AutoColor)
         self._pixmap = pixmap
 

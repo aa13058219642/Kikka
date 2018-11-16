@@ -1,99 +1,187 @@
 # coding=utf-8
 import logging
 
+from PyQt5 import QtGui
+from PyQt5.QtCore import Qt, QRect, QPoint, QSize
+from PyQt5.QtGui import QPixmap, QPainter
+from PyQt5.QtWidgets import QWidget, QPushButton, QStackedLayout, QVBoxLayout, QHBoxLayout, QLabel, QGridLayout
+
 import kikka
-from mouseevent import MouseEvent
+from ghostevent import GhostEvent
 from kikka_shell import Surface
+from ghostbase import GhostBase
 
 
-def getEventList():
-    e = {}
+KIKKA = 0
+TOWA = 1
 
-    name = 'Head'
-    e[name] = {}
-    e[name][MouseEvent.MouseDown] = head_click
-    e[name][MouseEvent.MouseMove] = head_touch
-    e[name][MouseEvent.MouseDoubleClick] = head_doubleclick
+class GhostKikka(GhostBase):
+    def __init__(self, gid=-1, name='Kikka'):
+        GhostBase.__init__(self, gid, name)
+        self.setShell(1)
+        self.setBalloon(0)
+        self.addWindow(KIKKA, 0)
+        self.addWindow(TOWA, 10)
+        self.initEvent()
 
-    name = 'Face'
-    e[name] = {}
-    e[name][MouseEvent.MouseDown] = face_click
-    e[name][MouseEvent.MouseMove] = face_touch
-    e[name][MouseEvent.MouseDoubleClick] = face_doubleclick
+        dlg = self.getDialog(KIKKA)
+        dlg.setLayout(self.getMainLayout(dlg))
+        self.repaint()
+        pass
 
-    name = 'Bust'
-    e[name] = {}
-    e[name][MouseEvent.MouseDown] = bust_click
-    e[name][MouseEvent.MouseMove] = bust_touch
-    e[name][MouseEvent.MouseDoubleClick] = bust_doubleclick
+    def getMainLayout(self, parent):
+        self._mainLayout = QVBoxLayout()
+        self._mainLayout.setContentsMargins(0, 0, 0, 0)
+        self._stackedLayout = QStackedLayout()
+        self._topLayout = QVBoxLayout()
 
-    name = 'Hand'
-    e[name] = {}
-    e[name][MouseEvent.MouseDown] = hand_click
-    e[name][MouseEvent.MouseMove] = hand_touch
-    e[name][MouseEvent.MouseDoubleClick] = hand_doubleclick
+        # 0 main Layout
+        self._mainLayout.addLayout(self._topLayout)
+        self._mainLayout.addLayout(self._stackedLayout)
 
-    return e
+        # 1.0 top layout
+        self._toplabel = QLabel("Hello")
+        self._toplabel.setObjectName('Hello')
+        self._topLayout.addWidget(self._toplabel)
+
+        # 1.2 tab layout
+        self._tabLayout = QHBoxLayout()
+        self._topLayout.addLayout(self._tabLayout)
+
+        # 1.2.1 tab button
+        p1 = QPushButton("page1")
+        p2 = QPushButton("page2")
+        p3 = QPushButton("page3")
+        p1.clicked.connect(lambda: self._stackedLayout.setCurrentIndex(0))
+        p2.clicked.connect(lambda: self._stackedLayout.setCurrentIndex(1))
+        p3.clicked.connect(lambda: self._stackedLayout.setCurrentIndex(2))
+        self._tabLayout.addWidget(p1)
+        self._tabLayout.addWidget(p2)
+        self._tabLayout.addWidget(p3)
+
+        # 2.0 gird layouts
+        self._girdlayouts = []
+        for i in range(3):
+            girdlayout = QGridLayout()
+            self._girdlayouts.append(girdlayout)
+
+            page = QWidget(parent)
+            page.setLayout(girdlayout)
+            self._stackedLayout.addWidget(page)
+
+        # 2.1 page1
+        callbackfunc = lambda : self.event_selector(GhostEvent.CustomEvent, 'ResizeWindow', bool=False, nid=KIKKA)
+        for i in range(3):
+            girdlayout = self._girdlayouts[i]
+            for j in range(5):
+                but = QPushButton("move%d(%d)" % (i, j))
+                but.clicked.connect(callbackfunc)
+                girdlayout.addWidget(but, j, 0)
+
+                but2 = QPushButton("close%d(%d)" % (i, j))
+                but2.clicked.connect(lambda : self.event_selector(GhostEvent.CustomEvent, 'CloseDialog', nid=KIKKA))
+                girdlayout.addWidget(but2, j, 1)
+            but = QPushButton("move%d(%d)" % (i, 5))
+            but.clicked.connect(callbackfunc)
+            girdlayout.addWidget(but, 5, 0)
+
+        return self._mainLayout
+
+    def initEvent(self):
+        e = {}
+
+        tag = ['Head', 'Face', 'Bust', 'Hand']
+        e[GhostEvent.MouseDown] = {}
+        e[GhostEvent.MouseDown]['Head'] = head_click
+        e[GhostEvent.MouseDown]['Face'] = face_click
+        e[GhostEvent.MouseDown]['Bust'] = bust_click
+        e[GhostEvent.MouseDown]['Hand'] = hand_click
+
+        e[GhostEvent.MouseMove] = {}
+        e[GhostEvent.MouseMove]['Head'] = head_touch
+        e[GhostEvent.MouseMove]['Face'] = face_touch
+        e[GhostEvent.MouseMove]['Bust'] = bust_touch
+        e[GhostEvent.MouseMove]['Hand'] = hand_touch
+
+        e[GhostEvent.MouseDoubleClick] = {}
+        e[GhostEvent.MouseDoubleClick]['Head'] = head_doubleclick
+        e[GhostEvent.MouseDoubleClick]['Face'] = face_doubleclick
+        e[GhostEvent.MouseDoubleClick]['Bust'] = bust_doubleclick
+        e[GhostEvent.MouseDoubleClick]['Hand'] = hand_doubleclick
+
+        e[GhostEvent.CustomEvent]={}
+        e[GhostEvent.CustomEvent]['ResizeWindow'] = resizeWindow
+        e[GhostEvent.CustomEvent]['CloseDialog'] = closeDlg
+        self.eventlist = e
+
+# ########################################################################################################
+def resizeWindow(**kwargs):
+    dlg = kikka.core.getGhost(kwargs['gid']).getDialog(kwargs['nid'])
+    dlg.setFramelessWindowHint(kwargs['bool'])
 
 
-def head_touch(gid, nid):
-    logging.info("head_touch")
-    kikka.core.getGhost(kikka.KIKKA).setSurface(kikka.SAKURA, Surface.ENUM_NORMAL)
+def closeDlg(**kwargs):
+    kikka.core.getGhost(kwargs['gid']).getDialog(kwargs['nid']).hide()
+
+
+def head_touch(**kwargs):
+    logging.info("head_touch!!!")
+    kikka.core.getGhost(kwargs['gid']).setSurface(kwargs['nid'], Surface.ENUM_JOY)
     pass
 
 
-def head_click(gid, nid):
+def head_click(**kwargs):
     logging.info("head_click")
     pass
 
 
-def head_doubleclick(gid, nid):
+def head_doubleclick(**kwargs):
     logging.info("head_doubleclick")
     pass
 
 
-def face_touch(gid, nid):
+def face_touch(**kwargs):
     logging.info("face_touch")
-    kikka.core.getGhost(kikka.KIKKA).setSurface(kikka.SAKURA, Surface.ENUM_ANGER2)
+    kikka.core.getGhost(kwargs['gid']).setSurface(kwargs['nid'], Surface.ENUM_ANGER2)
     pass
 
 
-def face_click(gid, nid):
+def face_click(**kwargs):
     logging.info("face_click")
     pass
 
 
-def face_doubleclick(gid, nid):
+def face_doubleclick(**kwargs):
     logging.info("face_doubleclick")
     pass
 
 
-def bust_touch(gid, nid):
+def bust_touch(**kwargs):
     logging.info("bust_touch")
     pass
 
 
-def bust_click(gid, nid):
+def bust_click(**kwargs):
     logging.info("bust_click")
     pass
 
 
-def bust_doubleclick(gid, nid):
+def bust_doubleclick(**kwargs):
     logging.info("bust_doubleclick")
     pass
 
 
-def hand_touch(gid, nid):
+def hand_touch(**kwargs):
     logging.info("hand_touch")
     pass
 
 
-def hand_click(gid, nid):
+def hand_click(**kwargs):
     logging.info("hand_click")
     pass
 
 
-def hand_doubleclick(gid, nid):
+def hand_doubleclick(**kwargs):
     logging.info("hand_doubleclick")
     pass
 

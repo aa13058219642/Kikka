@@ -1,12 +1,13 @@
 # coding=utf-8
 import logging
 import time
+import random
 from enum import Enum
 
 from PyQt5.QtCore import QTimer
 
 import kikka
-from ghost import Gohst
+from ghostbase import GhostBase
 
 
 class KikkaCore:
@@ -52,8 +53,9 @@ class KikkaCore:
         for _, g in self._ghosts.items():
             g.show()
 
-    def addGhost(self, gid, shellID=1, balloonID=0):
-        self._ghosts[gid] = (Gohst(gid, shellID, balloonID))
+    def addGhost(self, ghost):
+        self._ghosts[ghost.gid] = ghost
+        return ghost.gid
 
     def getGhost(self, gid):
         if gid in self._ghosts:
@@ -61,6 +63,12 @@ class KikkaCore:
         else:
             logging.error("getGhost: gid NOT in ghost list")
             raise ValueError
+
+    def newGhostID(self):
+        id = len(self._ghosts)
+        while id in self._ghosts:
+            id = random.randint()
+        return id
 
     def setGhostSurface(self, gid, nid, surfaceID):
         if gid in self._ghosts:

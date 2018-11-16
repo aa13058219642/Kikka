@@ -79,6 +79,7 @@ class Balloon:
         self.flipBackground = False
         self.noFlipCenter = False
         self.stylesheet = None
+        self.margin = [3, 3, 3, 3]
 
         self._load_descript()
         pass
@@ -160,6 +161,8 @@ class Balloon:
                 self.flipBackground = int(value[0]) == 1
             elif key[0] == 'noflipcenter':
                 self.noFlipCenter = int(value[0]) == 1
+            elif key[0] == 'margin':
+                self.margin = [int(value[0]), int(value[1]), int(value[2]), int(value[3])]
 
             elif key[0] == 'id':
                 self.id = value[0]

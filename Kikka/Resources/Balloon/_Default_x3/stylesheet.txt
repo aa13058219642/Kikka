@@ -1,17 +1,13 @@
 
-
-
-
 QPushButton{
 	border-style: solid;
-	background-color: #FF0000;
+	/*background: transparent;*/
+	background-color:#00FF00;
 	padding: 3px;
 } 
-
 QPushButton:hover{
 	text-decoration: underline;
 } 
-
 
 
 

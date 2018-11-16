@@ -5,7 +5,8 @@ import logging
 from PyQt5 import QtGui
 from PyQt5.QtCore import Qt, QRect, QPoint, QSize
 from PyQt5.QtGui import QPixmap, QPainter
-from PyQt5.QtWidgets import QWidget, QPushButton, QStackedLayout, QVBoxLayout, QHBoxLayout, QLabel, QGridLayout
+from PyQt5.QtWidgets import QWidget, QPushButton, QStackedLayout, QVBoxLayout, QHBoxLayout, QLabel, QGridLayout, \
+    QStyleOption, QStyle
 
 import kikka
 from kikka_balloon import Balloon
@@ -16,6 +17,7 @@ class Dialog(QWidget):
         QWidget.__init__(self)
         self.setWindowFlags(Qt.Tool | Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint)
         self.setAttribute(Qt.WA_TranslucentBackground)
+        self.setWindowTitle(ghost.name)
         # self.setAttribute(Qt.WA_DeleteOnClose)
         # self.setMouseTracking(True)
         # self.setAcceptDrops(True)
@@ -23,85 +25,18 @@ class Dialog(QWidget):
         self._ghost = ghost
         self._shellwindow = self._ghost.getMainWindow(nid)
         self.nid = nid
-        self._isChangeSizeMode = False
-        self.balloon = None
+        self._framelessWindowHint = True
         self.isFlip = False
+        self.setContentsMargins(0, 0, 0, 0)
 
         self._bgImage = None
         self._bgPixmap = None
         self._bgMask = None
-
-        style = '''
-        QPushButton{
-            border-style: solid;
-            background-color: #FF0000;
-            padding: 3px;
-        } 
-        QPushButton:hover{
-            text-decoration: underline;
-        } 
-        '''
-        self.setStyleSheet(style)
-        self._initLayout()
         pass
 
-    def _initLayout(self):
-        self.mainLayout = QVBoxLayout()
-        self.stackedLayout = QStackedLayout()
-        self.topLayout = QVBoxLayout()
-
-        # 0 main Layout
-        self.mainLayout.addLayout(self.topLayout)
-        self.mainLayout.addLayout(self.stackedLayout)
-        self.setLayout(self.mainLayout)
-
-        # 1.0 top layout
-        self.toplabel = QLabel("Hello")
-        self.topLayout.addWidget(self.toplabel)
-
-        # 1.2 tab layout
-        self.tabLayout = QHBoxLayout()
-        self.topLayout.addLayout(self.tabLayout)
-
-        # 1.2.1 tab button
-        p1 = QPushButton("page1")
-        p2 = QPushButton("page2")
-        p3 = QPushButton("page3")
-        p1.clicked.connect(lambda: self.stackedLayout.setCurrentIndex(0))
-        p2.clicked.connect(lambda: self.stackedLayout.setCurrentIndex(1))
-        p3.clicked.connect(lambda: self.stackedLayout.setCurrentIndex(2))
-        self.tabLayout.addWidget(p1)
-        self.tabLayout.addWidget(p2)
-        self.tabLayout.addWidget(p3)
-
-        # 2.0 gird layouts
-        self.girdlayouts = []
-        for i in range(3):
-            girdlayout = QGridLayout()
-            self.girdlayouts.append(girdlayout)
-
-            page = QWidget()
-            page.setLayout(girdlayout)
-            self.stackedLayout.addWidget(page)
-
-        # 2.1 page1
-        for i in range(3):
-            girdlayout = self.girdlayouts[i]
-            for j in range(5):
-                but = QPushButton("move%d(%d)" % (i, j))
-                but.clicked.connect(self.setChangeSizeMode)
-                girdlayout.addWidget(but, j, 0)
-
-                but2 = QPushButton("close%d(%d)" % (i, j))
-                but2.clicked.connect(lambda: self.hide())
-                girdlayout.addWidget(but2, j, 1)
-            but = QPushButton("move%d(%d)" % (i, 5))
-            but.clicked.connect(self.setChangeSizeMode)
-            girdlayout.addWidget(but, 5, 0)
-
-    def setChangeSizeMode(self):
-        self._isChangeSizeMode = not self._isChangeSizeMode
-        if self._isChangeSizeMode is True:
+    def setFramelessWindowHint(self, boolean):
+        self._framelessWindowHint = boolean
+        if self._framelessWindowHint is False:
             self.clearMask()
             self.setWindowFlag(Qt.FramelessWindowHint, False)
             self.setWindowOpacity(0.8)
@@ -129,7 +64,7 @@ class Dialog(QWidget):
             self.move(pos.x(), pos.y())
 
     def updatePosition(self):
-        if self._isChangeSizeMode is True:
+        if self._framelessWindowHint is False:
             return
 
         shellwindow = self._ghost.getMainWindow(self.nid)
@@ -163,7 +98,7 @@ class Dialog(QWidget):
             self.isFlip = flip
             balloon = self._ghost.getBalloon()
             if balloon is not None:
-                self._bgImage = self._ghost.getBalloonImage(self.size(), self.isFlip)
+                self._bgImage = self._ghost.getBalloonImage(self.size(), self.isFlip, self.nid)
                 self._bgPixmap = QPixmap().fromImage(self._bgImage, Qt.AutoColor)
                 self._bgMask = self._bgPixmap.mask()
 
@@ -176,7 +111,7 @@ class Dialog(QWidget):
         pass
 
     def closeEvent(self, event):
-        self.setChangeSizeMode()
+        self.setFramelessWindowHint(True)
         event.ignore()
         pass
 
@@ -189,15 +124,21 @@ class Dialog(QWidget):
         painter = QPainter(self)
         pixmap = QPixmap().fromImage(self._bgImage, Qt.AutoColor)
         painter.drawPixmap(self.rect(), pixmap)
+
+        opt = QStyleOption()
+        opt.initFrom(self)
+        self.style().drawPrimitive(QStyle.PE_Widget, opt, painter, self)
         super().paintEvent(event)
 
     def setBalloon(self, balloon):
-        self.balloon = balloon
         self.setMinimumSize(balloon.minimumsize)
+        self.setContentsMargins(balloon.margin[0], balloon.margin[1], balloon.margin[2], balloon.margin[3])
         self.setStyleSheet(balloon.stylesheet)
 
     def repaint(self):
-        self._bgImage = self._ghost.getBalloonImage(self.size(), self.isFlip)
+        self._bgImage = self._ghost.getBalloonImage(self.size(), self.isFlip, self.nid)
         self._bgPixmap = QPixmap().fromImage(self._bgImage, Qt.AutoColor)
         self._bgMask = self._bgPixmap.mask()
         super().repaint()
+
+
