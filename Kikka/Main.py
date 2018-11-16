@@ -10,6 +10,7 @@ def awake():
     # logging level (low to hight):
     # CRITICAL, ERROR, WARNING, INFO, DEBUG, NOTSET
     setLogging(logging.INFO)
+    sys.excepthook = handle_exception
 
     # init all Singletion class
     import kikka
@@ -19,6 +20,7 @@ def awake():
         kikka.memory.isDebug = True
         kikka.app.isDebug = True
         kikka.core.isDebug = True
+        kikka.shell.isDebug = True
 
     # start
     kikka.memory.awake()
@@ -29,9 +31,11 @@ def awake():
     kikka.core.start()
     kikka.app.start()
 
-    kikka.core.addGhost(kikka.KIKKA)
 
-    kikka.menu.setAppMenu(kikka.core.getGhost(kikka.KIKKA).getMenu(kikka.KIKKA))
+    #kikka.core.addGhost(kikka.KIKKA)
+    from ghost_kikka import GhostKikka
+    gid = kikka.core.addGhost(GhostKikka())
+    kikka.menu.setAppMenu(kikka.core.getGhost(gid).getMenu())
     kikka.core.show()
 
     pass
@@ -55,6 +59,13 @@ def setLogging(level):
     file_handler.setFormatter(formatter)
     logging.getLogger().addHandler(file_handler)
 
+def handle_exception(exc_type, exc_value, exc_traceback):
+    if issubclass(exc_type, KeyboardInterrupt):
+        sys.__excepthook__(exc_type, exc_value, exc_traceback)
+        return
+    logging.error("Run time error\n%s: %s\n%s"%(exc_type.__name__, exc_value, "-"*40), exc_info=(exc_type, exc_value, exc_traceback))
+    logging.info("\n%s\n%s"%("-"*120, "-"*120))
+
 
 def run():
     try:
@@ -63,9 +74,6 @@ def run():
         sys.exit(qapp.exec_())
     except SystemExit:
         pass
-    except Exception:
-        logging.exception('Kikka: run time error')
-        raise SyntaxError('run time error')
 
 
 if __name__ == '__main__':

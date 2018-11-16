@@ -34,7 +34,7 @@ class KikkaMemory:
         pass
 
     def awake(self):
-        self._filepath = 'Kikka.memory' if self.isDebug is False else 'Kikka.db'
+        self._filepath = 'Kikka.memory'
         memoryEsists = os.path.exists(self._filepath)
         self._deepmemory = DeepMemory(sqlite3.connect(self._filepath))
 

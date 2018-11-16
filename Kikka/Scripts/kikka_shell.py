@@ -13,7 +13,7 @@ import kikka
 
 class KikkaShell:
     _instance = None
-    isDebug = True
+    isDebug = False
 
     def __init__(self, **kwargs):
         raise SyntaxError('The class is Singletion, please use ShellManager.this() or kikka.shell_manager')

@@ -18,11 +18,3 @@ menu = kikka_menu.KikkaMenu.this()
 shell = kikka_shell.KikkaShell.this()
 core = kikka_core.KikkaCore.this()
 balloon = kikka_balloon.KikkaBalloon.this()
-
-# Ghost list
-KIKKA = 0
-SSP = 1
-
-# Shell index const
-SAKURA = 0
-KERO = 1

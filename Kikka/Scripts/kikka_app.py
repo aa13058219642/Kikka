@@ -29,8 +29,8 @@ class KikkaApp:
     def _init(self):
         self._hasFullScreenProgress = False
         self._hasKikkaExe = True
+        logging.info("")
         logging.info("Hey~ Kikka here %s" % ("-" * 40))
-        pass
 
     def start(self):
         self._createGuardThread()
@@ -39,7 +39,6 @@ class KikkaApp:
     def exitApp(self):
         logging.info("Bye Bye~")
         QApplication.instance().exit(0)
-        pass
 
     def _createGuardThread(self):
         try:
