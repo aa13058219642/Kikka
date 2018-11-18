@@ -19,7 +19,7 @@ class ShellWindow(QWidget):
         self.setAttribute(Qt.WA_DeleteOnClose)
         self.setMouseTracking(True)
         self.setAcceptDrops(True)
-        self.setContextMenuPolicy(Qt.ActionsContextMenu)
+        #self.setContextMenuPolicy(Qt.ActionsContextMenu)
 
         self._isMoving = False
         self._boxes = {}

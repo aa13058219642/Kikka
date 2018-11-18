@@ -608,7 +608,7 @@ class Menu(QMenu):
             style.drawPrimitive(arrow, opt, p, self)
         pass
 
-    def _paintEvent(self, event):
+    def paintEvent(self, event):
         # init
         menustyle = kikka.core.getGhost(self.gid).getMenuStyle()
         self._bg_image = menustyle.bg_image
