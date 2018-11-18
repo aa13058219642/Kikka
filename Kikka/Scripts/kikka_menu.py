@@ -2,10 +2,10 @@
 import logging
 import os
 
-from PyQt5.QtCore import QRect, QSize, Qt, QRectF, QPoint, QEvent
+from PyQt5.QtCore import QRect, QSize, Qt, QRectF, QPoint, QEvent, QObject
 from PyQt5.QtWidgets import QMenu, QStyle, QStyleOptionMenuItem, QStyleOption, QWidget, QApplication, QActionGroup
 from PyQt5.QtWidgets import QAction
-from PyQt5.QtGui import QIcon, QImage, QPainter, QFont, QPalette, QColor
+from PyQt5.QtGui import QIcon, QImage, QPainter, QFont, QPalette, QColor, QKeySequence, QGuiApplication
 
 import kikka
 
@@ -37,6 +37,7 @@ class KikkaMenu:
 
     @staticmethod
     def setAppMenu(menu):
+        QApplication.instance().trayIcon.setContextMenu(None)
         QApplication.instance().trayIcon.setContextMenu(menu)
 
     @staticmethod
@@ -50,10 +51,15 @@ class KikkaMenu:
         menu = Menu(mainmenu, ghost.gid, "Shells")
         group1 = QActionGroup(parten)
         for i in range(kikka.shell.getShellCount()):
-            callbackfunc = lambda checked, a=i: ghost.setShell(a)
+            callbackfunc = lambda checked, id=i: ghost.changeShell(id)
             act = menu.addMenuItem(kikka.shell.getShell(i).name, callbackfunc, None, group1)
             act.setCheckable(True)
             act.setChecked(True)
+        mainmenu.addSubMenu(menu)
+
+        # clothes list
+        menu = Menu(mainmenu, ghost.gid, "Clothes")
+        menu.setEnabled(False)
         mainmenu.addSubMenu(menu)
 
         # balloon list
@@ -91,122 +97,176 @@ class KikkaMenu:
         def _test_callback(index=0, title=''):
             logging.info("MainMenu_callback: click [%d] %s" % (index, title))
 
+        def _test_Exit(testmenu):
+            from kikka_app import KikkaApp
+            callbackfunc = lambda: KikkaApp.this().exitApp()
+            testmenu.addMenuItem("Exit", callbackfunc)
+
+        def _test_MenuItemState(testmenu):
+            menu = Menu(testmenu, 0, "MenuItem State")
+            c = 16
+            for i in range(c):
+                text = str("%s-item%d" % (menu.title(), i))
+                callbackfunc = lambda checked, a=i, b=text: _test_callback(a, b)
+                act = menu.addMenuItem(text, callbackfunc)
+
+                if i >= c / 2: act.setDisabled(True); act.setText("%s-disable" % act.text())
+                if i % 8 >= c / 4: act.setIcon(icon); act.setText("%s-icon" % act.text())
+                if i % 4 >= c / 8: act.setCheckable(True); act.setText("%s-ckeckable" % act.text())
+                if i % 2 >= c / 16: act.setChecked(True); act.setText("%s-checked" % act.text())
+            testmenu.addSubMenu(menu)
+
+        def _test_Shortcut(testmenu):
+            menu = Menu(testmenu, 0, "Shortcut")
+
+            c = 4
+            for i in range(c):
+                text = str("%s-item" % (str(chr(ord('A') + i))))
+                callbackfunc = lambda checked, a=i, b=text: _test_callback(a, b)
+                act = menu.addMenuItem(text, callbackfunc)
+
+                if i==0:
+                    act.setShortcut(QKeySequence("Ctrl+T"))
+                    act.setShortcutContext(Qt.ApplicationShortcut)
+                    act.setShortcutVisibleInContextMenu(True)
+            testmenu.addSubMenu(menu)
+            pass
+
+        def _test_StatusTip(testmenu):
+            pass
+
+
+        def _test_Separator(testmenu):
+            menu = Menu(testmenu, 0, "Separator")
+            menu.addSeparator()
+            c = 5
+            for i in range(c):
+                text = str("%s-item%d" % (menu.title(), i))
+                callbackfunc = lambda checked, a=i, b=text: _test_callback(a, b)
+                menu.addMenuItem(text, callbackfunc)
+                for j in range(i + 2): menu.addSeparator()
+            testmenu.addSubMenu(menu)
+
+        def _test_MultipleItem(testmenu):
+            menu = Menu(testmenu, 0, "Multiple item")
+            for i in range(100):
+                text = str("%s-item%d" % (menu.title(), i))
+                callbackfunc = lambda checked, a=i, b=text: _test_callback(a, b)
+                menu.addMenuItem(text, callbackfunc)
+            testmenu.addSubMenu(menu)
+
+        def _test_LongTextItem(testmenu):
+            menu = Menu(testmenu, 0, "Long text item")
+            for i in range(5):
+                text = str("%s-item%d " % (menu.title(), i)) * 20
+                callbackfunc = lambda checked, a=i, b=text: _test_callback(a, b)
+                menu.addMenuItem(text, callbackfunc)
+            testmenu.addSubMenu(menu)
+
+        def _test_LargeMenu(testmenu):
+            menu = Menu(testmenu, 0, "Large menu")
+            for i in range(60):
+                text = str("%s-item%d " % (menu.title(), i)) * 10
+                callbackfunc = lambda checked, a=i, b=text: _test_callback(a, b)
+                menu.addMenuItem(text, callbackfunc)
+                if i % 5 == 0: menu.addSeparator()
+            testmenu.addSubMenu(menu)
+
+        def _test_LimitTest(testmenu):
+            menu = Menu(testmenu, 0, "LimitTest")
+            _test_LargeMenu(menu)
+            _test_MultipleItem(menu)
+            _test_LongTextItem(menu)
+            testmenu.addSubMenu(menu)
+
+        def _test_Submenu(testmenu):
+            menu = Menu(testmenu, 0, "Submenu")
+            testmenu.addSubMenu(menu)
+
+            submenu = Menu(menu, 0, "submenu1")
+            menu.addSubMenu(submenu)
+            m = submenu
+            for i in range(8):
+                next = Menu(testmenu, 0, "submenu%d" % (i + 2))
+                m.addSubMenu(next)
+                m = next
+
+            submenu = Menu(menu, 0, "submenu2")
+            menu.addSubMenu(submenu)
+            m = submenu
+            for i in range(8):
+                for j in range(10):
+                    text = str("%s-item%d" % (m.title(), j))
+                    callbackfunc = lambda checked, a=j, b=text: _test_callback(a, b)
+                    m.addMenuItem(text, callbackfunc)
+                next = Menu(testmenu, 0, "submenu%d" % (i + 2))
+                m.addSubMenu(next)
+                m = next
+
+            submenu = Menu(testmenu, 0, "SubMenu State")
+            c = 16
+            for i in range(c):
+                text = str("%s-%d" % (submenu.title(), i))
+                m = Menu(submenu, 0, text)
+                act = submenu.addSubMenu(m)
+                callbackfunc = lambda checked, a=i, b=text: _test_callback(a, b)
+                act.triggered.connect(callbackfunc)
+                if i >= c / 2: act.setDisabled(True); act.setText("%s-disable" % act.text())
+                if i % 8 >= c / 4: act.setIcon(icon); act.setText("%s-icon" % act.text())
+                if i % 4 >= c / 8: act.setCheckable(True); act.setText("%s-ckeckable" % act.text())
+                if i % 2 >= c / 16: act.setChecked(True); act.setText("%s-checked" % act.text())
+                submenu.addSubMenu(m)
+            menu.addSubMenu(submenu)
+
+        def _test_ImageTest(testmenu):
+            imagetestmenu = Menu(testmenu, 0, "ImageTest")
+            testmenu.addSubMenu(imagetestmenu)
+
+            menu = Menu(imagetestmenu, 0, "MenuImage-normal")
+            for i in range(32): text = " " * 54; menu.addMenuItem(text)
+            imagetestmenu.addSubMenu(menu)
+
+            menu = Menu(imagetestmenu, 0, "MenuImage-bit")
+            menu.addMenuItem('')
+            imagetestmenu.addSubMenu(menu)
+
+            menu = Menu(imagetestmenu, 0, "MenuImage-small")
+            for i in range(10): text = " " * 30; menu.addMenuItem(text)
+            imagetestmenu.addSubMenu(menu)
+
+            menu = Menu(imagetestmenu, 0, "MenuImage-long")
+            for i in range(64): text = " " * 54; menu.addMenuItem(text)
+            imagetestmenu.addSubMenu(menu)
+
+            menu = Menu(imagetestmenu, 0, "MenuImage-long2")
+            for i in range(32): text = " " * 300; menu.addMenuItem(text)
+            imagetestmenu.addSubMenu(menu)
+
+            menu = Menu(imagetestmenu, 0, "MenuImage-large")
+            for i in range(64): text = " " * 300; menu.addMenuItem(text)
+            imagetestmenu.addSubMenu(menu)
+
+            menu = Menu(imagetestmenu, 0, "MenuImage-verylarge")
+            for i in range(100): text = " " * 600; menu.addMenuItem(text)
+            imagetestmenu.addSubMenu(menu)
+
+
         parten = QWidget(flags=Qt.Dialog)
         icon = QIcon(r"icon.ico")
-        testmenu = Menu(parten, "Main")
+        testmenu = Menu(parten, 0, "Main")
 
-        from kikka_app import KikkaApp
-        callbackfunc = lambda: KikkaApp.this().exitApp()
-        testmenu.addMenuItem("Exit", callbackfunc)
+        _test_Exit(testmenu)
         testmenu.addSeparator()
-
-        # MenuItem state ######################################################################
-        menu = Menu(testmenu, "MenuItem state")
-        testmenu.addSubMenu(menu)
-        c = 16
-        for i in range(c):
-            text = str("%s-item%d" % (menu.title(), i))
-            callbackfunc = lambda checked, a=i, b=text: _test_callback(a, b)
-            act = menu.addMenuItem(text, callbackfunc)
-
-            if i >= c / 2: act.setDisabled(True); act.setText("%s-disable" % act.text())
-            if i % 8 >= c / 4: act.setIcon(icon); act.setText("%s-icon" % act.text())
-            if i % 4 >= c / 8: act.setCheckable(True); act.setText("%s-ckeckable" % act.text())
-            if i % 2 >= c / 16: act.setChecked(True); act.setText("%s-checked" % act.text())
-
-        # Separator  ######################################################################
-        menu = Menu(testmenu, "Separator")
-        testmenu.addSubMenu(menu)
-        menu.addSeparator()
-        c = 5
-        for i in range(c):
-            text = str("%s-item%d" % (menu.title(), i))
-            callbackfunc = lambda checked, a=i, b=text: _test_callback(a, b)
-            menu.addMenuItem(text, callbackfunc)
-            for j in range(i + 2): menu.addSeparator()
-
-        # Multiple item  ######################################################################
-        menu = Menu(testmenu, "Multiple item")
-        testmenu.addSubMenu(menu)
-        for i in range(100):
-            text = str("%s-item%d" % (menu.title(), i))
-            callbackfunc = lambda checked, a=i, b=text: _test_callback(a, b)
-            menu.addMenuItem(text, callbackfunc)
-
-        # Long text item  ######################################################################
-        menu = Menu(testmenu, "Long text item")
-        testmenu.addSubMenu(menu)
-        for i in range(5):
-            text = str("%s-item%d " % (menu.title(), i)) * 20
-            callbackfunc = lambda checked, a=i, b=text: _test_callback(a, b)
-            menu.addMenuItem(text, callbackfunc)
-
-        # Submenu  ######################################################################
-        menu = Menu(testmenu, "Submenu")
-        testmenu.addSubMenu(menu)
-
-        submenu = Menu(menu, "submenu1")
-        menu.addSubMenu(submenu)
-        m = submenu
-        for i in range(8):
-            next = Menu(testmenu, "submenu%d" % (i + 2))
-            m.addSubMenu(next)
-            m = next
-        submenu = Menu(menu, "submenu2")
-        menu.addSubMenu(submenu)
-
-        m = submenu
-        for i in range(8):
-            for j in range(10):
-                text = str("%s-item%d" % (m.title(), j))
-                callbackfunc = lambda checked, a=j, b=text: _test_callback(a, b)
-                m.addMenuItem(text, callbackfunc)
-            next = Menu(testmenu, "submenu%d" % (i + 2))
-            m.addSubMenu(next)
-            m = next
-
-        # Large menu  ######################################################################
-        menu = Menu(testmenu, "Large menu")
-        testmenu.addSubMenu(menu)
-        for i in range(60):
-            text = str("%s-item%d " % (menu.title(), i)) * 10
-            callbackfunc = lambda checked, a=i, b=text: _test_callback(a, b)
-            menu.addMenuItem(text, callbackfunc)
-            if i % 5 == 0: menu.addSeparator()
-
-        # Image test  ######################################################################
+        _test_MenuItemState(testmenu)
+        _test_Shortcut(testmenu)
+        _test_StatusTip(testmenu)
+        _test_Separator(testmenu)
+        _test_LimitTest(testmenu)
+        _test_Submenu(testmenu)
         testmenu.addSeparator()
-        menu = Menu(testmenu, "MenuImage-normal")
-        for i in range(32): text = " " * 54; menu.addMenuItem(text)
-        testmenu.addSubMenu(menu)
-
-        menu = Menu(testmenu, "MenuImage-bit")
-        menu.addMenuItem('')
-        testmenu.addSubMenu(menu)
-
-        menu = Menu(testmenu, "MenuImage-small")
-        for i in range(10): text = " " * 30; menu.addMenuItem(text)
-        testmenu.addSubMenu(menu)
-
-        menu = Menu(testmenu, "MenuImage-long")
-        for i in range(64): text = " " * 54; menu.addMenuItem(text)
-        testmenu.addSubMenu(menu)
-
-        menu = Menu(testmenu, "MenuImage-long2")
-        for i in range(32): text = " " * 300; menu.addMenuItem(text)
-        testmenu.addSubMenu(menu)
-
-        menu = Menu(testmenu, "MenuImage-large")
-        for i in range(64): text = " " * 300; menu.addMenuItem(text)
-        testmenu.addSubMenu(menu)
-
-        menu = Menu(testmenu, "MenuImage-verylarge")
-        for i in range(100): text = " " * 600; menu.addMenuItem(text)
-        testmenu.addSubMenu(menu)
-
+        _test_ImageTest(testmenu)
         testmenu.addSeparator()
-        callbackfunc = lambda: KikkaApp.this().exitApp()
-        testmenu.addMenuItem("Exit", callbackfunc)
+        _test_Exit(testmenu)
 
         return testmenu
 
@@ -325,6 +385,7 @@ class Menu(QMenu):
     def addSubMenu(self, menu):
         act = self.addMenu(menu)
         self.confirmMenuSize(act, menu.title())
+        return act
 
     def confirmMenuSize(self, item, text=''):
         s = self.sizeHint()
@@ -411,7 +472,7 @@ class Menu(QMenu):
             # sz = self.sizeHint().expandedTo(self.minimumSize()).expandedTo(self.minimumSizeHint()).boundedTo(self.maximumSize())
             # calc what I think the size is..
             if act.isSeparator():
-                sz = QSize(2, 2)
+                sz = QSize(2,2)
             else:
                 s = act.text()
                 if '\t' in s:
@@ -421,7 +482,7 @@ class Menu(QMenu):
                 else:
                     seq = act.shortcut()
                     if seq.isEmpty() is False:
-                        tabWidth = max(int(tabWidth), qfm.width(seq))
+                        tabWidth = max(int(tabWidth), qfm.width(seq.toString()))
 
                 sz.setWidth(fm.boundingRect(QRect(), Qt.TextSingleLine | Qt.TextShowMnemonic, s).width())
                 sz.setHeight(fm.height())
@@ -547,7 +608,7 @@ class Menu(QMenu):
             style.drawPrimitive(arrow, opt, p, self)
         pass
 
-    def paintEvent(self, event):
+    def _paintEvent(self, event):
         # init
         menustyle = kikka.core.getGhost(self.gid).getMenuStyle()
         self._bg_image = menustyle.bg_image

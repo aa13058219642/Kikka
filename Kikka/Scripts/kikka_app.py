@@ -38,7 +38,9 @@ class KikkaApp:
 
     def exitApp(self):
         logging.info("Bye Bye~")
-        QApplication.instance().exit(0)
+        qapp = QApplication.instance()
+        qapp.trayIcon.hide()
+        qapp.exit(0)
 
     def _createGuardThread(self):
         try:

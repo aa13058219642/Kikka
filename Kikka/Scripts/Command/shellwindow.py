@@ -19,6 +19,7 @@ class ShellWindow(QWidget):
         self.setAttribute(Qt.WA_DeleteOnClose)
         self.setMouseTracking(True)
         self.setAcceptDrops(True)
+        self.setContextMenuPolicy(Qt.ActionsContextMenu)
 
         self._isMoving = False
         self._boxes = {}
@@ -87,6 +88,7 @@ class ShellWindow(QWidget):
 
     def contextMenuEvent(self, event):
         self._ghost.showMenu(self.nid, event.globalPos())
+        logging.info('contextMenuEvent')
 
     def mousePressEvent(self, event):
         self._mouseLogging("mousePressEvent", event.buttons(), event.globalPos().x(), event.globalPos().y())

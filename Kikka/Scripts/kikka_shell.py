@@ -77,16 +77,15 @@ class Shell:
         self.name = ''
         self.id = ''
         self.type = ''
+        self.pnglist = []
         self.author = AuthorInfo()
-
         self.shellmenustyle = ShellMenuStyle()
         self.setting = ShellSetting()
-
-        self.pnglist = []
-        self._base_image = None
-        self._surfaces = {}
         self.isInitialized = False
         self.isLoaded = False
+
+        self._base_image = None
+        self._surfaces = {}
         self._updatetime = 0
         self._CurfaceID = 0
 
@@ -525,7 +524,7 @@ class Animation:
             if hasBindAnimationIsRuning is False:
                 self.updatetime = 0
                 self.isRuning = False
-                isNeedUpdate = True
+                #isNeedUpdate = True
 
             if self.interval == 'always':
                 self.start()

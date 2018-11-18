@@ -1,9 +1,8 @@
 # coding=utf-8
 import logging
 
-from PyQt5 import QtGui
 from PyQt5.QtCore import Qt, QRect, QPoint, QSize
-from PyQt5.QtGui import QPixmap, QPainter
+from PyQt5.QtGui import QPixmap, QPainter, QKeySequence
 from PyQt5.QtWidgets import QWidget, QPushButton, QStackedLayout, QVBoxLayout, QHBoxLayout, QLabel, QGridLayout
 
 import kikka
@@ -32,6 +31,25 @@ class GhostKikka(GhostBase):
         mainmenu = self.getMenu(KIKKA)
         menu = Menu(mainmenu.parent(), self.gid, "kikka menu")
         mainmenu.insertMenu(mainmenu.actions()[0], menu)
+
+        def _test_callback(index=0, title=''):
+            logging.info("GhostKikka_callback: click [%d] %s" % (index, title))
+
+        act = menu.addMenuItem("111", _test_callback)
+        act.setShortcut(QKeySequence("Ctrl+T"))
+        act.setShortcutContext(Qt.ApplicationShortcut)
+        # act.setShortcutContext(Qt.ApplicationShortcut)
+        act.setShortcutVisibleInContextMenu(True)
+
+
+        w = self.getShellWindow(KIKKA)
+        w.addAction(act)
+
+
+        # w.s
+
+
+
 
     def initLayout(self):
         dlg = self.getDialog(KIKKA)
@@ -119,6 +137,12 @@ class GhostKikka(GhostBase):
         e[GhostEvent.CustomEvent]['CloseDialog'] = closeDlg
         self.eventlist = e
 
+    def changeShell(self, shellID):
+        logging.debug("Please don't peek at me to change clothes!")
+        self.hide()
+        self.setShell(shellID)
+        self.show()
+
 # ########################################################################################################
 def resizeWindow(**kwargs):
     dlg = kikka.core.getGhost(kwargs['gid']).getDialog(kwargs['nid'])
@@ -130,8 +154,9 @@ def closeDlg(**kwargs):
 
 
 def head_touch(**kwargs):
-    logging.info("head_touch!!!")
-    kikka.core.getGhost(kwargs['gid']).setSurface(kwargs['nid'], Surface.ENUM_JOY)
+    logging.info("head_touch")
+    if kwargs['nid'] == KIKKA:
+        kikka.core.getGhost(kwargs['gid']).setSurface(kwargs['nid'], Surface.ENUM_JOY)
     pass
 
 
@@ -147,7 +172,8 @@ def head_doubleclick(**kwargs):
 
 def face_touch(**kwargs):
     logging.info("face_touch")
-    kikka.core.getGhost(kwargs['gid']).setSurface(kwargs['nid'], Surface.ENUM_ANGER2)
+    if kwargs['nid'] == KIKKA:
+        kikka.core.getGhost(kwargs['gid']).setSurface(kwargs['nid'], Surface.ENUM_ANGER2)
     pass
 
 
@@ -163,6 +189,8 @@ def face_doubleclick(**kwargs):
 
 def bust_touch(**kwargs):
     logging.info("bust_touch")
+    if kwargs['nid'] == KIKKA:
+        kikka.core.getGhost(kwargs['gid']).setSurface(kwargs['nid'], Surface.ENUM_NORMAL)
     pass
 
 

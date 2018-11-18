@@ -27,7 +27,6 @@ def awake():
     kikka.shell.loadAllShell(kikka.helper.getPath(kikka.helper.PATH_SHELL))
     kikka.balloon.loadAllBalloon(kikka.helper.getPath(kikka.helper.PATH_BALLOON))
 
-    import mainmenu
     kikka.core.start()
     kikka.app.start()
 
@@ -36,6 +35,7 @@ def awake():
     from ghost_kikka import GhostKikka
     gid = kikka.core.addGhost(GhostKikka())
     kikka.menu.setAppMenu(kikka.core.getGhost(gid).getMenu())
+    kikka.menu.setAppMenu(kikka.menu.createTestMenu())
     kikka.core.show()
 
     pass
@@ -58,6 +58,7 @@ def setLogging(level):
     file_handler.setLevel(level)
     file_handler.setFormatter(formatter)
     logging.getLogger().addHandler(file_handler)
+
 
 def handle_exception(exc_type, exc_value, exc_traceback):
     if issubclass(exc_type, KeyboardInterrupt):

@@ -18,11 +18,12 @@ class GhostBase:
         self.shell = None
         self.balloon = None
         self.eventlist = {}
+
         self._shellwindows = {}
         self._dialogs = {}
         self._surfaces = {}
-        self._surface_base_image = {}
-        self._balloon_base_image = None
+        self._surface_image_cache = {}
+        self._balloon_image_cache = None
         self._shell_image = {}
         self._balloon_image = {}
         self._menus = {}
@@ -50,9 +51,11 @@ class GhostBase:
 
         self._shellwindows[nid] = window
         self._dialogs[nid] = dialog
-        self._surface_base_image[nid] = None
+        self._surface_image_cache[nid] = None
         self._surfaces[nid] = None
-        self._menus[nid] = kikka.menu.createSystemMenu(self)
+
+        if len(self._menus) == 0:
+            self._menus[nid] = kikka.menu.createSystemMenu(self)
 
         self.setSurface(nid, surfaceID)
         if self.balloon is not None:
@@ -71,7 +74,15 @@ class GhostBase:
         else:
             return None
 
+    def changeShell(self, shellID):
+        self.hide()
+        self.setShell(shellID)
+        self.show()
+
     def setShell(self, shellID):
+        if self.shell is not None and self.shell.id == shellID:
+            return
+
         self.shell = kikka.shell.getShell(shellID)
         self.shell.load()
         self._menustyle = MenuStyle(self.shell.shellmenustyle)
@@ -85,9 +96,10 @@ class GhostBase:
                 continue
             self._shell_image[filename] = kikka.helper.getImage(p)
 
-        for nid, w in self._shellwindows.items():
-            self.makeSurfaceBaseImage(nid, self._surfaces[nid].ID)
-            w.setImage(self.getShellImage(nid))
+        for nid in self._shellwindows.keys():
+            self.setSurface(nid)
+
+        self.updateClothMenu()
 
     def getShell(self):
         return self.shell
@@ -101,7 +113,7 @@ class GhostBase:
                 if filename[len(filename) - 4:] == '.png':
                     p = os.path.join(self.balloon.balloonpath, filename)
                     self._balloon_image[filename] = kikka.helper.getImage(p)
-        self._balloon_base_image = self._balloon_image['background.png']
+        self._balloon_image_cache = self._balloon_image['background.png']
 
         for i in range(len(self._dialogs)):
             self._dialogs[i].setBalloon(self.balloon)
@@ -122,17 +134,20 @@ class GhostBase:
 
     # ###################################################################################
 
-    def setSurface(self, nid, surfaceID):
+    def setSurface(self, nid, surfaceID=-1):
         try:
             if self._surfaces[nid] is not None and self._surfaces[nid].ID == surfaceID:
                 return
+
+            if surfaceID == -1:
+                surfaceID = self._surfaces[nid].ID
 
             surface = self.shell.getSurface(surfaceID)
             if surface is None:
                 return
 
             self._surfaces[nid] = surface
-            self.makeSurfaceBaseImage(nid, surfaceID)
+            self.makeImageCache(nid, surfaceID)
 
             # start 'runonce' and 'always' animation
             for aid, ani in surface.animations.items():
@@ -146,12 +161,12 @@ class GhostBase:
             logging.warning("Gohst.setSurfaces: surfaceID: %d NOT exist" % surfaceID)
         pass
 
-    def makeSurfaceBaseImage(self, nid, surfaceID):
+    def makeImageCache(self, nid, surfaceID):
         surface = self.shell.getSurface(surfaceID)
-        base_image = QImage(500, 500, QImage.Format_ARGB32)
-        painter = QPainter(base_image)
+        image_cache = QImage(500, 500, QImage.Format_ARGB32)
+        painter = QPainter(image_cache)
         painter.setCompositionMode(QPainter.CompositionMode_Source)
-        painter.fillRect(base_image.rect(), Qt.transparent)
+        painter.fillRect(image_cache.rect(), Qt.transparent)
 
         painter.setCompositionMode(QPainter.CompositionMode_SourceOver)
         if len(surface.elements) > 0:
@@ -165,11 +180,11 @@ class GhostBase:
                 painter.drawImage(self.shell.setting.offset, self._shell_image[fn])
         painter.end()
         # self._base_image.save("_base_image.png")
-        self._surface_base_image[nid] = base_image
+        self._surface_image_cache[nid] = image_cache
 
 
     def getShellImage(self, nid):
-        img = QImage(self._surface_base_image[nid])
+        img = QImage(self._surface_image_cache[nid])
         painter = QPainter(img)
 
         # draw surface and animations
@@ -252,7 +267,7 @@ class GhostBase:
 
         # paint balloon image
         img = QImage(size, QImage.Format_ARGB32)
-        pixmap = QPixmap().fromImage(self._balloon_base_image, Qt.AutoColor)
+        pixmap = QPixmap().fromImage(self._balloon_image_cache, Qt.AutoColor)
         painter = QPainter(img)
         painter.setCompositionMode(QPainter.CompositionMode_Source)
 
@@ -344,3 +359,14 @@ class GhostBase:
 
     def getEventList(self):
         return self.eventlist
+
+    def updateClothMenu(self):
+        for m in self._menus:
+
+
+            pass
+
+
+        pass
+
+
