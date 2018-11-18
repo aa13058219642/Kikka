@@ -1,11 +1,13 @@
 # coding=utf-8
 import logging
 import os
+from collections import OrderedDict
 
 from PyQt5.QtCore import Qt, QPoint, QRect, QSize, QRectF
 from PyQt5.QtGui import QImage, QPainter, QColor, QPixmap
 
 import kikka
+from PyQt5.QtWidgets import QActionGroup
 from shellwindow import ShellWindow
 from dialogwindow import Dialog
 from kikka_menu import MenuStyle, Menu
@@ -60,6 +62,9 @@ class GhostBase:
         self.setSurface(nid, surfaceID)
         if self.balloon is not None:
             dialog.setBalloon(self.balloon)
+
+        self.updateClothesMenu(nid)
+
         return window
 
     def getShellWindow(self, nid):
@@ -98,8 +103,8 @@ class GhostBase:
 
         for nid in self._shellwindows.keys():
             self.setSurface(nid)
+            self.updateClothesMenu(nid)
 
-        self.updateClothMenu()
 
     def getShell(self):
         return self.shell
@@ -123,11 +128,11 @@ class GhostBase:
         return self.balloon
 
     def setMenu(self, nid, Menu):
-        if 0 <= nid < len(self._menus):
-            self._menus[nid] = Menu
+        self._menus[nid] = Menu
+
 
     def getMenu(self, nid=0) -> Menu:
-        if 0 <= nid < len(self._menus):
+        if nid in self._menus:
             return self._menus[nid]
         else:
             return None
@@ -190,7 +195,7 @@ class GhostBase:
         # draw surface and animations
         surface = self._surfaces[nid]
         for aid, ani in surface.animations.items():
-            fid, x, y = ani.getCurSurfaceData()
+            fid, x, y, drawtype = ani.getCurSurfaceData()
             # logging.info("aid=%d pid=%d faceid=%d xy=(%d, %d)" % (aid, ani.curPattern, fid, x, y))
             if fid == -1: continue
 
@@ -360,13 +365,52 @@ class GhostBase:
     def getEventList(self):
         return self.eventlist
 
-    def updateClothMenu(self):
-        for m in self._menus:
+    def updateClothesMenu(self, nid):
+        if nid not in self._menus:
+            return
 
+        clothesmenu = OrderedDict(sorted(self.shell.setting.clothesmenu.items()))
+        bindgroups = self.shell.setting.bindgroups
 
-            pass
+        menu = None
+        for act in self._menus[nid].actions():
+            if act.text() == 'Clothes':
+                menu = act.menu()
+                break
 
+        if menu is None:
+            return
 
+        menu.clear()
+        if len(clothesmenu) == 0:
+            menu.setEnabled(False)
+            return
+
+        menu.setEnabled(True)
+
+        group = {}
+        for bindgroup in bindgroups.values():
+            if bindgroup.type not in group:
+                group[bindgroup.type] = QActionGroup(menu.parent())
+
+        #group1 = QActionGroup(parten)
+        for v in clothesmenu.values():
+            if v == -1:
+                menu.addSeparator()
+            elif v in bindgroups.keys():
+                bindgroup = bindgroups[v]
+                text = "%s - %s"%(bindgroup.type, bindgroup.title)
+                act = menu.addMenuItem(text, group=group[bindgroup.type])
+                callbackfunc = lambda checked, act=act, bindgroup=bindgroup: self.clickClothesMenuItem(act, bindgroup)
+                act.triggered.connect(callbackfunc)
+                act.setCheckable(True)
+
+                if bindgroup.default is True:
+                    act.setChecked(True)
+                    self.shell.runAnimation(bindgroup.aID)
         pass
 
-
+    def clickClothesMenuItem(self, act, bindgroup):
+        logging.info(act.text())
+        self.shell.runAnimation(bindgroup.aID)
+        pass

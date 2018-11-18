@@ -83,6 +83,7 @@ class Shell:
         self.setting = ShellSetting()
         self.isInitialized = False
         self.isLoaded = False
+        self.bind = []
 
         self._base_image = None
         self._surfaces = {}
@@ -197,8 +198,8 @@ class Shell:
                                     newmap[id] = []
                         else:
                             id = int(key)
+                            surfaceID.append(id)
                             if id not in newmap:
-                                surfaceID.append(id)
                                 newmap[id] = []
         pass  # exit for
         f.close()
@@ -294,9 +295,9 @@ class Shell:
                 elif 'menuitem' in key[1]:
                     mid = int(key[1][8:])
                     if value[0] != '-':
-                        self.shellmenustyle.menuitem[mid] = int(value[0])
+                        self.setting.clothesmenu[mid] = int(value[0])
                     else:
-                        self.shellmenustyle.menuitem[mid] = -1
+                        self.setting.clothesmenu[mid] = -1
                 elif key[1] == 'balloon':
                     if key[2] == 'offsetx':
                         self.setting.balloon_offset.setX(int(value[0]))
@@ -401,6 +402,10 @@ class Shell:
     def getShellMenuStyle(self):
         return self.shellmenustyle
 
+    def runAnimation(self, aid):
+        if aid in self._surfaces[self._CurfaceID].animations:
+            self._surfaces[self._CurfaceID].animations[aid].start()
+
 
 class Animation:
     def __init__(self, id, parent):
@@ -438,7 +443,7 @@ class Animation:
         elif self.interval == 'sometimes':
             # 30% per second
             r = random.random()
-            isNeedStart = True if r < 0.0003 * timer_interval else False
+            isNeedStart = True if r < 0.000003 * timer_interval else False
 
         elif self.interval == 'rarely':
             # 10% per second
@@ -484,6 +489,9 @@ class Animation:
                 if aid in self._parent:
                     self._parent[aid].stop()
                     pattern.bindAnimation = -1
+        elif pattern.methodType == 'bind':
+            self._parent.bind.append((pattern.surfaceID, pattern.offset[0], pattern.offset[1], pattern.methodType))
+
         pass
 
     def update(self, updatetime):
@@ -534,11 +542,11 @@ class Animation:
         if self.curPattern in self.patterns:
             pattern = self.patterns[self.curPattern]
             if pattern.isControlPattern():
-                return -1, 0, 0
+                return -1, 0, 0, None
             else:
-                return pattern.surfaceID, pattern.offset[0], pattern.offset[1]
+                return pattern.surfaceID, pattern.offset[0], pattern.offset[1], pattern.methodType
         else:
-            return -1, 0, 0
+            return -1, 0, 0, None
         pass
 
 
@@ -821,7 +829,7 @@ class AuthorInfo:
 class ShellMenuStyle:
     def __init__(self):
         self.hidden = False
-        self.menuitem = {}
+
 
         self.font_family = ''
         self.font_size = -1
@@ -862,6 +870,7 @@ class ShellSetting:
         self.balloon_alignment = 'lefttop'
         self.bindoption = {}
         self.bindgroups = {}
+        self.clothesmenu = {}
 
     def addBingGroup(self, aID, bindgroup):
         self.bindgroups[aID] = bindgroup

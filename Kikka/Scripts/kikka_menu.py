@@ -44,12 +44,12 @@ class KikkaMenu:
     def createSystemMenu(ghost):
         import kikka
 
-        parten = QWidget(flags=Qt.Dialog)
-        mainmenu = Menu(parten, ghost.gid, "Main")
+        parent = QWidget(flags=Qt.Dialog)
+        mainmenu = Menu(parent, ghost.gid, "Main")
 
         # shell list
         menu = Menu(mainmenu, ghost.gid, "Shells")
-        group1 = QActionGroup(parten)
+        group1 = QActionGroup(parent)
         for i in range(kikka.shell.getShellCount()):
             callbackfunc = lambda checked, id=i: ghost.changeShell(id)
             act = menu.addMenuItem(kikka.shell.getShell(i).name, callbackfunc, None, group1)
@@ -64,7 +64,7 @@ class KikkaMenu:
 
         # balloon list
         menu = Menu(mainmenu, ghost.gid, "Balloons")
-        group2 = QActionGroup(parten)
+        group2 = QActionGroup(parent)
         for i in range(kikka.balloon.getBalloonCount()):
             callbackfunc = lambda checked, a=i: ghost.setBalloon(a)
             act = menu.addMenuItem(kikka.balloon.getBalloon(i).name, callbackfunc, None, group2)
