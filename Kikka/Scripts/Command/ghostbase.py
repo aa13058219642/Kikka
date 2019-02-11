@@ -1,6 +1,8 @@
 # coding=utf-8
 import logging
 import os
+import time
+import random
 from collections import OrderedDict
 
 from PyQt5.QtCore import Qt, QPoint, QRect, QSize, QRectF
@@ -20,16 +22,19 @@ class GhostBase:
         self.shell = None
         self.balloon = None
         self.eventlist = {}
+        self.animation_list = {}
 
         self._shellwindows = {}
         self._dialogs = {}
         self._surfaces = {}
-        self._surface_image_cache = {}
+        self._surface_base_image = {}
+        self._surface_image = {}
         self._balloon_image_cache = None
         self._shell_image = {}
         self._balloon_image = {}
         self._menus = {}
         self._menustyle = None
+        self._clothes = {}
 
     def show(self):
         for w in self._shellwindows.values():
@@ -41,41 +46,41 @@ class GhostBase:
         for d in self._dialogs.values():
             d.hide()
 
-    def showMenu(self, nid, pos):
-        if 0 <= nid < len(self._menus) and self._menus[nid] is not None:
-            self._menus[nid].setPosition(pos)
-            self._menus[nid].show()
+    def showMenu(self, winid, pos):
+        if 0 <= winid < len(self._menus) and self._menus[winid] is not None:
+            self._menus[winid].setPosition(pos)
+            self._menus[winid].show()
         pass
 
-    def addWindow(self, nid, surfaceID=0):
-        window = ShellWindow(self, nid)
-        dialog = Dialog(self, nid)
+    def addWindow(self, winid, surfaceID=0):
+        window = ShellWindow(self, winid)
+        dialog = Dialog(self, winid)
 
-        self._shellwindows[nid] = window
-        self._dialogs[nid] = dialog
-        self._surface_image_cache[nid] = None
-        self._surfaces[nid] = None
+        self._shellwindows[winid] = window
+        self._dialogs[winid] = dialog
+        self._surface_base_image[winid] = None
+        self._surfaces[winid] = None
 
         if len(self._menus) == 0:
-            self._menus[nid] = kikka.menu.createSystemMenu(self)
+            self._menus[winid] = kikka.menu.createSystemMenu(self)
 
-        self.setSurface(nid, surfaceID)
+        self.setSurface(winid, surfaceID)
         if self.balloon is not None:
             dialog.setBalloon(self.balloon)
 
-        self.updateClothesMenu(nid)
+        self.updateClothesMenu(winid)
 
         return window
 
-    def getShellWindow(self, nid):
-        if 0 <= nid < len(self._shellwindows):
-            return self._shellwindows[nid]
+    def getShellWindow(self, winid):
+        if 0 <= winid < len(self._shellwindows):
+            return self._shellwindows[winid]
         else:
             return None
 
-    def getDialog(self, nid):
-        if 0 <= nid < len(self._dialogs):
-            return self._dialogs[nid]
+    def getDialog(self, winid):
+        if 0 <= winid < len(self._dialogs):
+            return self._dialogs[winid]
         else:
             return None
 
@@ -101,16 +106,16 @@ class GhostBase:
                 continue
             self._shell_image[filename] = kikka.helper.getImage(p)
 
-        for nid in self._shellwindows.keys():
-            self.setSurface(nid)
-            self.updateClothesMenu(nid)
+        for winid in self._shellwindows.keys():
+            self.setSurface(winid)
+            self.updateClothesMenu(winid)
 
 
     def getShell(self):
         return self.shell
 
-    def setBalloon(self, balloonID):
-        self.balloon = kikka.balloon.getBalloon(balloonID)
+    def setBalloon(self, balloowinid):
+        self.balloon = kikka.balloon.getBalloon(balloowinid)
         self.balloon.load()
 
         for parent, dirnames, filenames in os.walk(self.balloon.balloonpath):
@@ -127,46 +132,58 @@ class GhostBase:
     def getBalloon(self):
         return self.balloon
 
-    def setMenu(self, nid, Menu):
-        self._menus[nid] = Menu
+    def setMenu(self, winid, Menu):
+        self._menus[winid] = Menu
 
-
-    def getMenu(self, nid=0) -> Menu:
-        if nid in self._menus:
-            return self._menus[nid]
+    def getMenu(self, winid=0) -> Menu:
+        if winid in self._menus:
+            return self._menus[winid]
         else:
             return None
 
     # ###################################################################################
 
-    def setSurface(self, nid, surfaceID=-1):
+    def setSurface(self, wiwinid, surfaceID=-1):
         try:
-            if self._surfaces[nid] is not None and self._surfaces[nid].ID == surfaceID:
+            if self._surfaces[wiwinid] is not None and self._surfaces[wiwinid].ID == surfaceID:
                 return
 
             if surfaceID == -1:
-                surfaceID = self._surfaces[nid].ID
+                surfaceID = self._surfaces[wiwinid].ID
 
             surface = self.shell.getSurface(surfaceID)
             if surface is None:
                 return
 
-            self._surfaces[nid] = surface
-            self.makeImageCache(nid, surfaceID)
+            self._surfaces[wiwinid] = surface
+            self.animation_list.clear()
+            for aid, ani in surface.animations.items():
+                self.animation_list[aid] = Animation(aid, self, ani)
+
+            self.makeImageCache(wiwinid, surfaceID)
 
             # start 'runonce' and 'always' animation
-            for aid, ani in surface.animations.items():
+            #for aid, ani in surface.animations.items():
+            for aid, ani in self.animation_list.items():
                 if ani.interval in ['runonce', 'always']:
                     ani.start()
+                else:
+                    ani.stop()
 
-            img = self.getShellImage(nid)
-            self._shellwindows[nid].setImage(img)
-            self._shellwindows[nid].setBoxes(self.shell.getCollisionBoxes(surfaceID), self.shell.getOffset())
+            # start bind close
+            for aid in self.shell.bind:
+                if aid in self.animation_list:
+                    self.animation_list[aid].start()
+
+
+            img = self.getShellImage(wiwinid)
+            self._shellwindows[wiwinid].setImage(img)
+            self._shellwindows[wiwinid].setBoxes(self.shell.getCollisionBoxes(surfaceID), self.shell.getOffset())
         except ValueError:
             logging.warning("Gohst.setSurfaces: surfaceID: %d NOT exist" % surfaceID)
         pass
 
-    def makeImageCache(self, nid, surfaceID):
+    def makeImageCache(self, winid, surfaceID):
         surface = self.shell.getSurface(surfaceID)
         image_cache = QImage(500, 500, QImage.Format_ARGB32)
         painter = QPainter(image_cache)
@@ -183,36 +200,66 @@ class GhostBase:
             fn = "surface%04d.png" % surface.ID
             if fn in self._shell_image:
                 painter.drawImage(self.shell.setting.offset, self._shell_image[fn])
+
+        for aid, ani in self.animation_list.items():
+            patterns = ani.getCurSurfaceData()
+            for pattern in patterns:
+                fid = pattern[0]
+                x = pattern[1]
+                y = pattern[2]
+                drawtype = pattern[3]
+
+                if ani.interval in ['bind', 'add']:
+                    image_name = "surface%04d.png" % fid
+                    if image_name in self._shell_image:
+                        face = self._shell_image[image_name]
+                        painter.drawImage(self.shell.setting.offset + QPoint(x, y), face)
+
         painter.end()
         # self._base_image.save("_base_image.png")
-        self._surface_image_cache[nid] = image_cache
+        self._surface_base_image[winid] = image_cache
 
+    def getShellBaseImage(self, winid):
+        return self._surface_base_image[winid]
 
-    def getShellImage(self, nid):
-        img = QImage(self._surface_image_cache[nid])
+    def getShellImage(self, winid):
+        img = QImage(self._surface_base_image[winid])
         painter = QPainter(img)
 
         # draw surface and animations
-        surface = self._surfaces[nid]
-        for aid, ani in surface.animations.items():
-            fid, x, y, drawtype = ani.getCurSurfaceData()
-            # logging.info("aid=%d pid=%d faceid=%d xy=(%d, %d)" % (aid, ani.curPattern, fid, x, y))
-            if fid == -1: continue
+        surface = self._surfaces[winid]
+        runningAni = []
+        for aid, ani in self.animation_list.items():
+            patterns = ani.getCurSurfaceData()
+            if len(patterns) > 0 and aid not in runningAni:
+                runningAni.append(aid)
 
-            image_name = "surface%04d.png" % fid
-            if image_name in self._shell_image:
-                face = self._shell_image[image_name]
-                painter.drawImage(self.shell.setting.offset + QPoint(x, y), face)
+            for pattern in patterns:
+                fid = pattern[0]
+                x = pattern[1]
+                y = pattern[2]
+                drawtype = pattern[3]
+                logging.info("aid=%d pid=%d faceid=%d xy=(%d, %d)" % (aid, ani.curPattern, fid, x, y))
+
+                self.drawImage(img, fid, x, y, drawtype)
+                #
+                # image_name = "surface%04d.png" % fid
+                # if image_name in self._shell_image:
+                #     face = self._shell_image[image_name]
+                #     painter.drawImage(self.shell.setting.offset + QPoint(x, y), face)
 
         # debug draw
         if kikka.shell.isDebug is True:
-            painter.fillRect(QRect(0, 0, 200, 64), QColor(0, 0, 0, 64))
+            painter.fillRect(QRect(0, 0, 256, 128), QColor(0, 0, 0, 64))
             painter.setPen(Qt.green)
             painter.drawRect(QRect(0, 0, img.width() - 1, img.height() - 1))
             painter.drawText(3, 12, "MainWindow")
             painter.drawText(3, 24, "Ghost: %d" % self.gid)
             painter.drawText(3, 36, "Name: %s" % self.name)
-            painter.drawText(3, 48, "nid: %d" % nid)
+            painter.drawText(3, 48, "winid: %d" % winid)
+            painter.drawText(3, 60, "surface: %d" % surface.ID)
+            painter.drawText(3, 72, "bind: %s" % self.shell.bind)
+            painter.drawText(3, 84, "animations: %s" % runningAni)
 
             for cid, col in surface.CollisionBoxes.items():
                 painter.setPen(Qt.red)
@@ -225,7 +272,18 @@ class GhostBase:
 
         return img
 
-    def getBalloonImage(self, size: QSize, flip=False, nid=-1):
+    def drawImage(self, image, faceid, x, y, drawtype):
+        image_name = "surface%04d.png" % faceid
+        if image_name in self._shell_image:
+            face = self._shell_image[image_name]
+
+            painter = QPainter(image)
+            painter.setCompositionMode(QPainter.CompositionMode_SourceOver)
+            painter.drawImage(self.shell.setting.offset + QPoint(x, y), face)
+            painter.end()
+        pass
+
+    def getBalloonImage(self, size: QSize, flip=False, winid=-1):
         drect = []
         # calculate destination rect
         if len(self.balloon.clipW) == 3:
@@ -313,7 +371,7 @@ class GhostBase:
             painter.drawText(3, 12, "DialogWindow")
             painter.drawText(3, 24, "Ghost: %d" % self.gid)
             painter.drawText(3, 36, "Name: %s" % self.name)
-            painter.drawText(3, 48, "nid: %d" % nid)
+            painter.drawText(3, 48, "winid: %d" % winid)
         return img
 
     def getMenuStyle(self):
@@ -322,33 +380,37 @@ class GhostBase:
     def update(self, updatetime):
         isNeedUpdate = False
 
-        for nid, w in self._shellwindows.items():
-            for aid, ani in self._surfaces[nid].animations.items():
-                if ani.update(updatetime) is True:
-                    w.setImage(self.getShellImage(nid))
-                    isNeedUpdate = True
+        # for winid, w in self._shellwindows.items():
+        #     for aid, ani in self._surfaces[winid].animations.items():
+        #         if ani.update(updatetime) is True:
+        #             w.setImage(self.getShellImage(winid))
+        #             isNeedUpdate = True
+
+        for aid, ani in self.animation_list.items():
+            if ani.update(updatetime) is True:
+                isNeedUpdate = True
 
         return isNeedUpdate
 
     def repaint(self):
         for w in self._shellwindows.values():
-            w.setImage(self.getShellImage(w.nid))
+            w.setImage(self.getShellImage(w.winid))
             w.repaint()
         for d in self._dialogs.values():
             d.repaint()
 
     # #####################################################################################
 
-    def memoryRead(self, key, default, nid=0):
-        key = '%s_%d_%d' % (key, self.gid, nid)
+    def memoryRead(self, key, default, winid=0):
+        key = '%s_%d_%d' % (key, self.gid, winid)
         if kikka.core.isDebug:
             value = kikka.memory.read(key, default)
         else:
             value = kikka.memory.readDeepMemory(key, default)
         return value
 
-    def menoryWrite(self, key, value, nid=0):
-        key = '%s_%d_%d' % (key, self.gid, nid)
+    def menoryWrite(self, key, value, winid=0):
+        key = '%s_%d_%d' % (key, self.gid, winid)
         if kikka.core.isDebug:
             kikka.memory.write(key, value)
         else:
@@ -365,15 +427,16 @@ class GhostBase:
     def getEventList(self):
         return self.eventlist
 
-    def updateClothesMenu(self, nid):
-        if nid not in self._menus:
+    def updateClothesMenu(self, winid):
+        if winid not in self._menus:
             return
 
         clothesmenu = OrderedDict(sorted(self.shell.setting.clothesmenu.items()))
         bindgroups = self.shell.setting.bindgroups
+        bindoption = self.shell.setting.bindoption
 
         menu = None
-        for act in self._menus[nid].actions():
+        for act in self._menus[winid].actions():
             if act.text() == 'Clothes':
                 menu = act.menu()
                 break
@@ -382,6 +445,7 @@ class GhostBase:
             return
 
         menu.clear()
+        self._clothes.clear()
         if len(clothesmenu) == 0:
             menu.setEnabled(False)
             return
@@ -392,6 +456,11 @@ class GhostBase:
         for bindgroup in bindgroups.values():
             if bindgroup.type not in group:
                 group[bindgroup.type] = QActionGroup(menu.parent())
+                if bindgroup.type in bindoption:
+                    option = bindoption[bindgroup.type]
+                    if option == 'multiple':
+                        group[bindgroup.type].setExclusive(False)
+                    logging.info("%s %s" % (bindgroup.type, option))
 
         #group1 = QActionGroup(parten)
         for v in clothesmenu.values():
@@ -401,16 +470,188 @@ class GhostBase:
                 bindgroup = bindgroups[v]
                 text = "%s - %s"%(bindgroup.type, bindgroup.title)
                 act = menu.addMenuItem(text, group=group[bindgroup.type])
-                callbackfunc = lambda checked, act=act, bindgroup=bindgroup: self.clickClothesMenuItem(act, bindgroup)
+                callbackfunc = lambda checked, act=act, bindgroup=bindgroup: self.clickClothesMenuItem(checked, act, bindgroup)
                 act.triggered.connect(callbackfunc)
                 act.setCheckable(True)
+                if bindgroup.type not in self._clothes.keys():
+                    self._clothes[bindgroup.type] = -1
 
-                if bindgroup.default is True:
+                if bindgroup.default is True and len(self.shell.bind) == 0:
+                    self._clothes[bindgroup.type] = bindgroup.aID
                     act.setChecked(True)
-                    self.shell.runAnimation(bindgroup.aID)
+                    #self.shell.runAnimation(bindgroup.aID)
+                    self.shell.setClothes(bindgroup.aID, True)
+        logging.info("bind: %s", self.shell.bind)
         pass
 
-    def clickClothesMenuItem(self, act, bindgroup):
-        logging.info(act.text())
-        self.shell.runAnimation(bindgroup.aID)
+    def clickClothesMenuItem(self, checked, act, bindgroup):
+        bindgroups = self.shell.setting.bindgroups
+        bindoption = self.shell.setting.bindoption
+
+        group = act.actionGroup()
+        lastcloth = self._clothes[bindgroup.type]
+        if lastcloth == bindgroup.aID:
+            if (bindgroup.type in bindoption and bindoption[bindgroup.type] != 'mustselect') \
+            or bindgroup.type not in bindoption:
+                self._clothes[bindgroup.type] = -1
+                self.shell.setClothes(bindgroup.aID, False)
+                act.setChecked(not act.isChecked())
+        else:
+            self.shell.setClothes(lastcloth, False)
+            self._clothes[bindgroup.type] = bindgroup.aID
+            self.shell.setClothes(bindgroup.aID, True)
+
+        self.repaint()
+        logging.info("clickClothesMenuItem: %s %s", act.text(), act.isChecked())
         pass
+
+
+class Animation:
+    def __init__(self, ghost, wiwinid, animation_data):
+        self._ghost = ghost
+        self.ID = wiwinid
+        self.data = animation_data
+        self.patterns = animation_data.patterns
+        self.interval = animation_data.interval
+        self.intervalValue = animation_data.intervalValue
+        self.exclusive = animation_data.exclusive
+
+        self.isRuning = False
+        self.updatetime = 0
+        self.curPattern = -1
+        self._lasttime = 0
+
+    def start(self):
+        if self.isRuning is False:
+            self.isRuning = True
+            self.updatetime = time.clock()
+            self.curPattern = -1
+
+    def stop(self):
+        self.isRuning = False
+        self.curPattern = -1
+
+    def randomStart(self):
+        isNeedStart = False
+        timer_interval = kikka.core.getTimerInterval()
+        if self.interval == 'never' \
+                or self.interval == 'talk' \
+                or self.interval == 'bind' \
+                or self.interval == 'yen-e' \
+                or self.interval == 'runonce':
+            isNeedStart = False
+
+        elif self.interval == 'sometimes':
+            # 30% per second
+            r = random.random()
+            isNeedStart = True if r < 0.0003 * timer_interval else False
+
+        elif self.interval == 'rarely':
+            # 10% per second
+            isNeedStart = True if random.random() < 0.0001 * timer_interval else False
+
+        elif self.interval == 'random':
+            # n% per second
+            isNeedStart = True if random.random() < self.intervalValue / 100000 * timer_interval else False
+
+        elif self.interval == 'periodic':
+            now = time.clock()
+            if now - self._lasttime >= self.intervalValue:
+                self._lasttime = now
+                isNeedStart = True
+            else:
+                isNeedStart = False
+
+        elif self.interval == 'always':
+            isNeedStart = True
+
+        # start animation
+        if isNeedStart is True:
+            for pid, pattern in self.patterns.items():
+                self.doPattern(pattern)
+            self.start()
+
+        return isNeedStart
+
+    def doPattern(self, pattern):
+        if pattern.methodType in ['alternativestart', 'start', 'insert']:
+            r = random.choice(self.patterns[0].aid)
+            if r in self._ghost.animation_list.keys():
+                self._ghost.animation_list[r].start()
+                pattern.bindAnimation = r
+
+        elif pattern.methodType in ['alternativestop', 'stop']:
+            for aid in self.patterns[0].aid:
+                if aid in self._ghost.animation_list.keys():
+                    self._ghost.animation_list[aid].stop()
+                    pattern.bindAnimation = -1
+        elif pattern.methodType == 'bind':
+            self._ghost.animation_list.bind.append((pattern.surfaceID, pattern.offset[0], pattern.offset[1], pattern.methodType))
+            self._ghost.drawImage(self._ghost.getShellBaseImage())
+
+        else:
+            self._ghost.repaint()
+        pass
+
+    def update(self, updatetime):
+        isNeedUpdate = False
+        if self.isRuning is False and self.randomStart() is True:
+            isNeedUpdate = True
+            return isNeedUpdate
+
+        # updating pattern
+        if self.isRuning is True:
+            self.updatetime += updatetime
+            if self.curPattern < len(self.patterns) - 1 \
+            and self.updatetime > self.patterns[self.curPattern + 1].time:
+                isNeedUpdate = True
+                self.curPattern += 1
+                self.updatetime -= self.patterns[self.curPattern].time
+
+                # skip time==0 pattern
+                while self.curPattern < len(self.patterns) and self.patterns[self.curPattern].time == 0:
+                    #self._animationControl(self.patterns[self.curPattern])
+                    self.doPattern(self.patterns[self.curPattern])
+                    self.curPattern += 1
+        pass  # end if
+
+        # if run to last Pattern, stop animation
+        if self.curPattern >= len(self.patterns) - 1:
+            self.curPattern = len(self.patterns) - 1
+
+            # Control Pattern stop
+            if self.patterns[self.curPattern].isControlPattern() is True:
+                hasBindAnimationIsRuning = False
+                for pid, pattern in self.patterns.items():
+                    if pattern.bindAnimation != -1 \
+                    and self._ghost.animation_list[pattern.bindAnimation].isRuning is True:
+                        hasBindAnimationIsRuning = True
+                    else:
+                        pattern.bindAnimation = -1
+
+                if hasBindAnimationIsRuning is False and self.curPattern == len(self.patterns) - 1:
+                    self.stop()
+                    self.updatetime = 0
+                    isNeedUpdate = True
+
+            # stop when face id = -1
+            if self.curPattern in self.patterns and self.patterns[self.curPattern].surfaceID == -1:
+                self.stop()
+                self.updatetime = 0
+                isNeedUpdate = True
+
+            if self.data.interval == 'always':
+                self.start()
+        return isNeedUpdate
+
+    def getCurSurfaceData(self):
+        result = []
+        if self.curPattern in self.patterns and self.patterns[self.curPattern] != -1:
+            pattern = self.patterns[self.curPattern]
+            result.append((pattern.surfaceID, pattern.offset[0], pattern.offset[1], pattern.methodType))
+            # for i in range(self.curPattern + 1):
+            #     pattern = self.patterns[i]
+            #     if pattern.isControlPattern() is False:
+            #         result.append((pattern.surfaceID, pattern.offset[0], pattern.offset[1], pattern.methodType))
+        return result
+

@@ -370,7 +370,7 @@ class Shell:
             self._surfaces[key] = Surface(key, values)
 
     def _IgnoreParams(self, key, values):
-        print('unknow shell params: %s,%s' % (key, values))
+        logging.info('unknow shell params: %s,%s' % (key, values))
         pass
 
     def getSurface(self, surfacesID):
@@ -406,8 +406,20 @@ class Shell:
         if aid in self._surfaces[self._CurfaceID].animations:
             self._surfaces[self._CurfaceID].animations[aid].start()
 
+    def setClothes(self, aid, isEnable=True):
+        if isEnable is True and aid not in self.bind:
+            self.bind.append(aid)
+            for surface in self._surfaces.values():
+                if aid in surface.animations:
+                    surface.animations[aid].start()
+        elif aid in self.bind:
+            self.bind.remove(aid)
+            for surface in self._surfaces.values():
+                if aid in surface.animations:
+                    surface.animations[aid].stop()
 
-class Animation:
+
+class AnimationData:
     def __init__(self, id, parent):
         self._parent = parent
         self.ID = id
@@ -429,6 +441,7 @@ class Animation:
 
     def stop(self):
         self.isRuning = False
+        self.curPattern = -1
 
     def randomStart(self):
         isNeedStart = False
@@ -443,7 +456,7 @@ class Animation:
         elif self.interval == 'sometimes':
             # 30% per second
             r = random.random()
-            isNeedStart = True if r < 0.000003 * timer_interval else False
+            isNeedStart = True if r < 0.0003 * timer_interval else False
 
         elif self.interval == 'rarely':
             # 10% per second
@@ -451,7 +464,7 @@ class Animation:
 
         elif self.interval == 'random':
             # n% per second
-            isNeedStart = True if random.random() < self.intervalValue / 1000 * timer_interval else False
+            isNeedStart = True if random.random() < self.intervalValue / 100000 * timer_interval else False
 
         elif self.interval == 'periodic':
             now = time.clock()
@@ -520,34 +533,41 @@ class Animation:
         if self.curPattern >= len(self.patterns) - 1:
             self.curPattern = len(self.patterns) - 1
 
-            hasBindAnimationIsRuning = False
-            for pid, pattern in self.patterns.items():
-                if pattern.bindAnimation != -1 \
-                and self._parent[pattern.bindAnimation].isRuning is True:
-                    hasBindAnimationIsRuning = True
-                else:
-                    pattern.bindAnimation = -1
+            # Control Pattern stop
+            if self.patterns[self.curPattern].isControlPattern() is True:
+                hasBindAnimationIsRuning = False
+                for pid, pattern in self.patterns.items():
+                    if pattern.bindAnimation != -1 \
+                    and self._parent[pattern.bindAnimation].isRuning is True:
+                        hasBindAnimationIsRuning = True
+                    else:
+                        pattern.bindAnimation = -1
 
-            # stop self when all pattern bindAnimation is stop
-            if hasBindAnimationIsRuning is False:
+                if hasBindAnimationIsRuning is False and self.curPattern == len(self.patterns) - 1:
+                    self.stop()
+                    self.updatetime = 0
+                    isNeedUpdate = True
+
+            # stop when face id = -1
+            if self.curPattern in self.patterns and self.patterns[self.curPattern].surfaceID == -1:
+                self.stop()
                 self.updatetime = 0
-                self.isRuning = False
-                #isNeedUpdate = True
+                isNeedUpdate = True
 
             if self.interval == 'always':
                 self.start()
         return isNeedUpdate
 
     def getCurSurfaceData(self):
-        if self.curPattern in self.patterns:
+        result = []
+        if self.curPattern in self.patterns and self.patterns[self.curPattern] != -1:
             pattern = self.patterns[self.curPattern]
-            if pattern.isControlPattern():
-                return -1, 0, 0, None
-            else:
-                return pattern.surfaceID, pattern.offset[0], pattern.offset[1], pattern.methodType
-        else:
-            return -1, 0, 0, None
-        pass
+            result.append((pattern.surfaceID, pattern.offset[0], pattern.offset[1], pattern.methodType))
+            # for i in range(self.curPattern + 1):
+            #     pattern = self.patterns[i]
+            #     if pattern.isControlPattern() is False:
+            #         result.append((pattern.surfaceID, pattern.offset[0], pattern.offset[1], pattern.methodType))
+        return result
 
 
 class Surface:
@@ -622,7 +642,7 @@ class Surface:
 
             elif matchtype == SurfaceMatchLine.AnimationInterval:
                 aid = int(params[0])
-                ani = Animation(aid, self.animations) if aid not in self.animations else self.animations[aid]
+                ani = AnimationData(aid, self.animations) if aid not in self.animations else self.animations[aid]
                 if ',' in params[1]:
                     p = params[1].split(',')
                     ani.interval = p[0]
@@ -634,25 +654,25 @@ class Surface:
 
             elif matchtype == SurfaceMatchLine.AnimationPattern:
                 aid = int(params[0])
-                ani = Animation(aid, self.animations) if aid not in self.animations else self.animations[aid]
+                ani = AnimationData(aid, self.animations) if aid not in self.animations else self.animations[aid]
                 ani.patterns[int(params[1])] = Pattern(params, EPatternType.Normal)
                 self.animations[aid] = ani
 
             elif matchtype == SurfaceMatchLine.AnimationPatternNew:
                 aid = int(params[0])
-                ani = Animation(aid, self.animations) if aid not in self.animations else self.animations[aid]
+                ani = AnimationData(aid, self.animations) if aid not in self.animations else self.animations[aid]
                 ani.patterns[int(params[1])] = Pattern(params, EPatternType.New)
                 self.animations[aid] = ani
 
             elif matchtype == SurfaceMatchLine.AnimationPatternAlternative:
                 aid = int(params[0])
-                ani = Animation(aid, self.animations) if aid not in self.animations else self.animations[aid]
+                ani = AnimationData(aid, self.animations) if aid not in self.animations else self.animations[aid]
                 ani.patterns[int(params[1])] = Pattern(params, EPatternType.Alternative)
                 self.animations[aid] = ani
 
             elif matchtype == SurfaceMatchLine.AnimationOptionExclusive:
                 aid = int(params[0])
-                ani = Animation(aid, self.animations) if aid not in self.animations else self.animations[aid]
+                ani = AnimationData(aid, self.animations) if aid not in self.animations else self.animations[aid]
                 ani.exclusive = True
                 self.animations[aid] = ani
 
@@ -708,7 +728,7 @@ class Pattern:
                 self.aid = [int(params[5])]
 
     def isControlPattern(self):
-        return self.methodType in ['alternativestart', 'start', 'insert', 'alternativestop', 'stop']
+        return self.methodType in ['alternativestart', 'start', 'insert']
     pass
 
 
