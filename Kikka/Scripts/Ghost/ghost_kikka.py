@@ -154,14 +154,14 @@ def closeDlg(**kwargs):
 
 
 def head_touch(**kwargs):
-    logging.info("head_touch")
+    #logging.info("head_touch")
     if kwargs['nid'] == KIKKA:
         kikka.core.getGhost(kwargs['gid']).setSurface(kwargs['nid'], Surface.ENUM_JOY)
     pass
 
 
 def head_click(**kwargs):
-    logging.info("head_click")
+    #logging.info("head_click")
     pass
 
 
@@ -171,51 +171,51 @@ def head_doubleclick(**kwargs):
 
 
 def face_touch(**kwargs):
-    logging.info("face_touch")
+    #logging.info("face_touch")
     if kwargs['nid'] == KIKKA:
         kikka.core.getGhost(kwargs['gid']).setSurface(kwargs['nid'], Surface.ENUM_ANGER2)
     pass
 
 
 def face_click(**kwargs):
-    logging.info("face_click")
+    #logging.info("face_click")
     pass
 
 
 def face_doubleclick(**kwargs):
-    logging.info("face_doubleclick")
+    #logging.info("face_doubleclick")
     pass
 
 
 def bust_touch(**kwargs):
-    logging.info("bust_touch")
+    #logging.info("bust_touch")
     if kwargs['nid'] == KIKKA:
         kikka.core.getGhost(kwargs['gid']).setSurface(kwargs['nid'], Surface.ENUM_NORMAL)
     pass
 
 
 def bust_click(**kwargs):
-    logging.info("bust_click")
+    #logging.info("bust_click")
     pass
 
 
 def bust_doubleclick(**kwargs):
-    logging.info("bust_doubleclick")
+    #logging.info("bust_doubleclick")
     pass
 
 
 def hand_touch(**kwargs):
-    logging.info("hand_touch")
+    #logging.info("hand_touch")
     pass
 
 
 def hand_click(**kwargs):
-    logging.info("hand_click")
+    #logging.info("hand_click")
     pass
 
 
 def hand_doubleclick(**kwargs):
-    logging.info("hand_doubleclick")
+    #logging.info("hand_doubleclick")
     pass
 
 

@@ -12,20 +12,20 @@ from kikka_balloon import Balloon
 
 
 class Dialog(QWidget):
-    def __init__(self, ghost, nid):
+    def __init__(self, soul, nid):
         QWidget.__init__(self)
         self.setWindowFlags(Qt.Tool | Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint)
         self.setAttribute(Qt.WA_TranslucentBackground)
-        self.setWindowTitle(ghost.name)
         # self.setAttribute(Qt.WA_DeleteOnClose)
         # self.setMouseTracking(True)
         # self.setAcceptDrops(True)
-
-        self._ghost = ghost
+        self._soul = soul
+        self._ghost = self._soul.getGhost()
         self._shellwindow = self._ghost.getShellWindow(nid)
         self.nid = nid
         self._framelessWindowHint = True
         self.isFlip = False
+        self.setWindowTitle(self._ghost.name)
         self.setContentsMargins(0, 0, 0, 0)
 
         self._bgImage = None

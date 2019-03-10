@@ -10,10 +10,11 @@ import kikka
 
 
 class ShellWindow(QWidget):
-    def __init__(self, ghost, nid):
+    def __init__(self, soul, winid):
         QWidget.__init__(self)
-        self._ghost = ghost
-        self.nid = nid
+        self._soul = soul
+        self._ghost = self._soul.getGhost()
+        self.winid = winid
         self.setWindowFlags(Qt.Tool | Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint)
         self.setAttribute(Qt.WA_TranslucentBackground)
         self.setAttribute(Qt.WA_DeleteOnClose)
@@ -28,7 +29,7 @@ class ShellWindow(QWidget):
         self._pixmap = None
 
         # size and position
-        rect = self._ghost.memoryRead('ShellRect', [], self.nid)
+        rect = self._ghost.memoryRead('ShellRect', [], self.winid)
         if len(rect) > 0:
             self.move(rect[0], rect[1])
             self.resize(rect[2], rect[3])
@@ -50,7 +51,7 @@ class ShellWindow(QWidget):
             rect = box[0]
             if rect.contains(mx, my) is True:
                 tag = box[1]
-                self._ghost.event_selector(event, tag, nid=self.nid)
+                self._ghost.event_selector(event, tag, nid=self.winid)
                 return
         pass
     
@@ -87,7 +88,7 @@ class ShellWindow(QWidget):
     #     return False
 
     def contextMenuEvent(self, event):
-        self._ghost.showMenu(self.nid, event.globalPos())
+        self._ghost.showMenu(self.winid, event.globalPos())
         logging.info('contextMenuEvent')
 
     def mousePressEvent(self, event):
@@ -109,7 +110,7 @@ class ShellWindow(QWidget):
         self._mousepos = event.pos()
         if self._isMoving and event.buttons() == Qt.LeftButton:
             self.move(event.globalPos() - self._movepos)
-            self._ghost.getDialog(self.nid).updatePosition()
+            self._ghost.getDialog(self.winid).updatePosition()
             event.accept()
         else:
             self._isMoving = False
@@ -126,7 +127,7 @@ class ShellWindow(QWidget):
         self._isMoving = False
         self._ghost.menoryWrite('ShellRect',
                                 [self.pos().x(), self.pos().y(), self.size().width(), self.size().height()],
-                                self.nid)
+                                self.winid)
 
         self._boxCollision(GhostEvent.MouseUp)
         # eventtag = self._boxCollision()
@@ -138,7 +139,7 @@ class ShellWindow(QWidget):
         self._mouseLogging("mouseDoubleClickEvent", event.buttons(), event.globalPos().x(), event.globalPos().y())
         if event.buttons() == Qt.LeftButton:
             self._isMoving = False
-            self._ghost.getDialog(self.nid).show()
+            self._ghost.getDialog(self.winid).show()
 
         self._boxCollision(GhostEvent.MouseDoubleClick)
         # if self._isMoving is False:
@@ -177,9 +178,42 @@ class ShellWindow(QWidget):
         painter = QPainter(self)
         painter.drawPixmap(self.rect(), self._pixmap)
 
+    def debugDraw(self, image):
+        shell = self._ghost.getShell()
+        img = QImage(image)
+        painter = QPainter(img)
+
+        if kikka.core.isDebug is True:
+            painter.fillRect(QRect(0, 0, 256, 128), QColor(0, 0, 0, 64))
+            painter.setPen(Qt.green)
+            painter.drawRect(QRect(0, 0, image.width() - 1, image.height() - 1))
+            painter.drawText(3, 12, "MainWindow")
+            painter.drawText(3, 24, "Ghost ID: %d" % self._ghost.gid)
+            painter.drawText(3, 36, "Name: %s" % self._ghost.name)
+            painter.drawText(3, 48, "Soul ID: %d" % self._soul.ID)
+            painter.drawText(3, 60, "surface: %d" % self._soul.getCurrentSurfaceID())
+            painter.drawText(3, 72, "bind: %s" % self._soul.getBind())
+            painter.drawText(3, 84, "animations: %s" % self._soul.getRunningAnimation())
+
+        if kikka.shell.isDebug is True:
+            surface = self._soul.getCurrentSurface()
+            for cid, col in surface.CollisionBoxes.items():
+                painter.setPen(Qt.red)
+                rect = QRect(col.Point1, col.Point2)
+                rect.moveTopLeft(col.Point1 + shell.setting.offset)
+                painter.drawRect(rect)
+                painter.fillRect(rect, QColor(255, 255, 255, 64))
+                painter.setPen(Qt.black)
+                painter.drawText(rect, Qt.AlignCenter, col.tag)
+            pass
+        painter.end()
+        return img
+
     def setImage(self, image):
         # image = QImage(r"C:\\test.png")
-        pixmap = QPixmap().fromImage(image, Qt.AutoColor)
+
+        img = self.debugDraw(image)
+        pixmap = QPixmap().fromImage(img, Qt.AutoColor)
         self._pixmap = pixmap
 
         self.setFixedSize(self._pixmap.size())

@@ -75,13 +75,22 @@ class KikkaMenu:
         # debug option
         menu = Menu(mainmenu, ghost.gid, "Debug")
 
-        def callbackfunction():
+        def callbackfunction1():
+            kikka.core.isDebug = not kikka.core.isDebug
+            kikka.core.repaint()
+
+        def callbackfunction2():
             kikka.shell.isDebug = not kikka.shell.isDebug
             kikka.core.repaint()
 
-        act = menu.addMenuItem("Show shell frame", callbackfunction)
+        act = menu.addMenuItem("Show ghost data", callbackfunction1)
+        act.setCheckable(True)
+        act.setChecked(kikka.core.isDebug is True)
+
+        act = menu.addMenuItem("Show shell frame", callbackfunction2)
         act.setCheckable(True)
         act.setChecked(kikka.shell.isDebug is True)
+
         mainmenu.addSubMenu(menu)
 
         mainmenu.addSeparator()

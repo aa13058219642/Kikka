@@ -4,7 +4,9 @@ import re
 import logging
 import random
 import time
+import collections
 from enum import Enum
+from collections import OrderedDict
 
 from PyQt5.QtCore import QPoint
 
@@ -103,6 +105,7 @@ class Shell:
         if self.isLoaded is False:
             logging.info("load shell: %s", self.name)
             self._load_surfaces()
+            self._sort_data()
             self._updatetime = time.clock()
             self.isLoaded = True
         pass
@@ -373,12 +376,21 @@ class Shell:
         logging.info('unknow shell params: %s,%s' % (key, values))
         pass
 
+    def _sort_data(self):
+        #self._surfaces = sorted(self._surfaces.items(), key=lambda d: d[0])
+        self._surfaces = collections.OrderedDict(sorted(self._surfaces.items(), key=lambda t: t[0]))
+        for sid, surface in self._surfaces.items():
+            self._surfaces[sid].elements = collections.OrderedDict(sorted(surface.elements.items(), key=lambda t: t[0]))
+            self._surfaces[sid].animations = collections.OrderedDict(sorted(surface.animations.items(), key=lambda t: t[0]))
+            self._surfaces[sid].CollisionBoxes = collections.OrderedDict(sorted(surface.CollisionBoxes.items(), key=lambda t: t[0]))
+
+
+
     def getSurface(self, surfacesID):
         if surfacesID in self._surfaces:
             return self._surfaces[surfacesID]
         else:
             logging.error("setCurShell: index[%d] NOT in shells list" % (surfacesID))
-            raise ValueError
 
     def update(self, updatetime, surfacesID):
         isNeedUpdate = False
@@ -426,7 +438,7 @@ class AnimationData:
         self.interval = 'never'
         self.intervalValue = 0
         self.exclusive = False
-        self.patterns = {}
+        self.patterns = OrderedDict()
 
         self.isRuning = False
         self.updatetime = 0
