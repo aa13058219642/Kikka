@@ -4,8 +4,8 @@ import sys
 import hashlib
 
 from win32api import GetSystemMetrics
-from PyQt5.QtCore import QSize
-from PyQt5.QtGui import QImage
+from PyQt5.QtCore import QSize, QPoint
+from PyQt5.QtGui import QImage, QPainter
 
 
 class KikkaHelper:
@@ -29,12 +29,9 @@ class KikkaHelper:
         return KikkaHelper._instance
 
     def _init(self):
-
         fn = os.path.join(sys.path[0], 'Resources/default.png')
         if os.path.exists(fn): self._defaultImage = QImage(fn)
         else: self._defaultImage = QImage(QSize(1, 1))
-
-        pass
 
     @staticmethod
     def getPath(tag):
@@ -92,6 +89,16 @@ class KikkaHelper:
             return QImage(filepath)
         else:
             return QImage(self._defaultImage)
+
+    @staticmethod
+    def drawImage(destImage, srcImage, x, y, drawtype):
+        if destImage is None or srcImage is None:
+            return
+
+        painter = QPainter(destImage)
+        painter.setCompositionMode(QPainter.CompositionMode_SourceOver)
+        painter.drawImage(QPoint(x, y), srcImage)
+        painter.end()
 
     @staticmethod
     def getMD5(s):

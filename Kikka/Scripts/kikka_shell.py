@@ -11,7 +11,7 @@ from collections import OrderedDict
 from PyQt5.QtCore import QPoint
 
 import kikka
-
+from kikka_const import ShellConst
 
 class KikkaShell:
     _instance = None
@@ -54,12 +54,7 @@ class KikkaShell:
             for dirname in dirnames:
                 shellpath = os.path.join(parent, dirname)
                 self.loadShell(shellpath)
-
         logging.info("shell count: %d", len(self._shells))
-
-    def update(self, updatetime):
-        shell = self.getCurShell()
-        return shell.update(updatetime)
 
     def getShell(self, index):
         if 0 <= index < len(self._shells):
@@ -85,12 +80,9 @@ class Shell:
         self.setting = ShellSetting()
         self.isInitialized = False
         self.isLoaded = False
-        self.bind = []
 
-        self._base_image = None
         self._surfaces = {}
         self._updatetime = 0
-        self._CurfaceID = 0
 
         # path check
         if os.path.exists(shellpath):
@@ -204,6 +196,9 @@ class Shell:
                             surfaceID.append(id)
                             if id not in newmap:
                                 newmap[id] = []
+                    pass
+                pass # exit for
+            pass
         pass  # exit for
         f.close()
         return newmap
@@ -384,25 +379,11 @@ class Shell:
             self._surfaces[sid].animations = collections.OrderedDict(sorted(surface.animations.items(), key=lambda t: t[0]))
             self._surfaces[sid].CollisionBoxes = collections.OrderedDict(sorted(surface.CollisionBoxes.items(), key=lambda t: t[0]))
 
-
-
     def getSurface(self, surfacesID):
         if surfacesID in self._surfaces:
             return self._surfaces[surfacesID]
         else:
             logging.error("setCurShell: index[%d] NOT in shells list" % (surfacesID))
-
-    def update(self, updatetime, surfacesID):
-        isNeedUpdate = False
-        self._updatetime += updatetime
-
-        surface = self._surfaces[surfacesID]
-        for aid, ani in surface.animations.items():
-            ret = ani.update(updatetime)
-            if ret is True:
-                isNeedUpdate = True
-
-        return isNeedUpdate
 
     def getCollisionBoxes(self, surfacesID):
         surface = self._surfaces[surfacesID]
@@ -413,22 +394,6 @@ class Shell:
 
     def getShellMenuStyle(self):
         return self.shellmenustyle
-
-    def runAnimation(self, aid):
-        if aid in self._surfaces[self._CurfaceID].animations:
-            self._surfaces[self._CurfaceID].animations[aid].start()
-
-    def setClothes(self, aid, isEnable=True):
-        if isEnable is True and aid not in self.bind:
-            self.bind.append(aid)
-            for surface in self._surfaces.values():
-                if aid in surface.animations:
-                    surface.animations[aid].start()
-        elif aid in self.bind:
-            self.bind.remove(aid)
-            for surface in self._surfaces.values():
-                if aid in surface.animations:
-                    surface.animations[aid].stop()
 
 
 class AnimationData:
@@ -445,194 +410,15 @@ class AnimationData:
         self.curPattern = -1
         self._lasttime = 0
 
-    def start(self):
-        if self.isRuning is False:
-            self.isRuning = True
-            self.updatetime = time.clock()
-            self.curPattern = -1
-
-    def stop(self):
-        self.isRuning = False
-        self.curPattern = -1
-
-    def randomStart(self):
-        isNeedStart = False
-        timer_interval = kikka.core.getTimerInterval()
-        if self.interval == 'never' \
-                or self.interval == 'talk' \
-                or self.interval == 'bind' \
-                or self.interval == 'yen-e' \
-                or self.interval == 'runonce':
-            isNeedStart = False
-
-        elif self.interval == 'sometimes':
-            # 30% per second
-            r = random.random()
-            isNeedStart = True if r < 0.0003 * timer_interval else False
-
-        elif self.interval == 'rarely':
-            # 10% per second
-            isNeedStart = True if random.random() < 0.0001 * timer_interval else False
-
-        elif self.interval == 'random':
-            # n% per second
-            isNeedStart = True if random.random() < self.intervalValue / 100000 * timer_interval else False
-
-        elif self.interval == 'periodic':
-            now = time.clock()
-            if now - self._lasttime >= self.intervalValue:
-                self._lasttime = now
-                isNeedStart = True
-            else:
-                isNeedStart = False
-
-        elif self.interval == 'always':
-            isNeedStart = True
-
-        # start animation
-        if isNeedStart is True:
-            for pid, pattern in self.patterns.items():
-                self._animationControl(pattern)
-            self.start()
-
-        return isNeedStart
-        pass
-
-    def _animationControl(self, pattern):
-        if pattern.bindAnimation != -1:
-            # this pattern is run a animation and the animation is running
-            return
-
-        if pattern.methodType in ['alternativestart', 'start', 'insert']:
-            r = random.choice(self.patterns[0].aid)
-            if r in self._parent:
-                self._parent[r].start()
-                pattern.bindAnimation = r
-
-        elif pattern.methodType in ['alternativestop', 'stop']:
-            for aid in self.patterns[0].aid:
-                if aid in self._parent:
-                    self._parent[aid].stop()
-                    pattern.bindAnimation = -1
-        elif pattern.methodType == 'bind':
-            self._parent.bind.append((pattern.surfaceID, pattern.offset[0], pattern.offset[1], pattern.methodType))
-
-        pass
-
-    def update(self, updatetime):
-        isNeedUpdate = False
-        if self.isRuning is False and self.randomStart() is True:
-            isNeedUpdate = True
-            return isNeedUpdate
-
-        # updating pattern
-        if self.isRuning is True:
-            self.updatetime += updatetime
-            if self.curPattern < len(self.patterns) - 1 \
-            and self.updatetime > self.patterns[self.curPattern + 1].time:
-                isNeedUpdate = True
-                self.curPattern += 1
-                self.updatetime -= self.patterns[self.curPattern].time
-
-                # skip time==0 pattern
-                while self.curPattern < len(self.patterns) \
-                        and self.patterns[self.curPattern].time == 0:
-                    self._animationControl(self.patterns[self.curPattern])
-                    self.curPattern += 1
-        pass  # end if
-
-        # if run to last Pattern, stop animation
-        if self.curPattern >= len(self.patterns) - 1:
-            self.curPattern = len(self.patterns) - 1
-
-            # Control Pattern stop
-            if self.patterns[self.curPattern].isControlPattern() is True:
-                hasBindAnimationIsRuning = False
-                for pid, pattern in self.patterns.items():
-                    if pattern.bindAnimation != -1 \
-                    and self._parent[pattern.bindAnimation].isRuning is True:
-                        hasBindAnimationIsRuning = True
-                    else:
-                        pattern.bindAnimation = -1
-
-                if hasBindAnimationIsRuning is False and self.curPattern == len(self.patterns) - 1:
-                    self.stop()
-                    self.updatetime = 0
-                    isNeedUpdate = True
-
-            # stop when face id = -1
-            if self.curPattern in self.patterns and self.patterns[self.curPattern].surfaceID == -1:
-                self.stop()
-                self.updatetime = 0
-                isNeedUpdate = True
-
-            if self.interval == 'always':
-                self.start()
-        return isNeedUpdate
-
-    def getCurSurfaceData(self):
-        result = []
-        if self.curPattern in self.patterns and self.patterns[self.curPattern] != -1:
-            pattern = self.patterns[self.curPattern]
-            result.append((pattern.surfaceID, pattern.offset[0], pattern.offset[1], pattern.methodType))
-            # for i in range(self.curPattern + 1):
-            #     pattern = self.patterns[i]
-            #     if pattern.isControlPattern() is False:
-            #         result.append((pattern.surfaceID, pattern.offset[0], pattern.offset[1], pattern.methodType))
-        return result
-
 
 class Surface:
-    # surface const
-    ENUM_NORMAL = 0             # 正常 / 素1
-    ENUM_SHY = 1                # 害羞(侧面) / 照れ1
-    ENUM_SURPRISE = 2           # 惊讶 / 驚き
-    ENUM_WORRIED = 3            # 忧郁 / 落込み
-    ENUM_DISAPPOINTED = 4       # 失望 / 
-    ENUM_JOY = 5                # 高兴 / 喜び
-    ENUM_EYE_CLOSURE = 6        # 闭眼 / 目閉じ
-    ENUM_ANGER = 7              # 生气 / 怒り
-    ENUM_FORCED_SMILE = 8       # 苦笑 / 苦笑
-    ENUM_ANGER2 = 9             # 尴尬 / 照れ怒り
-    ENUM_HIDE = 19              # 消失 /
-    ENUM_THINKING = 20          # 思考 / 思考
-    ENUM_ABSENT_MINDED = 21     # 恍惚 / 恍惚
-    ENUM_P90 = 22               # P90 / P90
-    ENUM_DAGGER = 23            # 匕首 / 鉈
-    ENUM_SINGING = 25           # 唱歌 / 歌
-    ENUM_FRONT = 26             # 正面 / 正面
-    ENUM_CHAINSAW = 27          # 电锯 / チェーンソー
-    ENUM_VALENTINE = 28         # 礼物 / バレンタイン
-    ENUM_HAPPINESS = 29         # 幸福 / 幸せ
-    ENUM_SIDEWAYS = 30          # 看斗和 / 横向き
-    ENUM_FIVESEVEN = 32         # FiveseveN(手枪) / FiveseveN
-    ENUM_SURPRISE2 = 33         # 委屈 / 驚き
-    ENUM_KNIFE = 34             # 军刀 / ナイフ
-    ENUM_ENDURE = 35            # 难过 / 耐え
-    ENUM_SLOUCH = 40            # 鞠躬 / 前屈み
-    ENUM_SLOUCH_JOY = 41        # 鞠躬(闭眼) / 喜び（前屈み）
-    ENUM_APRON_TEA = 50         # 围裙(红茶) / エプロン（紅茶）
-    ENUM_APRON_SHY = 51         # 围裙(害羞) / エプロン（照れ）
-    ENUM_NORMAL2 = 100          # 正常2 / 素2
-    ENUM_SHY2 = 101             # 害羞2 / 照れ2
-    ENUM_APRON_COFFEE = 150     # 围裙(咖啡) / エプロン（コーヒー）
-    ENUM_APRON_JPN_TEA = 250    # 围裙(日本茶) / エプロン（日本茶）
-    
-    ENUM_KERO_NORMAL = 10           # 正常(闭眼) / 素
-    ENUM_KERO_SIDEWAYS = 11         # 侧身(睁眼) / 横
-    ENUM_KERO_FRONT = 12            # 正面(睁眼正视) / 正面
-    ENUM_KERO_TURNING = 13          # 转头(扭头无视) / 转头
-    ENUM_KERO_HUMAN_JOY = 110       # 笑(人形) / 笑(人形)
-    ENUM_KERO_HUMAN_NORMAL = 111    # 正常(人形) / 素(人形)
-    ENUM_KERO_HUMAN_SURPRISE = 117  # 惊讶(人形) / 驚き(人形)
-
     def __init__(self, id, values):
         self.ID = id
         self.elements = {}
         self.animations = {}
         self.CollisionBoxes = {}
-        self.offest1 = [0, 0]
-        self.offest2 = [0, 0]
+        self.offset0 = [0x7FFFFFFF, 0x7FFFFFFF]
+        self.offset1 = [0x7FFFFFFF, 0x7FFFFFFF]
 
         self._load_surface(values)
         pass
@@ -689,18 +475,21 @@ class Surface:
                 self.animations[aid] = ani
 
             elif matchtype == SurfaceMatchLine.OffectPointX:
-                self.offest1[0] = int(params[0])
+                self.offset0[0] = int(params[0])
 
             elif matchtype == SurfaceMatchLine.OffectPointY:
-                self.offest1[1] = int(params[0])
+                self.offset0[1] = int(params[0])
 
             elif matchtype == SurfaceMatchLine.OffectKinokoPointX:
-                self.offest2[0] = int(params[0])
+                self.offset1[0] = int(params[0])
 
             elif matchtype == SurfaceMatchLine.OffectKinokoPointY:
-                self.offest1[1] = int(params[0])
+                self.offset1[1] = int(params[0])
 
         pass
+
+    def getOffset(self, soulID=0):
+        return self.offset0 if soulID != 1 else self.offset1
 
 
 class EPatternType(Enum):
@@ -897,7 +686,7 @@ class BindGroup:
 class ShellSetting:
     def __init__(self):
         self.name = ''
-        self.offset = QPoint(100, 100)
+        self.offset = ShellConst.ImageOffset
         self.position = QPoint(0, 0)
         self.balloon_offset = QPoint(0, 0)
         self.balloon_alignment = 'lefttop'

@@ -240,9 +240,6 @@ class GhostBase:
             if soul.update(updatetime) is True:
                 isNeedUpdate = True
 
-        if isNeedUpdate is True:
-             self.repaint()
-
         return isNeedUpdate
 
     def repaint(self):

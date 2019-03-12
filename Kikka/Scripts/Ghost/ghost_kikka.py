@@ -7,7 +7,7 @@ from PyQt5.QtWidgets import QWidget, QPushButton, QStackedLayout, QVBoxLayout, Q
 
 import kikka
 from ghostevent import GhostEvent
-from kikka_shell import Surface
+from kikka_const import SurfaceEnum
 from ghostbase import GhostBase
 from kikka_menu import Menu
 
@@ -38,7 +38,6 @@ class GhostKikka(GhostBase):
         act = menu.addMenuItem("111", _test_callback)
         act.setShortcut(QKeySequence("Ctrl+T"))
         act.setShortcutContext(Qt.ApplicationShortcut)
-        # act.setShortcutContext(Qt.ApplicationShortcut)
         act.setShortcutVisibleInContextMenu(True)
 
 
@@ -156,7 +155,7 @@ def closeDlg(**kwargs):
 def head_touch(**kwargs):
     #logging.info("head_touch")
     if kwargs['nid'] == KIKKA:
-        kikka.core.getGhost(kwargs['gid']).setSurface(kwargs['nid'], Surface.ENUM_JOY)
+        kikka.core.getGhost(kwargs['gid']).setSurface(kwargs['nid'], SurfaceEnum.ENUM_JOY)
     pass
 
 
@@ -173,7 +172,7 @@ def head_doubleclick(**kwargs):
 def face_touch(**kwargs):
     #logging.info("face_touch")
     if kwargs['nid'] == KIKKA:
-        kikka.core.getGhost(kwargs['gid']).setSurface(kwargs['nid'], Surface.ENUM_ANGER2)
+        kikka.core.getGhost(kwargs['gid']).setSurface(kwargs['nid'], SurfaceEnum.ENUM_ANGER2)
     pass
 
 
@@ -190,7 +189,7 @@ def face_doubleclick(**kwargs):
 def bust_touch(**kwargs):
     #logging.info("bust_touch")
     if kwargs['nid'] == KIKKA:
-        kikka.core.getGhost(kwargs['gid']).setSurface(kwargs['nid'], Surface.ENUM_NORMAL)
+        kikka.core.getGhost(kwargs['gid']).setSurface(kwargs['nid'], SurfaceEnum.ENUM_NORMAL)
     pass
 
 

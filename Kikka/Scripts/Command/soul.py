@@ -1,26 +1,23 @@
 
 import logging
-import os
 import time
 import random
 from collections import OrderedDict
 
-from PyQt5.QtCore import Qt, QPoint, QRect, QSize, QRectF
-from PyQt5.QtGui import QImage, QPainter, QColor, QPixmap
+from PyQt5.QtCore import Qt, QPoint
+from PyQt5.QtGui import QImage, QPainter
 from PyQt5.QtWidgets import QActionGroup
 
 import kikka
 from shellwindow import ShellWindow
 from dialogwindow import Dialog
-from kikka_menu import MenuStyle, Menu
+from kikka_const import ShellConst
 
 
 class Soul:
-
-
-    def __init__(self, ghost, id, surfaceID=0):
-        self._parent = ghost
-        self.ID = id
+    def __init__(self, ghost, soulid, surfaceID=0):
+        self.ID = soulid
+        self._ghost = ghost
 
         self._shell = None
         self._balloon = None
@@ -35,9 +32,10 @@ class Soul:
         self._clothes = {}
         self._bind = []
 
-        #self._shell_image = {}
-        self._base_shell_image = None
-        self._current_shell_image = None
+        self._draw_offset = []
+        self._base_image = None
+        self._surface_image = None
+        self._soul_image = None
         self._balloon_image_cache = None
 
         self.init()
@@ -48,7 +46,7 @@ class Soul:
         self._shell_window = ShellWindow(self, self.ID)
         self._dialog_window = Dialog(self, self.ID)
 
-        self._menu = kikka.menu.createSystemMenu(self._parent)
+        self._menu = kikka.menu.createSystemMenu(self._ghost)
 
         if self._balloon is not None:
             self._dialog_window.setBalloon(self._balloon)
@@ -67,7 +65,7 @@ class Soul:
         pass
 
     def getGhost(self):
-        return self._parent
+        return self._ghost
 
     def getShellWindow(self):
         return self._shell_window
@@ -89,7 +87,7 @@ class Soul:
         return self._menu
 
     def updateClothesMenu(self):
-        shell = self._parent.getShell()
+        shell = self._ghost.getShell()
         clothesmenu = OrderedDict(sorted(shell.setting.clothesmenu.items()))
         bindgroups = shell.setting.bindgroups
         bindoption = shell.setting.bindoption
@@ -122,13 +120,13 @@ class Soul:
                     logging.info("%s %s" % (bindgroup.type, option))
         pass
 
-        #group1 = QActionGroup(parten)
+        # group1 = QActionGroup(parten)
         for v in clothesmenu.values():
             if v == -1:
                 menu.addSeparator()
             elif v in bindgroups.keys():
                 bindgroup = bindgroups[v]
-                text = "%s - %s"%(bindgroup.type, bindgroup.title)
+                text = "%s - %s" % (bindgroup.type, bindgroup.title)
                 act = menu.addMenuItem(text, group=group[bindgroup.type])
                 callbackfunc = lambda checked, act=act, bindgroup=bindgroup: self.clickClothesMenuItem(checked, act, bindgroup)
                 act.triggered.connect(callbackfunc)
@@ -140,11 +138,11 @@ class Soul:
                     self._clothes[bindgroup.type] = bindgroup.aID
                     act.setChecked(True)
                     self.setClothes(bindgroup.aID, True)
-        logging.info("bind: %s", shell.bind)
+            pass
         pass
 
     def clickClothesMenuItem(self, checked, act, bindgroup):
-        shell = self._parent.getShell()
+        shell = self._ghost.getShell()
         bindgroups = shell.setting.bindgroups
         bindoption = shell.setting.bindoption
 
@@ -161,10 +159,14 @@ class Soul:
             self._clothes[bindgroup.type] = bindgroup.aID
             self.setClothes(bindgroup.aID, True)
 
-        #self.repaint()
         self.setSurface(-1)
         logging.info("clickClothesMenuItem: %s %s", act.text(), act.isChecked())
         pass
+
+    def resetAnimation(self, animations):
+        self._animations.clear()
+        for aid, ani in animations.items():
+            self._animations[aid] = Animation(self, self.ID, ani)
 
     def getAnimation(self):
         return self._animations
@@ -180,7 +182,7 @@ class Soul:
         if aid in self._animations.keys():
             self._animations[aid].start()
         else:
-            logging.warning("animation %d NOT exist!"%aid)
+            logging.warning("animation %d NOT exist!" % aid)
 
     def animationStop(self, aid):
         if aid in self._animations.keys():
@@ -192,10 +194,19 @@ class Soul:
         if aid not in self._bind:
             self._bind.append(aid)
             self._bind.sort()
-            #self.repaintBaseSurfaceImage()
 
     def getBind(self):
         return self._bind
+
+    def setDrawOffset(self):
+        shell_offset = self._ghost.getShell().getOffset()
+        surface_offset = self._surface.getOffset(self.ID)
+        offset = QPoint(surface_offset[0] if surface_offset[0] != 0x7FFFFFFF else shell_offset.x(),
+                        surface_offset[1] if surface_offset[1] != 0x7FFFFFFF else shell_offset.y())
+        self._draw_offset = ShellConst.ImageOffset - offset
+
+    def getDrawOffset(self):
+        return self._draw_offset
 
     def setSurface(self, surfaceID=-1):
         if self._surface is not None and self._surface.ID == surfaceID:
@@ -207,27 +218,17 @@ class Soul:
 
         logging.info("setSurface %d", surfaceID)
 
-        shell = self._parent.getShell()
+        shell = self._ghost.getShell()
         surface = shell.getSurface(surfaceID)
         if surface is None:
             logging.warning("setSurfaces: surfaceID: %d NOT exist" % surfaceID)
             return
 
         self._surface = surface
-        self.repaintBaseSurfaceImage()
-
-        self._animations.clear()
-        for aid, ani in surface.animations.items():
-            self._animations[aid] = Animation(self, self.ID, ani)
-
-        # start bind cloth
-        for aid in self._bind:
-            if aid in self._animations.keys():
-                self._animations[aid].start()
-
-        img = self.getShellImage()
-        self._shell_window.setImage(img)
-        self._shell_window.setBoxes(shell.getCollisionBoxes(surfaceID), shell.getOffset())
+        self.setDrawOffset()
+        self.resetAnimation(surface.animations)
+        self.repaint()
+        self._shell_window.setBoxes(shell.getCollisionBoxes(surfaceID), self._draw_offset)
         pass
 
     def getCurrentSurface(self):
@@ -237,87 +238,77 @@ class Soul:
         return self._surface.ID
 
     def setClothes(self, aid, isEnable=True):
-        self.repaintBaseSurfaceImage()
+        self.repaintBaseImage()
         if isEnable is True and aid not in self._bind:
             self.addBind(aid)
-            self.animationStart(aid)
         elif aid in self._bind:
             self._bind.remove(aid)
-            self.animationStop(aid)
+        self.repaint()
 
     # ################################################################
 
     def update(self, updatetime):
         isNeedUpdate = False
-
         for aid, ani in self._animations.items():
             if ani.update(updatetime) is True:
                 isNeedUpdate = True
 
+        if isNeedUpdate is True:
+            self.repaint()
         return isNeedUpdate
 
     def repaint(self):
-        #self.repaintBaseSurfaceImage()
-        self._shell_window.setImage(self.getShellImage())
+        self.repaintBaseImage()
+        self.repaintSoulImage()
+        self._shell_window.setImage(self._soul_image)
         self._dialog_window.repaint()
 
-    def drawImage(self, image, faceid, x, y, drawtype):
-        if faceid == -1:
-            return
+    def getShellImage(self, faceID):
+        filename = "surface%04d.png" % faceID
+        shell_image = self._ghost.getShellImage()
+        if filename in shell_image:
+            img = shell_image[filename]
+            return img
+        else:
+            return None
 
-        image_name = "surface%04d.png" % faceid
-        shell_image = self._parent.getShellImage()
-        if image_name in shell_image:
-            face = shell_image[image_name]
-            offset = self._parent.getShell().setting.offset
-            painter = QPainter(image)
-            painter.setCompositionMode(QPainter.CompositionMode_SourceOver)
-            painter.drawImage(offset + QPoint(x, y), face)
-            painter.end()
-        pass
+    def repaintBaseImage(self):
+        shell_image = self._ghost.getShellImage()
 
-    def repaintBaseSurfaceImage(self):
-        shell = self._parent.getShell()
-        shell_image = self._parent.getShellImage()
-
-        image_cache = QImage(kikka.const.ShellWidth, kikka.const.ShellHeight, QImage.Format_ARGB32)
-        painter = QPainter(image_cache)
+        self._base_image = QImage(ShellConst.ImageWidth, ShellConst.ImageHeight, QImage.Format_ARGB32_Premultiplied)
+        painter = QPainter(self._base_image)
         painter.setCompositionMode(QPainter.CompositionMode_Source)
-        painter.fillRect(image_cache.rect(), Qt.transparent)
-
-        painter.setCompositionMode(QPainter.CompositionMode_SourceOver)
+        painter.fillRect(self._base_image.rect(), Qt.transparent)
+        painter.end()
+        del painter
         if len(self._surface.elements) > 0:
             for i, ele in self._surface.elements.items():
                 fn = ele.filename
                 if fn in shell_image:
-                    painter.drawImage(shell.setting.offset + ele.offset, shell_image[fn])
+                    offset = self._draw_offset + ele.offset
+                    kikka.helper.drawImage(self._base_image, shell_image[fn], offset[0], offset[1], ele.PaintType)
         else:
             fn = "surface%04d.png" % self._surface.ID
             if fn in shell_image:
-                painter.drawImage(shell.setting.offset, shell_image[fn])
+                painter = QPainter(self._base_image)
+                painter.setCompositionMode(QPainter.CompositionMode_SourceOver)
+                painter.drawImage(self._draw_offset, shell_image[fn])
+                painter.end()
 
-        painter.end()
         # self._base_image.save("_base_image.png")
-        self._base_shell_image = image_cache
-        self._current_shell_image = QImage(image_cache)
+        pass
 
-    def getShellImage(self):
-        image = QImage(self._base_shell_image)
-        painter = QPainter(image)
+    def repaintSoulImage(self):
+        self._soul_image = QImage(self._base_image)
         for aid, ani in self._animations.items():
-            img = ani.getImage()
-            if img is not None:
-                #img.save("%d.png"%aid)
-                #painter.setCompositionMode(QPainter.CompositionMode_SourceOver)
-                painter.drawImage(QPoint(0, 0), img)
-
-        painter.end()
-        return image
+            ani.draw(self._soul_image)
+        pass
 
 
 class Animation:
     def __init__(self, soul, winid, animation_data):
-        self._parent = soul
+        self._soul = soul
+        self._ghost = soul.getGhost()
         self._winid = winid
         self.ID = animation_data.ID
         self.data = animation_data
@@ -327,31 +318,28 @@ class Animation:
         self.exclusive = animation_data.exclusive
 
         self.isRunning = False
-        self.updatetime = 0
-        self.curPattern = -1
+        self._updatetime = 0
+        self._curPattern = -1
         self._lasttime = 0
+
         self._image = None
+        self._drawOffset = QPoint()
+        self._drawType = None
 
         if self.interval == 'runonce':
             self.start()
 
     def start(self):
         if self.isRunning is False:
-            logging.debug("Animation %d start"%(self.ID))
+            logging.debug("Animation %d start" % self.ID)
 
             self.isRunning = True
-            self.updatetime = time.clock()
-            self.curPattern = -1
-
-            self._image = QImage(kikka.const.ShellWidth, kikka.const.ShellHeight, QImage.Format_ARGB32)
-            painter = QPainter(self._image)
-            painter.setCompositionMode(QPainter.CompositionMode_Source)
-            painter.fillRect(self._image.rect(), Qt.transparent)
-            painter.end()
+            self._updatetime = time.clock()
+            self._curPattern = -1
 
     def stop(self):
         self.isRunning = False
-        self.curPattern = -1
+        self._curPattern = -1
         self._image = None
 
     def randomStart(self):
@@ -398,20 +386,22 @@ class Animation:
 
         if pattern.methodType in ['alternativestart', 'start', 'insert']:
             r = random.choice(self.patterns[0].aid)
-            self._parent.animationStart(r)
+            self._soul.animationStart(r)
             pattern.bindAnimation = r
         elif pattern.methodType in ['alternativestop', 'stop']:
             for aid in self.patterns[0].aid:
-                self._parent.animationStop(aid)
+                self._soul.animationStop(aid)
                 pattern.bindAnimation = -1
         else:
-            self._parent.drawImage(self._image, pattern.surfaceID, pattern.offset[0], pattern.offset[1], pattern.methodType)
+            self._image = self._soul.getShellImage(pattern.surfaceID)
+            self._drawOffset = QPoint(pattern.offset[0], pattern.offset[1])
+            self._drawType = pattern.methodType
         pass
 
     def isAllBindAnimationStop(self):
         hasControlPattern = False
         AllStop = True
-        animations = self._parent.getAnimation()
+        animations = self._soul.getAnimation()
         for pid, pattern in self.patterns.items():
             if pattern.isControlPattern() and pattern.bindAnimation != -1:
                 hasControlPattern = True
@@ -432,33 +422,38 @@ class Animation:
         if self.isRunning is False:
             return isNeedUpdate
 
-        self.updatetime += updatetime
-        while self.curPattern + 1 < len(self.patterns) \
-        and self.updatetime > self.patterns[self.curPattern + 1].time:
+        self._updatetime += updatetime
+        while self._curPattern + 1 < len(self.patterns) \
+        and self._updatetime > self.patterns[self._curPattern + 1].time:
             isNeedUpdate = True
-            self.curPattern += 1
-            pattern = self.patterns[self.curPattern]
+            self._curPattern += 1
+            pattern = self.patterns[self._curPattern]
 
             if pattern.surfaceID == -1:
-                self.updatetime = 0
+                self._updatetime = 0
                 self.stop()
                 break
 
-            self.updatetime -= pattern.time
+            self._updatetime -= pattern.time
             self.doPattern(pattern)
 
-
         if self.isAllBindAnimationStop() is True:
-            self.updatetime = 0
+            self._updatetime = 0
             self.stop()
 
         return isNeedUpdate
 
-    def getImage(self):
-        img = self._image if self.isRunning is True else None
-        return img
+    def draw(self, destImage):
+        if self.ID in self._soul.getBind():
+            for p in self.patterns.values():
+                self.doPattern(p)
+                offset = self._soul.getDrawOffset() + self._drawOffset
+                kikka.helper.drawImage(destImage, self._image, offset.x(), offset.y(), self._drawType)
+        else:
+            offset = self._soul.getDrawOffset() + self._drawOffset
+            kikka.helper.drawImage(destImage, self._image, offset.x(), offset.y(), self._drawType)
 
-
+        return destImage
 
 
 
