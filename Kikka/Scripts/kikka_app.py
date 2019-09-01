@@ -6,11 +6,11 @@ import time
 import win32gui
 import ctypes
 
-from PyQt5.QtGui import QIcon
-from PyQt5.QtWidgets import QApplication, QSystemTrayIcon
+from PyQt5.QtGui import QPainter, QIcon
+from PyQt5.QtCore import Qt, QTimer
+from PyQt5.QtWidgets import QApplication, QSystemTrayIcon,QWidget
 
 import kikka
-
 
 class KikkaApp:
     _instance = None
@@ -29,8 +29,40 @@ class KikkaApp:
     def _init(self):
         self._hasFullScreenProgress = False
         self._hasKikkaExe = True
+
+        self._loadingWindow = LoadingWindow()
+        self._timer = QTimer()
+
         logging.info("")
         logging.info("Hey~ Kikka here %s" % ("-" * 40))
+
+    def _load(self):
+        time.sleep(1)
+        # start
+        kikka.memory.awake()
+
+        kikka.shell.loadAllShell(kikka.helper.getPath(kikka.helper.PATH_SHELL))
+        kikka.balloon.loadAllBalloon(kikka.helper.getPath(kikka.helper.PATH_BALLOON))
+
+        kikka.core.start()
+        kikka.app.start()
+
+        # kikka.core.addGhost(kikka.KIKKA)
+        from ghost_kikka import GhostKikka
+        gid = kikka.core.addGhost(GhostKikka())
+        kikka.menu.setAppMenu(kikka.core.getGhost(gid).getMenu())
+        kikka.menu.setAppMenu(kikka.menu.createTestMenu())
+
+        logging.info('kikka load done ################################')
+        self._loadingWindow.close()
+        kikka.core.show()
+        pass
+
+    def awake(self):
+        self._loadingWindow.show()
+        self._timer.timeout.connect(self._load)
+        self._timer.setSingleShot(True)
+        self._timer.start(100)
 
     def start(self):
         self._createGuardThread()
@@ -112,3 +144,19 @@ class KikkaApp:
             else:
                 kikka.core.hide()
         pass
+
+
+class LoadingWindow(QWidget):
+    def __init__(self):
+        QWidget.__init__(self)
+        self.setWindowFlags(Qt.Tool | Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint)
+
+        self._image = kikka.helper.getImage(kikka.helper.getPath(kikka.helper.PATH_RESOURCES)+"/loading.png")
+        self.resize(self._image.width(), self._image.height())
+        (w, h) = kikka.helper.getScreenClientRect()
+        self.move(w-self._image.width(), h-self._image.height())
+
+    def paintEvent(self, event):
+        painter = QPainter(self)
+        painter.drawImage(self.rect(), self._image)
+        super().paintEvent(event)

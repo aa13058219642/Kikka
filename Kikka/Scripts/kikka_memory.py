@@ -44,22 +44,28 @@ class KikkaMemory:
         logging.info("linked kikka memory")
 
     def read(self, key, default=''):
-        return self._deepmemory.read(key, default, DeepMemory.TYPE_NORMAL)
+        db = DeepMemory(sqlite3.connect(self._filepath))
+        return db.read(key, default, DeepMemory.TYPE_NORMAL)
 
     def readDeepMemory(self, key, default):
-        return self._deepmemory.read(key, default, DeepMemory.TYPE_DEEP)
+        db = DeepMemory(sqlite3.connect(self._filepath))
+        return db.read(key, default, DeepMemory.TYPE_DEEP)
 
     def readInitialMemory(self, key, default):
-        return self._deepmemory.read(key, default, DeepMemory.TYPE_INITIAL)
+        db = DeepMemory(sqlite3.connect(self._filepath))
+        return db.read(key, default, DeepMemory.TYPE_INITIAL)
 
     def write(self, key, value):
-        return self._deepmemory.write(key, value, DeepMemory.TYPE_NORMAL)
+        db = DeepMemory(sqlite3.connect(self._filepath))
+        return db.write(key, value, DeepMemory.TYPE_NORMAL)
 
     def writeDeepMemory(self, key, value):
-        return self._deepmemory.write(key, value, DeepMemory.TYPE_DEEP)
+        db = DeepMemory(sqlite3.connect(self._filepath))
+        return db.write(key, value, DeepMemory.TYPE_DEEP)
 
     def writeInitialMemory(self, key, value, _key):
-        return self._deepmemory.write(key, value, DeepMemory.TYPE_INITIAL, _key)
+        db = DeepMemory(sqlite3.connect(self._filepath))
+        return db.write(key, value, DeepMemory.TYPE_INITIAL, _key)
 
 
 class DeepMemory:

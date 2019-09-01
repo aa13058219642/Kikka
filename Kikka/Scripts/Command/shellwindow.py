@@ -23,6 +23,7 @@ class ShellWindow(QWidget):
         #self.setContextMenuPolicy(Qt.ActionsContextMenu)
 
         self._isMoving = False
+        self._offset = QPoint(0, 0)
         self._boxes = {}
         self._movepos = QPoint(0, 0)
         self._mousepos = QPoint(0, 0)
@@ -36,6 +37,7 @@ class ShellWindow(QWidget):
 
     def setBoxes(self, boxes, offset):
         self._boxes = {}
+        self._offset = offset
         for cid, col in boxes.items():
             rect = QRect(col.Point1, col.Point2)
             rect.moveTopLeft(col.Point1 + offset)
@@ -187,20 +189,24 @@ class ShellWindow(QWidget):
             painter.fillRect(QRect(0, 0, 256, 128), QColor(0, 0, 0, 64))
             painter.setPen(Qt.green)
             painter.drawRect(QRect(0, 0, image.width() - 1, image.height() - 1))
-            painter.drawText(3, 12, "MainWindow")
-            painter.drawText(3, 24, "Ghost ID: %d" % self._ghost.gid)
-            painter.drawText(3, 36, "Name: %s" % self._ghost.name)
-            painter.drawText(3, 48, "Soul ID: %d" % self._soul.ID)
-            painter.drawText(3, 60, "surface: %d" % self._soul.getCurrentSurfaceID())
+            painter.drawText(3, 12, "Ghost ID: %d" % self._ghost.gid)
+            painter.drawText(3, 24, "Name: %s" % self._ghost.name)
+            painter.drawText(3, 36, "Soul ID: %d" % self._soul.ID)
+            painter.drawText(3, 48, "surface: %d" % self._soul.getCurrentSurfaceID())
+            painter.drawText(3, 60, "shell offset: %d %d" % (self._offset.x(), self._offset.y()))
             painter.drawText(3, 72, "bind: %s" % self._soul.getBind())
             painter.drawText(3, 84, "animations: %s" % self._soul.getRunningAnimation())
 
         if kikka.shell.isDebug is True:
+            painter.setPen(Qt.red)
+            painter.drawEllipse(QRect(self._offset.x()-5,self._offset.y()-5,10,10))
+            painter.drawPoint(self._offset)
+
             surface = self._soul.getCurrentSurface()
             for cid, col in surface.CollisionBoxes.items():
                 painter.setPen(Qt.red)
                 rect = QRect(col.Point1, col.Point2)
-                rect.moveTopLeft(col.Point1 + shell.setting.offset)
+                rect.moveTopLeft(col.Point1 + self._offset)
                 painter.drawRect(rect)
                 painter.fillRect(rect, QColor(255, 255, 255, 64))
                 painter.setPen(Qt.black)

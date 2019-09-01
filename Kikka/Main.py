@@ -22,25 +22,7 @@ def awake():
         kikka.core.isDebug = True
         kikka.shell.isDebug = False
 
-    # start
-    kikka.memory.awake()
-    kikka.shell.loadAllShell(kikka.helper.getPath(kikka.helper.PATH_SHELL))
-    kikka.balloon.loadAllBalloon(kikka.helper.getPath(kikka.helper.PATH_BALLOON))
-
-    kikka.core.start()
-    kikka.app.start()
-
-
-    #kikka.core.addGhost(kikka.KIKKA)
-    from ghost_kikka import GhostKikka
-    gid = kikka.core.addGhost(GhostKikka())
-    kikka.menu.setAppMenu(kikka.core.getGhost(gid).getMenu())
-    kikka.menu.setAppMenu(kikka.menu.createTestMenu())
-
-    logging.info('kikka awake done')
-    kikka.core.show()
-
-    pass
+    kikka.app.awake()
 
 
 def setLogging(level):

@@ -6,7 +6,7 @@ import hashlib
 from win32api import GetSystemMetrics
 from PyQt5.QtCore import QSize, QPoint
 from PyQt5.QtGui import QImage, QPainter
-
+from PyQt5.QtWidgets import QApplication
 
 class KikkaHelper:
     _instance = None
@@ -77,9 +77,13 @@ class KikkaHelper:
 
     @staticmethod
     def getScreenResolution():
-        w = GetSystemMetrics(0)
-        h = GetSystemMetrics(1)
-        return w, h
+        rect = QApplication.instance().desktop().screenGeometry()
+        return (rect.width(), rect.height())
+
+    @staticmethod
+    def getScreenClientRect():
+        rect = QApplication.instance().desktop().availableGeometry()
+        return (rect.width(), rect.height())
 
     def getDefaultImage(self):
         return QImage(self._defaultImage)
