@@ -99,8 +99,21 @@ class KikkaHelper:
         if destImage is None or srcImage is None:
             return
 
+        if drawtype == 'base' or drawtype == 'overlay':
+            mode = QPainter.CompositionMode_SourceOver
+        elif drawtype == 'overlayfast':
+            mode = QPainter.CompositionMode_SourceAtop
+        elif drawtype == 'replace':
+            mode = QPainter.CompositionMode_Source
+        elif drawtype == 'interpolate':
+            mode = QPainter.CompositionMode_DestinationOver
+        elif drawtype == 'asis':
+            mode = QPainter.CompositionMode_DestinationAtop
+        else:
+            mode = QPainter.CompositionMode_SourceOver
+
         painter = QPainter(destImage)
-        painter.setCompositionMode(QPainter.CompositionMode_SourceOver)
+        painter.setCompositionMode(mode)
         painter.drawImage(QPoint(x, y), srcImage)
         painter.end()
 
