@@ -51,7 +51,7 @@ class Dialog(QWidget):
             p_pos = self._ghost.getShellWindow(self.nid).pos()
             geometry = QPoint(self.geometry().x(), self.geometry().y())
             pos = QPoint(self.pos().x(), self.pos().y())
-            self._ghost.menoryWrite('DialogRect',
+            self._ghost.memoryWrite('DialogRect',
                                     [geometry.x() - p_pos.x(), geometry.y() - p_pos.y(), sz.width(), sz.height()],
                                     self.nid)
 
@@ -79,7 +79,7 @@ class Dialog(QWidget):
             x = int(p_pos.x() - self.size().width())
             y = int(p_pos.y() + p_size.height() / 2 - self.size().height())
             self.resize(200, 220)
-            self._ghost.menoryWrite('DialogRect',
+            self._ghost.memoryWrite('DialogRect',
                                     [x - p_pos.x(), y - p_pos.y(), self.size().width(), self.size().height()],
                                     self.nid)
         pass

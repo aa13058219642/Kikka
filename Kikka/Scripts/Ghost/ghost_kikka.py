@@ -18,8 +18,6 @@ TOWA = 1
 class GhostKikka(GhostBase):
     def __init__(self, gid=-1, name='Kikka'):
         GhostBase.__init__(self, gid, name)
-        self.setShell(16)
-        self.setBalloon(0)
         w_kikka = self.addWindow(KIKKA, 0)
         w_towa = self.addWindow(TOWA, 10)
 
@@ -46,8 +44,6 @@ class GhostKikka(GhostBase):
 
 
         # w.s
-
-
 
 
     def initLayout(self):
@@ -138,9 +134,7 @@ class GhostKikka(GhostBase):
 
     def changeShell(self, shellID):
         logging.debug("Please don't peek at me to change clothes!")
-        self.hide()
-        self.setShell(shellID)
-        self.show()
+        GhostBase.changeShell(self, shellID)
 
 # ########################################################################################################
 def resizeWindow(**kwargs):

@@ -20,7 +20,6 @@ def awake():
         kikka.memory.isDebug = True
         kikka.app.isDebug = True
         kikka.core.isDebug = True
-        kikka.shell.isDebug = False
 
     kikka.app.awake()
 

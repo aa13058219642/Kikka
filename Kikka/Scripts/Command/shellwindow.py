@@ -127,7 +127,7 @@ class ShellWindow(QWidget):
     def mouseReleaseEvent(self, event):
         self._mouseLogging("mouseReleaseEvent", event.buttons(), event.globalPos().x(), event.globalPos().y())
         self._isMoving = False
-        self._ghost.menoryWrite('ShellRect',
+        self._ghost.memoryWrite('ShellRect',
                                 [self.pos().x(), self.pos().y(), self.size().width(), self.size().height()],
                                 self.winid)
 

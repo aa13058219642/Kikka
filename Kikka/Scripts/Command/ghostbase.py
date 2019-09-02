@@ -40,6 +40,9 @@ class GhostBase:
         self._menustyle = None
         self._clothes = {}
 
+        self.setShell(self.memoryRead('CurrentShellID', 0))
+        self.setBalloon(self.memoryRead('CurrentBalloonID', 0))
+
     def show(self):
         for soul in self._souls.values():
             soul.show()
@@ -72,10 +75,7 @@ class GhostBase:
 
     def changeShell(self, shellID):
         self.hide()
-
-        for soul in self._souls.values():
-            soul.setShell(shellID)
-
+        self.setShell(shellID)
         self.show()
 
     def setShell(self, shellID):
@@ -98,6 +98,7 @@ class GhostBase:
         for sid in self._souls.keys():
             self.setSurface(sid)
             self.updateClothesMenu(sid)
+        self.memoryWrite('CurrentShellID', shellID)
 
     def getShell(self):
         return self.shell
@@ -119,6 +120,8 @@ class GhostBase:
         # for i in range(len(self._dialogs)):
         #     self._dialogs[i].setBalloon(self.balloon)
         #     self._dialogs[i].repaint()
+        self.memoryWrite('CurrentBalloonID', balloowinid)
+
 
     def getBalloon(self):
         return self.balloon
@@ -259,7 +262,7 @@ class GhostBase:
             value = kikka.memory.readDeepMemory(key, default)
         return value
 
-    def menoryWrite(self, key, value, winid=0):
+    def memoryWrite(self, key, value, winid=0):
         key = '%s_%d_%d' % (key, self.gid, winid)
         if kikka.core.isDebug:
             kikka.memory.write(key, value)
