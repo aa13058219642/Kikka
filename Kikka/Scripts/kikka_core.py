@@ -4,10 +4,14 @@ import time
 import random
 from enum import Enum
 
-from PyQt5.QtCore import QTimer
+from PyQt5.QtCore import QTimer, QObject, pyqtSignal
 
 import kikka
 from ghostbase import GhostBase
+
+class KikkaCoreSignal(QObject):
+    hide = pyqtSignal()
+    show = pyqtSignal()
 
 
 class KikkaCore:
@@ -36,7 +40,14 @@ class KikkaCore:
         self.isNeedUpdate = True
         self._timer_interval = 10
         self._Timer_Run = QTimer()
+        self._Timer_Run.setSingleShot(False)
+        self.setTimerInterval(self._timer_interval)
         self._ghosts = {}
+
+        self.signal = KikkaCoreSignal()
+        self.signal.show.connect(self.show)
+        self.signal.hide.connect(self.hide)
+
         pass
 
     def getAppState(self):
@@ -45,6 +56,7 @@ class KikkaCore:
 
     def hide(self):
         self._app_state = KikkaCore.APP_STATE.HIDE
+        self.stop()
         for _, g in self._ghosts.items():
             g.hide()
 
@@ -52,6 +64,7 @@ class KikkaCore:
         self._app_state = KikkaCore.APP_STATE.SHOW
         for _, g in self._ghosts.items():
             g.show()
+        self.start()
 
     def addGhost(self, ghost):
         self._ghosts[ghost.gid] = ghost
@@ -82,6 +95,9 @@ class KikkaCore:
         self._lasttime = time.clock()
         self._Timer_Run.timeout.connect(self.run)
         self._Timer_Run.start(self._timer_interval)
+
+    def stop(self):
+        self._Timer_Run.stop()
 
     def setTimerInterval(self, interval):
         self._timer_interval = interval

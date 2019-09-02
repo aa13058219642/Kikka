@@ -79,40 +79,53 @@ class KikkaApp:
             t1 = threading.Thread(target=self._guard)
             t1.setDaemon(True)
             t1.start()
+
         except Exception:
             logging.exception("error:create guard thread fail")
 
     def _guard(self):
-        time.sleep(1)
-        while 1:
-            result = self._watchFullScreenProgress()
-            if result != self._hasFullScreenProgress:
-                self._hasFullScreenProgress = result
-                if result: kikka.core.hide()
-                else: kikka.core.show()
+        try:
+            time.sleep(1)
+            while 1:
+                result = self._watchFullScreenProgress()
+                if result != self._hasFullScreenProgress:
+                    self._hasFullScreenProgress = result
+                    if result:
+                        kikka.core.signal.hide.emit()
+                    else:
+                        kikka.core.signal.show.emit()
 
-            if self.isDebug is False:
-                result = self._watchKikkaExeProgress()
-                if result is False:
-                    logging.warning("Kikka.exe lost")
-                    self.exitApp()
+                if self.isDebug is False:
+                    result = self._watchKikkaExeProgress()
+                    if result is False:
+                        logging.warning("Kikka.exe lost")
+                        self.exitApp()
 
-            time.sleep(0.5)
+                time.sleep(3)
+        except Exception:
+            logging.exception("error:_guard error")
         # exit while
 
     def _watchFullScreenProgress(self):
         hasFullScreenProgress = False
-        hwnd = win32gui.GetForegroundWindow()
-        dhwnd = win32gui.GetDesktopWindow()
-        if hwnd != 0 and dhwnd != 0:
-            drect = win32gui.GetWindowRect(dhwnd)
-            if hwnd != dhwnd and hwnd != ctypes.windll.user32.GetShellWindow():
-                rect = win32gui.GetWindowRect(hwnd)
-                if rect[0] <= drect[0] \
-                        and rect[1] <= drect[1] \
-                        and rect[2] <= drect[2] \
-                        and rect[3] <= drect[3]:
-                    hasFullScreenProgress = True
+        foreground_hwnd = win32gui.GetForegroundWindow()
+        desktop_hwnd = win32gui.GetDesktopWindow()
+        my_hwnd = ctypes.windll.user32.GetShellWindow()
+        #logging.info("watchFullScreenProgress foreground_hwnd:%X desktop_hwnd:%X my_hwnd:%X"%(foreground_hwnd,desktop_hwnd,my_hwnd))
+
+        if foreground_hwnd != 0 \
+        and desktop_hwnd != 0 \
+        and foreground_hwnd != desktop_hwnd \
+        and foreground_hwnd != my_hwnd:
+            frect = win32gui.GetWindowRect(foreground_hwnd)
+            drect = win32gui.GetWindowRect(desktop_hwnd)
+
+            #logging.info("%s, %s"%(frect,drect))
+            if frect[0] == drect[0] \
+            and frect[1] == drect[1] \
+            and frect[2] == drect[2] \
+            and frect[3] == drect[3]:
+                hasFullScreenProgress = True
         return hasFullScreenProgress
 
     def _watchKikkaExeProgress(self):
