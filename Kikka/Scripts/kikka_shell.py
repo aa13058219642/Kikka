@@ -80,6 +80,7 @@ class Shell:
         self.setting = ShellSetting()
         self.isInitialized = False
         self.isLoaded = False
+        self.alias = {}
 
         self._surfaces = {}
         self._updatetime = 0
@@ -136,9 +137,15 @@ class Shell:
         return map
 
     def _open_surfaces(self, surfaces_path, map=None):
-        newmap = {} if map is None else map
+        surfaces_map = {} if map is None else map
         surfaceID = []
-        is_load_key = True
+
+        the_line_is_key = True
+        struct_type = 0
+        ALIAS_DATA = 1
+        SURFACES_DATA = 2
+        DESCRIPT_DATA = 3
+
         charset = kikka.helper.checkEncoding(surfaces_path)
 
         f = open(surfaces_path, 'r', encoding=charset)
@@ -147,23 +154,46 @@ class Shell:
             line = line.strip(' ')
 
             if line == '': continue
-            if line.find('\\') == 0: continue
+            if line.find(r'\\') == 0: continue
             if line.find('//') == 0: continue
             if line.find('#') == 0: continue
 
-            if line == '{': is_load_key = False; continue
-            if line == '}': is_load_key = True; surfaceID = []; continue
+            if line == '{':
+                the_line_is_key = False
+                continue
 
-            if is_load_key is False:
+            if line == '}':
+                the_line_is_key = True
+                surfaceID = []
+                continue
+
+            if the_line_is_key is False:
                 # set value
-                for id in surfaceID:
-                    newmap[id].append(line)
-            else:
-                # set ID
-                if 'descript' in line or 'alias' in line: continue
+                if struct_type == SURFACES_DATA:
+                    for id in surfaceID:
+                        surfaces_map[id].append(line)
+                elif struct_type == ALIAS_DATA:
+                    keys = line.replace(' ', '').split(',')
 
-                str = line
-                keys = str.replace('surface', '').replace(' ', '').split(',')
+                    index = line.index(',')
+                    id = int(line[0:index])
+                    arr = line[index+2:-1].split(',')
+                    irr = [int(i) for i in arr]
+                    self.alias[id] = irr
+                elif struct_type == DESCRIPT_DATA:
+                    pass
+            else:
+                # check struct ID
+                if 'descript' in line:
+                    struct_type = DESCRIPT_DATA
+                    continue
+
+                if 'alias' in line:
+                    struct_type = ALIAS_DATA
+                    continue
+
+                struct_type = SURFACES_DATA
+                keys = line.replace('surface', '').replace(' ', '').split(',')
                 for key in keys:
                     if key == '': continue
                     if key[0] == '!':
@@ -174,13 +204,13 @@ class Shell:
                             a = int(v[0])
                             b = int(v[1])
                             for id in range(a, b):
-                                if id in newmap:
+                                if id in surfaces_map:
                                     surfaceID.remove(id)
-                                    newmap.pop(id)
+                                    surfaces_map.pop(id)
                         else:
                             id = int(key)
                             surfaceID.remove(id)
-                            newmap.pop(id)
+                            surfaces_map.pop(id)
                     else:
                         # add ID
                         if '-' in key:
@@ -188,20 +218,20 @@ class Shell:
                             a = int(v[0])
                             b = int(v[1])
                             for id in range(a, b):
-                                if id not in newmap:
+                                if id not in surfaces_map:
                                     surfaceID.append(id)
-                                    newmap[id] = []
+                                    surfaces_map[id] = []
                         else:
                             id = int(key)
                             surfaceID.append(id)
-                            if id not in newmap:
-                                newmap[id] = []
+                            if id not in surfaces_map:
+                                surfaces_map[id] = []
                     pass
                 pass # exit for
             pass
         pass  # exit for
         f.close()
-        return newmap
+        return surfaces_map
 
     def _load_descript(self, map):
         for keys, values in map.items():
@@ -360,7 +390,8 @@ class Shell:
         i = 2
         while 1:
             surfaces_path = os.path.join(self.shellpath, 'surfaces%d.txt' % i)
-            if not os.path.exists(surfaces_path): break
+            if not os.path.exists(surfaces_path):
+                break
             surfaces_map = self._open_surfaces(surfaces_path, surfaces_map)
             i = i + 1
 

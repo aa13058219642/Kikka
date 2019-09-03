@@ -2,6 +2,7 @@
 import os
 import sys
 import hashlib
+import logging
 
 from win32api import GetSystemMetrics
 from PyQt5.QtCore import QSize, QPoint
@@ -92,6 +93,7 @@ class KikkaHelper:
         if os.path.exists(filepath):
             return QImage(filepath)
         else:
+            logging.warning("Image lost: %s" % filepath)
             return QImage(self._defaultImage)
 
     @staticmethod

@@ -122,7 +122,6 @@ class GhostBase:
         #     self._dialogs[i].repaint()
         self.memoryWrite('CurrentBalloonID', balloowinid)
 
-
     def getBalloon(self):
         return self.balloon
 

@@ -19,7 +19,6 @@ class Soul:
         self.ID = soulid
         self._ghost = ghost
 
-        self._shell = None
         self._balloon = None
         self._menu = None
         self._menustyle = None
@@ -216,9 +215,10 @@ class Soul:
         if surfaceID == -1:
             surfaceID = self._surface.ID
 
-        logging.info("setSurface %d", surfaceID)
-
         shell = self._ghost.getShell()
+        if surfaceID in shell.alias.keys():
+            surfaceID = random.choice(shell.alias[surfaceID])
+        logging.info("setSurface %d", surfaceID)
         surface = shell.getSurface(surfaceID)
         if surface is None:
             logging.warning("setSurfaces: surfaceID: %d NOT exist" % surfaceID)
@@ -264,13 +264,16 @@ class Soul:
         self._dialog_window.repaint()
 
     def getShellImage(self, faceID):
-        filename = "surface%04d.png" % faceID
         shell_image = self._ghost.getShellImage()
-        if filename in shell_image:
-            img = shell_image[filename]
-            return img
+        filename1 = "surface%04d.png" % faceID
+        filename2 = "surface%d.png" % faceID
+        if filename1 in shell_image:
+            return shell_image[filename1]
+        if filename2 in shell_image:
+            return shell_image[filename2]
         else:
-            return None
+            logging.warning("Image lost: %s or %s"%(filename1, filename2))
+            return kikka.helper.getDefaultImage()
 
     def repaintBaseImage(self):
         shell_image = self._ghost.getShellImage()
@@ -288,12 +291,18 @@ class Soul:
                     offset = self._draw_offset + ele.offset
                     kikka.helper.drawImage(self._base_image, shell_image[fn], offset[0], offset[1], ele.PaintType)
         else:
-            fn = "surface%04d.png" % self._surface.ID
-            if fn in shell_image:
-                painter = QPainter(self._base_image)
-                painter.setCompositionMode(QPainter.CompositionMode_SourceOver)
-                painter.drawImage(self._draw_offset, shell_image[fn])
-                painter.end()
+            img = self.getShellImage(self._surface.ID)
+            painter = QPainter(self._base_image)
+            painter.setCompositionMode(QPainter.CompositionMode_SourceOver)
+            painter.drawImage(self._draw_offset, img)
+            painter.end()
+
+            # fn = "surface%04d.png" % self._surface.ID
+            # if fn in shell_image:
+            #     painter = QPainter(self._base_image)
+            #     painter.setCompositionMode(QPainter.CompositionMode_SourceOver)
+            #     painter.drawImage(self._draw_offset, shell_image[fn])
+            #     painter.end()
 
         # self._base_image.save("_base_image.png")
         pass
@@ -318,6 +327,7 @@ class Animation:
         self.exclusive = animation_data.exclusive
 
         self.isRunning = False
+        self.isFinish = False
         self._updatetime = 0
         self._curPattern = -1
         self._lasttime = 0
@@ -330,20 +340,22 @@ class Animation:
             self.start()
 
     def start(self):
-        if self.isRunning is False:
+        if self.isRunning is False or self.isFinish is True:
             logging.debug("Animation %d start" % self.ID)
 
             self.isRunning = True
+            self.isFinish = False
             self._updatetime = time.clock()
             self._curPattern = -1
 
     def stop(self):
         self.isRunning = False
+        self.isFinish = True
         self._curPattern = -1
         self._image = None
 
     def randomStart(self):
-        if self.isRunning is True:
+        if self.isFinish is False:
             return False
 
         isNeedStart = False
@@ -398,14 +410,14 @@ class Animation:
             self._drawType = pattern.methodType
         pass
 
-    def isAllBindAnimationStop(self):
+    def isAllBindAnimationFinish(self):
         hasControlPattern = False
         AllStop = True
         animations = self._soul.getAnimation()
         for pid, pattern in self.patterns.items():
             if pattern.isControlPattern() and pattern.bindAnimation != -1:
                 hasControlPattern = True
-                if animations[pattern.bindAnimation].isRunning is True:
+                if animations[pattern.bindAnimation].isFinish is False:
                     AllStop = False
                     break
                 else:
@@ -437,7 +449,10 @@ class Animation:
             self._updatetime -= pattern.time
             self.doPattern(pattern)
 
-        if self.isAllBindAnimationStop() is True:
+        if self._curPattern + 1 >= len(self.patterns):
+            self.isFinish = True
+
+        if self.isAllBindAnimationFinish() is True:
             self._updatetime = 0
             self.stop()
 
