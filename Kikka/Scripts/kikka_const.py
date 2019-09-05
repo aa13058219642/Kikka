@@ -1,15 +1,16 @@
 
 
-from PyQt5.QtCore import QPoint
+from PyQt5.QtCore import QPoint, QSize
 
 
 class ShellConst:
+    UNSET = QPoint(0x7FFFFFFF, 0x7FFFFFFF)
     ImageWidth = 500
     ImageHeight = 500
     ImageBaseX = ImageWidth / 2
     ImageBaseY = ImageHeight / 2
     ImageOffset = QPoint(ImageBaseX, ImageBaseY)
-
+    ImageSize = QSize(ImageWidth, ImageHeight)
 
 class SurfaceEnum():
     # surface const

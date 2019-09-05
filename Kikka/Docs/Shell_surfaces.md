@@ -806,18 +806,29 @@ Type类型如下:
 
 
 ##### point.centerx,[int]
+- surface的中心X坐标。通常不使用。
+- 默认值：surface宽/2
 
 ##### point.centery,[int]
+- surface的中心Y坐标。通常不使用。
+- 默认值：surface高/2
 
 ##### point.kinoko.centerx,[int]
+- kinoko的中心X坐标。通常不使用。
+- 默认值：surface宽/2
 
 ##### point.kinoko.centery,[int]
+- kinoko的中心Y坐标。通常不使用。
+- 默认值：surface顶部+20像素
 
 ##### point.basepos.centerx,[int]
+- 最初放置和保存窗口时参考位置的X坐标。切换到具有不同尺寸的surface图像时，用于调整未对准。
+- 默认值：surface宽/2
 
 ##### point.basepos.centery,[int]
+- 最初放置和保存窗口时参考位置的X坐标。切换到具有不同尺寸的surface图像时，用于调整未对准。
+- 默认值：surface最下端
 
-surface的中心坐标XY
 
 
 

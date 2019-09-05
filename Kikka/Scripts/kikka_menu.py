@@ -33,6 +33,7 @@ class KikkaMenu:
         if ghost is not None:
             return ghost.getMenu(nid)
         else:
+            logging.warning('menu lost')
             return None
 
     @staticmethod
@@ -41,7 +42,7 @@ class KikkaMenu:
         QApplication.instance().trayIcon.setContextMenu(menu)
 
     @staticmethod
-    def createSystemMenu(ghost):
+    def createSoulMainMenu(ghost):
         import kikka
 
         parent = QWidget(flags=Qt.Dialog)
@@ -94,6 +95,35 @@ class KikkaMenu:
 
             mainmenu.addSubMenu(menu)
             mainmenu.addSeparator()
+
+        from kikka_app import KikkaApp
+        callbackfunc = lambda: KikkaApp.this().exitApp()
+        mainmenu.addMenuItem("Exit", callbackfunc)
+
+        return mainmenu
+
+    @staticmethod
+    def createSoulDefaultMenu(ghost):
+        import kikka
+
+        parent = QWidget(flags=Qt.Dialog)
+        mainmenu = Menu(parent, ghost.gid, "Main")
+
+        # shell list
+        menu = Menu(mainmenu, ghost.gid, "Shells")
+        group1 = QActionGroup(parent)
+        for i in range(kikka.shell.getShellCount()):
+            callbackfunc = lambda checked, id=i: ghost.changeShell(id)
+            act = menu.addMenuItem(kikka.shell.getShell(i).name, callbackfunc, None, group1)
+            act.setCheckable(True)
+            act.setChecked(True)
+        mainmenu.addSubMenu(menu)
+
+        # clothes list
+        menu = Menu(mainmenu, ghost.gid, "Clothes")
+        menu.setEnabled(False)
+        mainmenu.addSubMenu(menu)
+
 
         from kikka_app import KikkaApp
         callbackfunc = lambda: KikkaApp.this().exitApp()

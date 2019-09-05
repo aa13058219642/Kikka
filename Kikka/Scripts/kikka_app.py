@@ -41,7 +41,7 @@ class KikkaApp:
         # start
         kikka.memory.awake()
 
-        kikka.shell.loadAllShell(kikka.helper.getPath(kikka.helper.PATH_SHELL))
+        kikka.shell.scanShell(kikka.helper.getPath(kikka.helper.PATH_SHELL))
         kikka.balloon.loadAllBalloon(kikka.helper.getPath(kikka.helper.PATH_BALLOON))
 
         kikka.core.start()

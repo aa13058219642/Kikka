@@ -4,7 +4,7 @@ import time
 import random
 from collections import OrderedDict
 
-from PyQt5.QtCore import Qt, QPoint
+from PyQt5.QtCore import Qt, QPoint, QRect, QSize
 from PyQt5.QtGui import QImage, QPainter
 from PyQt5.QtWidgets import QActionGroup
 
@@ -15,6 +15,7 @@ from kikka_const import ShellConst
 
 
 class Soul:
+
     def __init__(self, ghost, soulid, surfaceID=0):
         self.ID = soulid
         self._ghost = ghost
@@ -36,6 +37,8 @@ class Soul:
         self._surface_image = None
         self._soul_image = None
         self._balloon_image_cache = None
+        self._center_point = QPoint()
+        self._base_rect = QRect()
 
         self.init()
         self.setSurface(surfaceID)
@@ -45,7 +48,10 @@ class Soul:
         self._shell_window = ShellWindow(self, self.ID)
         self._dialog_window = Dialog(self, self.ID)
 
-        self._menu = kikka.menu.createSystemMenu(self._ghost)
+        if self.ID == 0:
+            self._menu = kikka.menu.createSoulMainMenu(self._ghost)
+        else:
+            self._menu = kikka.menu.createSoulDefaultMenu(self._ghost)
 
         if self._balloon is not None:
             self._dialog_window.setBalloon(self._balloon)
@@ -87,9 +93,10 @@ class Soul:
 
     def updateClothesMenu(self):
         shell = self._ghost.getShell()
-        clothesmenu = OrderedDict(sorted(shell.setting.clothesmenu.items()))
-        bindgroups = shell.setting.bindgroups
-        bindoption = shell.setting.bindoption
+        setting = shell.setting[self.ID]
+        clothesmenu = OrderedDict(sorted(setting.clothesmenu.items()))
+        bindgroups = setting.bindgroups
+        bindoption = setting.bindoption
 
         menu = None
         for act in self._menu.actions():
@@ -119,7 +126,6 @@ class Soul:
                     logging.info("%s %s" % (bindgroup.type, option))
         pass
 
-        # group1 = QActionGroup(parten)
         for v in clothesmenu.values():
             if v == -1:
                 menu.addSeparator()
@@ -133,7 +139,7 @@ class Soul:
                 if bindgroup.type not in self._clothes.keys():
                     self._clothes[bindgroup.type] = -1
 
-                if bindgroup.default is True and len(self._bind) == 0:
+                if bindgroup.default is True and len(self._ghost.getShell().getBind()) == 0:
                     self._clothes[bindgroup.type] = bindgroup.aID
                     act.setChecked(True)
                     self.setClothes(bindgroup.aID, True)
@@ -142,8 +148,9 @@ class Soul:
 
     def clickClothesMenuItem(self, checked, act, bindgroup):
         shell = self._ghost.getShell()
-        bindgroups = shell.setting.bindgroups
-        bindoption = shell.setting.bindoption
+        setting = shell.setting[self.ID]
+        bindgroups = setting.bindgroups
+        bindoption = setting.bindoption
 
         group = act.actionGroup()
         lastcloth = self._clothes[bindgroup.type]
@@ -166,6 +173,7 @@ class Soul:
         self._animations.clear()
         for aid, ani in animations.items():
             self._animations[aid] = Animation(self, self.ID, ani)
+            self._animations[aid].updateDrawRect()
 
     def getAnimation(self):
         return self._animations
@@ -189,24 +197,6 @@ class Soul:
         else:
             logging.warning("animation %d NOT exist!" % aid)
 
-    def addBind(self, aid):
-        if aid not in self._bind:
-            self._bind.append(aid)
-            self._bind.sort()
-
-    def getBind(self):
-        return self._bind
-
-    def setDrawOffset(self):
-        shell_offset = self._ghost.getShell().getOffset()
-        surface_offset = self._surface.getOffset(self.ID)
-        offset = QPoint(surface_offset[0] if surface_offset[0] != 0x7FFFFFFF else shell_offset.x(),
-                        surface_offset[1] if surface_offset[1] != 0x7FFFFFFF else shell_offset.y())
-        self._draw_offset = ShellConst.ImageOffset - offset
-
-    def getDrawOffset(self):
-        return self._draw_offset
-
     def setSurface(self, surfaceID=-1):
         if self._surface is not None and self._surface.ID == surfaceID:
             return
@@ -225,8 +215,8 @@ class Soul:
             return
 
         self._surface = surface
-        self.setDrawOffset()
         self.resetAnimation(surface.animations)
+        self.updateDrawRect()
         self.repaint()
         self._shell_window.setBoxes(shell.getCollisionBoxes(surfaceID), self._draw_offset)
         pass
@@ -238,12 +228,20 @@ class Soul:
         return self._surface.ID
 
     def setClothes(self, aid, isEnable=True):
-        self.repaintBaseImage()
-        if isEnable is True and aid not in self._bind:
-            self.addBind(aid)
-        elif aid in self._bind:
-            self._bind.remove(aid)
+        self._ghost.getShell().setClothes(aid, isEnable)
         self.repaint()
+
+    def getSize(self):
+        return QSize(self._size)
+
+    def getDrawOffset(self):
+        return QPoint(self._draw_offset)
+
+    def getCenterPoint(self):
+        return QPoint(self._center_point)
+
+    def getBaseRect(self):
+        return QRect(self._base_rect)
 
     # ################################################################
 
@@ -275,10 +273,42 @@ class Soul:
             logging.warning("Image lost: %s or %s"%(filename1, filename2))
             return kikka.helper.getDefaultImage()
 
+    def updateDrawRect(self):
+        if self._surface.ID == -1:
+            self._draw_offset = self._ghost.getShell().getOffset(self.ID)
+            self._size = kikka.const.ShellConst.ImageSize
+            self._center_point = QPoint(self._size.width()/2, self._size.height())
+            self._base_rect = QRect(self._draw_offset, self._size)
+        else:
+            shell_image = self._ghost.getShellImage()
+            baserect = QRect()
+            if len(self._surface.elements) > 0:
+                for i, ele in self._surface.elements.items():
+                    if ele.filename in shell_image:
+                        baserect = baserect.united(QRect(ele.offset, shell_image[ele.filename].size()))
+            else:
+                img = self.getShellImage(self._surface.ID)
+                baserect = QRect(0, 0, img.width(), img.height())
+
+            self._base_rect = QRect(baserect)
+            baserect.translate(self._ghost.getShell().getOffset(self.ID))
+            rect = QRect(baserect)
+            for aid, ani in self._animations.items():
+                rect = rect.united(ani.rect)
+
+            self._draw_offset = QPoint(baserect.x() - rect.x(), baserect.y() - rect.y())
+            self._size = rect.size()
+
+            if self._surface.basepos != ShellConst.UNSET:
+                self._center_point = self._surface.basepos
+            else:
+                self._center_point = QPoint(self._size.width() / 2, self._size.height())
+        pass
+
     def repaintBaseImage(self):
         shell_image = self._ghost.getShellImage()
 
-        self._base_image = QImage(ShellConst.ImageWidth, ShellConst.ImageHeight, QImage.Format_ARGB32_Premultiplied)
+        self._base_image = QImage(self._size, QImage.Format_ARGB32_Premultiplied)
         painter = QPainter(self._base_image)
         painter.setCompositionMode(QPainter.CompositionMode_Source)
         painter.fillRect(self._base_image.rect(), Qt.transparent)
@@ -286,23 +316,15 @@ class Soul:
         del painter
         if len(self._surface.elements) > 0:
             for i, ele in self._surface.elements.items():
-                fn = ele.filename
-                if fn in shell_image:
+                if ele.filename in shell_image:
                     offset = self._draw_offset + ele.offset
-                    kikka.helper.drawImage(self._base_image, shell_image[fn], offset[0], offset[1], ele.PaintType)
+                    kikka.helper.drawImage(self._base_image, shell_image[ele.filename], offset.x(), offset.y(), ele.PaintType)
         else:
             img = self.getShellImage(self._surface.ID)
             painter = QPainter(self._base_image)
             painter.setCompositionMode(QPainter.CompositionMode_SourceOver)
             painter.drawImage(self._draw_offset, img)
             painter.end()
-
-            # fn = "surface%04d.png" % self._surface.ID
-            # if fn in shell_image:
-            #     painter = QPainter(self._base_image)
-            #     painter.setCompositionMode(QPainter.CompositionMode_SourceOver)
-            #     painter.drawImage(self._draw_offset, shell_image[fn])
-            #     painter.end()
 
         # self._base_image.save("_base_image.png")
         pass
@@ -335,9 +357,18 @@ class Animation:
         self._image = None
         self._drawOffset = QPoint()
         self._drawType = None
+        self.rect = QRect()
 
         if self.interval == 'runonce':
             self.start()
+
+    def updateDrawRect(self):
+        self.rect = QRect()
+        for pid, p in self.patterns.items():
+            if p.isControlPattern() is False and p.surfaceID != -1:
+                img = self._soul.getShellImage(p.surfaceID)
+                self.rect = self.rect.united(QRect(p.offset, img.size()))
+        pass
 
     def start(self):
         if self.isRunning is False or self.isFinish is True:
@@ -406,7 +437,7 @@ class Animation:
                 pattern.bindAnimation = -1
         else:
             self._image = self._soul.getShellImage(pattern.surfaceID)
-            self._drawOffset = QPoint(pattern.offset[0], pattern.offset[1])
+            self._drawOffset = pattern.offset
             self._drawType = pattern.methodType
         pass
 
@@ -459,7 +490,7 @@ class Animation:
         return isNeedUpdate
 
     def draw(self, destImage):
-        if self.ID in self._soul.getBind():
+        if self.ID in self._soul.getGhost().getShell().getBind():
             for p in self.patterns.values():
                 self.doPattern(p)
                 offset = self._soul.getDrawOffset() + self._drawOffset

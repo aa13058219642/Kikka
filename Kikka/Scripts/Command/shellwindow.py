@@ -178,35 +178,62 @@ class ShellWindow(QWidget):
 
     def paintEvent(self, event):
         painter = QPainter(self)
-        painter.drawPixmap(self.rect(), self._pixmap)
+        painter.drawPixmap(QPoint(), self._pixmap)
 
     def debugDraw(self, image):
+
+        def drawText(painter, line, left, msg, color=Qt.white):
+            painter.setPen(color)
+            painter.drawText(left, line*12, msg)
+            return line+1
+
+        def drawPoint(painter, point, color=Qt.red):
+            painter.setPen(color)
+            painter.drawEllipse(QRect( point.x()-5, point.y()-5, 10, 10))
+            painter.drawPoint( point.x(), point.y())
+
         shell = self._ghost.getShell()
-        img = QImage(image)
+        shell_offset = shell.getOffset(self._soul.ID)
+        surface_center = self._soul.getCenterPoint()
+        draw_offset = self._soul.getDrawOffset()
+
+        img = QImage(image.width()+250, max(image.height()+1, 120), QImage.Format_ARGB32_Premultiplied)
         painter = QPainter(img)
+        painter.setCompositionMode(QPainter.CompositionMode_Source)
+        painter.fillRect(0, 0, img.width(), img.height(), Qt.transparent)
+        painter.setCompositionMode(QPainter.CompositionMode_SourceOver)
+        painter.drawImage(QPoint(), image)
 
         if kikka.core.isDebug is True:
-            painter.fillRect(QRect(0, 0, 256, 128), QColor(0, 0, 0, 64))
-            painter.setPen(Qt.green)
-            painter.drawRect(QRect(0, 0, image.width() - 1, image.height() - 1))
-            painter.drawText(3, 12, "Ghost ID: %d" % self._ghost.gid)
-            painter.drawText(3, 24, "Name: %s" % self._ghost.name)
-            painter.drawText(3, 36, "Soul ID: %d" % self._soul.ID)
-            painter.drawText(3, 48, "surface: %d" % self._soul.getCurrentSurfaceID())
-            painter.drawText(3, 60, "shell offset: %d %d" % (self._offset.x(), self._offset.y()))
-            painter.drawText(3, 72, "bind: %s" % self._soul.getBind())
-            painter.drawText(3, 84, "animations: %s" % self._soul.getRunningAnimation())
+            painter.fillRect(QRect(image.width(), 0, 250, img.height()), QColor(0, 0, 0, 255))
+            painter.setPen(Qt.white)
+            painter.drawRect(QRect(0, 0, image.width(), image.height()))
+
+            left = image.width() + 3
+            line = 1
+            line = drawText(painter, line, left, "Ghost ID: %d" % self._ghost.gid)
+            line = drawText(painter, line, left, "Name: %s" % self._ghost.name)
+            line = drawText(painter, line, left, "Soul ID: %d" % self._soul.ID)
+            line = drawText(painter, line, left, "surface: %d" % self._soul.getCurrentSurfaceID())
+            line = drawText(painter, line, left, "bind: %s" % shell.getBind())
+            line = drawText(painter, line, left, "animations: %s" % self._soul.getRunningAnimation())
+            line = drawText(painter, line, left, "shell offset: %d %d" % (shell_offset.x(), shell_offset.y()), Qt.green)
+            line = drawText(painter, line, left, "draw offset: %d %d" % (draw_offset.x(), draw_offset.y()), Qt.blue)
+            line = drawText(painter, line, left, "surface center: %d %d" % (surface_center.x(), surface_center.y()), Qt.red)
 
         if kikka.shell.isDebug is True:
-            painter.setPen(Qt.red)
-            painter.drawEllipse(QRect(self._offset.x()-5,self._offset.y()-5,10,10))
-            painter.drawPoint(self._offset)
+            painter.setPen(Qt.blue)
+            painter.drawRect(self._soul.getBaseRect().translated(draw_offset))
+
+            drawPoint(painter, shell_offset, Qt.green)
+            drawPoint(painter, draw_offset, Qt.blue)
+            drawPoint(painter, surface_center, Qt.red)
 
             surface = self._soul.getCurrentSurface()
             for cid, col in surface.CollisionBoxes.items():
                 painter.setPen(Qt.red)
                 rect = QRect(col.Point1, col.Point2)
-                rect.moveTopLeft(col.Point1 + self._offset)
+                rect.moveTopLeft(col.Point1 + draw_offset)
                 painter.drawRect(rect)
                 painter.fillRect(rect, QColor(255, 255, 255, 64))
                 painter.setPen(Qt.black)
@@ -218,8 +245,9 @@ class ShellWindow(QWidget):
     def setImage(self, image):
         # image = QImage(r"C:\\test.png")
 
-        img = self.debugDraw(image)
-        pixmap = QPixmap().fromImage(img, Qt.AutoColor)
+        if kikka.core.isDebug | kikka.shell.isDebug:
+            image = self.debugDraw(image)
+        pixmap = QPixmap().fromImage(image, Qt.AutoColor)
         self._pixmap = pixmap
 
         self.setFixedSize(self._pixmap.size())
