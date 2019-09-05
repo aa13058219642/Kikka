@@ -4,12 +4,12 @@ import logging
 import logging.handlers
 
 from PyQt5.QtWidgets import QApplication
-
+from PyQt5.QtGui import QFont
 
 def awake():
     # logging level (low to hight):
     # CRITICAL, ERROR, WARNING, INFO, DEBUG, NOTSET
-    setLogging(logging.INFO)
+    file_handler = setLogging(logging.INFO)
     sys.excepthook = handle_exception
 
     # init all Singletion class
@@ -20,44 +20,32 @@ def awake():
         kikka.memory.isDebug = True
         kikka.app.isDebug = True
         kikka.core.isDebug = True
-        kikka.shell.isDebug = True
+        file_handler.setLevel(logging.DEBUG)
 
-    # start
-    kikka.memory.awake()
-    kikka.shell.loadAllShell(kikka.helper.getPath(kikka.helper.PATH_SHELL))
-    kikka.balloon.loadAllBalloon(kikka.helper.getPath(kikka.helper.PATH_BALLOON))
+    kikka.app.awake()
 
-    kikka.core.start()
-    kikka.app.start()
-
-
-    #kikka.core.addGhost(kikka.KIKKA)
-    from ghost_kikka import GhostKikka
-    gid = kikka.core.addGhost(GhostKikka())
-    kikka.menu.setAppMenu(kikka.core.getGhost(gid).getMenu())
-    kikka.menu.setAppMenu(kikka.menu.createTestMenu())
-    kikka.core.show()
-
+    #font = QFont(kikka.helper.getPath(kikka.helper.PATH_RESOURCES) + "InconsolataGo-Regular.ttf", 10)
+    #QApplication.instance().setFont(font)
     pass
-
 
 def setLogging(level):
     if level == logging.DEBUG or level == logging.NOTSET:
         fmt = '%(asctime)s | line:%(lineno)-4d %(filename)-20s %(funcName)-30s | %(levelname)-8s| %(message)s'
         logging.basicConfig(level=level, format=fmt)
         file_handler = logging.handlers.RotatingFileHandler(
-            'kikka.log', mode='a', maxBytes=5.01*1024*1024, backupCount=1, encoding='utf-8')
+            'kikka.log', mode='w', maxBytes=5.01*1024*1024, backupCount=0, encoding='utf-8')
         formatter = logging.Formatter(fmt)
     else:
         fmt = '%(asctime)s | line:%(lineno)-4d %(filename)-20s | %(levelname)-8s| %(message)s'
         logging.basicConfig(level=level, format=fmt)
         file_handler = logging.handlers.RotatingFileHandler(
-            'kikka.log', mode='a', maxBytes=1.01*1024*1024, backupCount=1, encoding='utf-8')
+            'kikka.log', mode='a', maxBytes=1.01*1024*1024, backupCount=0, encoding='utf-8')
         formatter = logging.Formatter(fmt)
 
     file_handler.setLevel(level)
     file_handler.setFormatter(formatter)
     logging.getLogger().addHandler(file_handler)
+    return file_handler
 
 
 def handle_exception(exc_type, exc_value, exc_traceback):

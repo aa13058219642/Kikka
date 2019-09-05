@@ -10,10 +10,11 @@ import kikka
 
 
 class ShellWindow(QWidget):
-    def __init__(self, ghost, nid):
+    def __init__(self, soul, winid):
         QWidget.__init__(self)
-        self._ghost = ghost
-        self.nid = nid
+        self._soul = soul
+        self._ghost = self._soul.getGhost()
+        self.winid = winid
         self.setWindowFlags(Qt.Tool | Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint)
         self.setAttribute(Qt.WA_TranslucentBackground)
         self.setAttribute(Qt.WA_DeleteOnClose)
@@ -22,19 +23,21 @@ class ShellWindow(QWidget):
         #self.setContextMenuPolicy(Qt.ActionsContextMenu)
 
         self._isMoving = False
+        self._offset = QPoint(0, 0)
         self._boxes = {}
         self._movepos = QPoint(0, 0)
         self._mousepos = QPoint(0, 0)
         self._pixmap = None
 
         # size and position
-        rect = self._ghost.memoryRead('ShellRect', [], self.nid)
+        rect = self._ghost.memoryRead('ShellRect', [], self.winid)
         if len(rect) > 0:
             self.move(rect[0], rect[1])
             self.resize(rect[2], rect[3])
 
     def setBoxes(self, boxes, offset):
         self._boxes = {}
+        self._offset = offset
         for cid, col in boxes.items():
             rect = QRect(col.Point1, col.Point2)
             rect.moveTopLeft(col.Point1 + offset)
@@ -50,7 +53,7 @@ class ShellWindow(QWidget):
             rect = box[0]
             if rect.contains(mx, my) is True:
                 tag = box[1]
-                self._ghost.event_selector(event, tag, nid=self.nid)
+                self._ghost.event_selector(event, tag, nid=self.winid)
                 return
         pass
     
@@ -87,7 +90,7 @@ class ShellWindow(QWidget):
     #     return False
 
     def contextMenuEvent(self, event):
-        self._ghost.showMenu(self.nid, event.globalPos())
+        self._ghost.showMenu(self.winid, event.globalPos())
         logging.info('contextMenuEvent')
 
     def mousePressEvent(self, event):
@@ -109,7 +112,7 @@ class ShellWindow(QWidget):
         self._mousepos = event.pos()
         if self._isMoving and event.buttons() == Qt.LeftButton:
             self.move(event.globalPos() - self._movepos)
-            self._ghost.getDialog(self.nid).updatePosition()
+            self._ghost.getDialog(self.winid).updatePosition()
             event.accept()
         else:
             self._isMoving = False
@@ -124,9 +127,9 @@ class ShellWindow(QWidget):
     def mouseReleaseEvent(self, event):
         self._mouseLogging("mouseReleaseEvent", event.buttons(), event.globalPos().x(), event.globalPos().y())
         self._isMoving = False
-        self._ghost.menoryWrite('ShellRect',
+        self._ghost.memoryWrite('ShellRect',
                                 [self.pos().x(), self.pos().y(), self.size().width(), self.size().height()],
-                                self.nid)
+                                self.winid)
 
         self._boxCollision(GhostEvent.MouseUp)
         # eventtag = self._boxCollision()
@@ -138,7 +141,7 @@ class ShellWindow(QWidget):
         self._mouseLogging("mouseDoubleClickEvent", event.buttons(), event.globalPos().x(), event.globalPos().y())
         if event.buttons() == Qt.LeftButton:
             self._isMoving = False
-            self._ghost.getDialog(self.nid).show()
+            self._ghost.getDialog(self.winid).show()
 
         self._boxCollision(GhostEvent.MouseDoubleClick)
         # if self._isMoving is False:
@@ -175,10 +178,75 @@ class ShellWindow(QWidget):
 
     def paintEvent(self, event):
         painter = QPainter(self)
-        painter.drawPixmap(self.rect(), self._pixmap)
+        painter.drawPixmap(QPoint(), self._pixmap)
+
+    def debugDraw(self, image):
+
+        def drawText(painter, line, left, msg, color=Qt.white):
+            painter.setPen(color)
+            painter.drawText(left, line*12, msg)
+            return line+1
+
+        def drawPoint(painter, point, color=Qt.red):
+            painter.setPen(color)
+            painter.drawEllipse(QRect( point.x()-5, point.y()-5, 10, 10))
+            painter.drawPoint( point.x(), point.y())
+
+        shell = self._ghost.getShell()
+        shell_offset = shell.getOffset(self._soul.ID)
+        surface_center = self._soul.getCenterPoint()
+        draw_offset = self._soul.getDrawOffset()
+
+        img = QImage(image.width()+250, max(image.height()+1, 120), QImage.Format_ARGB32_Premultiplied)
+        painter = QPainter(img)
+        painter.setCompositionMode(QPainter.CompositionMode_Source)
+        painter.fillRect(0, 0, img.width(), img.height(), Qt.transparent)
+        painter.setCompositionMode(QPainter.CompositionMode_SourceOver)
+        painter.drawImage(QPoint(), image)
+
+        if kikka.core.isDebug is True:
+            painter.fillRect(QRect(image.width(), 0, 250, img.height()), QColor(0, 0, 0, 255))
+            painter.setPen(Qt.white)
+            painter.drawRect(QRect(0, 0, image.width(), image.height()))
+
+            left = image.width() + 3
+            line = 1
+            line = drawText(painter, line, left, "Ghost ID: %d" % self._ghost.gid)
+            line = drawText(painter, line, left, "Name: %s" % self._ghost.name)
+            line = drawText(painter, line, left, "Soul ID: %d" % self._soul.ID)
+            line = drawText(painter, line, left, "surface: %d" % self._soul.getCurrentSurfaceID())
+            line = drawText(painter, line, left, "bind: %s" % shell.getBind())
+            line = drawText(painter, line, left, "animations: %s" % self._soul.getRunningAnimation())
+            line = drawText(painter, line, left, "shell offset: %d %d" % (shell_offset.x(), shell_offset.y()), Qt.green)
+            line = drawText(painter, line, left, "draw offset: %d %d" % (draw_offset.x(), draw_offset.y()), Qt.blue)
+            line = drawText(painter, line, left, "surface center: %d %d" % (surface_center.x(), surface_center.y()), Qt.red)
+
+        if kikka.shell.isDebug is True:
+            painter.setPen(Qt.blue)
+            painter.drawRect(self._soul.getBaseRect().translated(draw_offset))
+
+            drawPoint(painter, shell_offset, Qt.green)
+            drawPoint(painter, draw_offset, Qt.blue)
+            drawPoint(painter, surface_center, Qt.red)
+
+            surface = self._soul.getCurrentSurface()
+            for cid, col in surface.CollisionBoxes.items():
+                painter.setPen(Qt.red)
+                rect = QRect(col.Point1, col.Point2)
+                rect.moveTopLeft(col.Point1 + draw_offset)
+                painter.drawRect(rect)
+                painter.fillRect(rect, QColor(255, 255, 255, 64))
+                painter.setPen(Qt.black)
+                painter.drawText(rect, Qt.AlignCenter, col.tag)
+            pass
+        painter.end()
+        return img
 
     def setImage(self, image):
         # image = QImage(r"C:\\test.png")
+
+        if kikka.core.isDebug | kikka.shell.isDebug:
+            image = self.debugDraw(image)
         pixmap = QPixmap().fromImage(image, Qt.AutoColor)
         self._pixmap = pixmap
 

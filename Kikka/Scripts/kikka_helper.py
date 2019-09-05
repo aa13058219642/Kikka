@@ -2,11 +2,12 @@
 import os
 import sys
 import hashlib
+import logging
 
 from win32api import GetSystemMetrics
-from PyQt5.QtCore import QSize
-from PyQt5.QtGui import QImage
-
+from PyQt5.QtCore import QSize, QPoint
+from PyQt5.QtGui import QImage, QPainter
+from PyQt5.QtWidgets import QApplication
 
 class KikkaHelper:
     _instance = None
@@ -29,12 +30,9 @@ class KikkaHelper:
         return KikkaHelper._instance
 
     def _init(self):
-
         fn = os.path.join(sys.path[0], 'Resources/default.png')
         if os.path.exists(fn): self._defaultImage = QImage(fn)
         else: self._defaultImage = QImage(QSize(1, 1))
-
-        pass
 
     @staticmethod
     def getPath(tag):
@@ -80,9 +78,13 @@ class KikkaHelper:
 
     @staticmethod
     def getScreenResolution():
-        w = GetSystemMetrics(0)
-        h = GetSystemMetrics(1)
-        return w, h
+        rect = QApplication.instance().desktop().screenGeometry()
+        return (rect.width(), rect.height())
+
+    @staticmethod
+    def getScreenClientRect():
+        rect = QApplication.instance().desktop().availableGeometry()
+        return (rect.width(), rect.height())
 
     def getDefaultImage(self):
         return QImage(self._defaultImage)
@@ -91,7 +93,31 @@ class KikkaHelper:
         if os.path.exists(filepath):
             return QImage(filepath)
         else:
+            logging.warning("Image lost: %s" % filepath)
             return QImage(self._defaultImage)
+
+    @staticmethod
+    def drawImage(destImage, srcImage, x, y, drawtype):
+        if destImage is None or srcImage is None:
+            return
+
+        if drawtype == 'base' or drawtype == 'overlay':
+            mode = QPainter.CompositionMode_SourceOver
+        elif drawtype == 'overlayfast':
+            mode = QPainter.CompositionMode_SourceAtop
+        elif drawtype == 'replace':
+            mode = QPainter.CompositionMode_Source
+        elif drawtype == 'interpolate':
+            mode = QPainter.CompositionMode_DestinationOver
+        elif drawtype == 'asis':
+            mode = QPainter.CompositionMode_DestinationAtop
+        else:
+            mode = QPainter.CompositionMode_SourceOver
+
+        painter = QPainter(destImage)
+        painter.setCompositionMode(mode)
+        painter.drawImage(QPoint(x, y), srcImage)
+        painter.end()
 
     @staticmethod
     def getMD5(s):

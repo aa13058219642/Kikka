@@ -33,6 +33,7 @@ class KikkaMenu:
         if ghost is not None:
             return ghost.getMenu(nid)
         else:
+            logging.warning('menu lost')
             return None
 
     @staticmethod
@@ -41,15 +42,15 @@ class KikkaMenu:
         QApplication.instance().trayIcon.setContextMenu(menu)
 
     @staticmethod
-    def createSystemMenu(ghost):
+    def createSoulMainMenu(ghost):
         import kikka
 
-        parten = QWidget(flags=Qt.Dialog)
-        mainmenu = Menu(parten, ghost.gid, "Main")
+        parent = QWidget(flags=Qt.Dialog)
+        mainmenu = Menu(parent, ghost.gid, "Main")
 
         # shell list
         menu = Menu(mainmenu, ghost.gid, "Shells")
-        group1 = QActionGroup(parten)
+        group1 = QActionGroup(parent)
         for i in range(kikka.shell.getShellCount()):
             callbackfunc = lambda checked, id=i: ghost.changeShell(id)
             act = menu.addMenuItem(kikka.shell.getShell(i).name, callbackfunc, None, group1)
@@ -64,7 +65,7 @@ class KikkaMenu:
 
         # balloon list
         menu = Menu(mainmenu, ghost.gid, "Balloons")
-        group2 = QActionGroup(parten)
+        group2 = QActionGroup(parent)
         for i in range(kikka.balloon.getBalloonCount()):
             callbackfunc = lambda checked, a=i: ghost.setBalloon(a)
             act = menu.addMenuItem(kikka.balloon.getBalloon(i).name, callbackfunc, None, group2)
@@ -73,18 +74,57 @@ class KikkaMenu:
         mainmenu.addSubMenu(menu)
 
         # debug option
-        menu = Menu(mainmenu, ghost.gid, "Debug")
+        if kikka.core.isDebug is True:
+            menu = Menu(mainmenu, ghost.gid, "Debug")
 
-        def callbackfunction():
-            kikka.shell.isDebug = not kikka.shell.isDebug
-            kikka.core.repaint()
+            def callbackfunction1():
+                kikka.core.isDebug = not kikka.core.isDebug
+                kikka.core.repaint()
 
-        act = menu.addMenuItem("Show shell frame", callbackfunction)
-        act.setCheckable(True)
-        act.setChecked(kikka.shell.isDebug is True)
+            def callbackfunction2():
+                kikka.shell.isDebug = not kikka.shell.isDebug
+                kikka.core.repaint()
+
+            act = menu.addMenuItem("Show ghost data", callbackfunction1)
+            act.setCheckable(True)
+            act.setChecked(kikka.core.isDebug is True)
+
+            act = menu.addMenuItem("Show shell frame", callbackfunction2)
+            act.setCheckable(True)
+            act.setChecked(kikka.shell.isDebug is True)
+
+            mainmenu.addSubMenu(menu)
+            mainmenu.addSeparator()
+
+        from kikka_app import KikkaApp
+        callbackfunc = lambda: KikkaApp.this().exitApp()
+        mainmenu.addMenuItem("Exit", callbackfunc)
+
+        return mainmenu
+
+    @staticmethod
+    def createSoulDefaultMenu(ghost):
+        import kikka
+
+        parent = QWidget(flags=Qt.Dialog)
+        mainmenu = Menu(parent, ghost.gid, "Main")
+
+        # shell list
+        menu = Menu(mainmenu, ghost.gid, "Shells")
+        group1 = QActionGroup(parent)
+        for i in range(kikka.shell.getShellCount()):
+            callbackfunc = lambda checked, id=i: ghost.changeShell(id)
+            act = menu.addMenuItem(kikka.shell.getShell(i).name, callbackfunc, None, group1)
+            act.setCheckable(True)
+            act.setChecked(True)
         mainmenu.addSubMenu(menu)
 
-        mainmenu.addSeparator()
+        # clothes list
+        menu = Menu(mainmenu, ghost.gid, "Clothes")
+        menu.setEnabled(False)
+        mainmenu.addSubMenu(menu)
+
+
         from kikka_app import KikkaApp
         callbackfunc = lambda: KikkaApp.this().exitApp()
         mainmenu.addMenuItem("Exit", callbackfunc)

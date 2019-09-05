@@ -4,12 +4,14 @@ import re
 import logging
 import random
 import time
+import collections
 from enum import Enum
+from collections import OrderedDict
 
-from PyQt5.QtCore import QPoint
+from PyQt5.QtCore import QPoint, QRect
 
 import kikka
-
+from kikka_const import ShellConst
 
 class KikkaShell:
     _instance = None
@@ -29,35 +31,39 @@ class KikkaShell:
         self._shells = []
         self.shelldir = ''
 
-    def loadShell(self, shellpath):
+    def loadShell(self, shelldict, shellpath):
         shell = Shell(shellpath)
         if shell.isInitialized is False:
             return
 
         isExist = False
-        for s in self._shells:
-            if shell.id == s.id and shell.name == s.name:
+        for name, s in shelldict.items():
+            if shell.id == s.id and shell.name == name:
                 isExist = True
                 break
 
         if not isExist:
             logging.info("scan shell: %s", shell.name)
-            self._shells.append(shell)
+            shelldict[shell.name] = shell
+        else:
+            logging.warning("load fail. shell name exist: %s", shell.name)
         pass
 
-    def loadAllShell(self, shelldir):
+    def scanShell(self, shelldir):
         self.shelldir = shelldir
 
+        shelldict = {}
         for parent, dirnames, filenames in os.walk(shelldir):
             for dirname in dirnames:
                 shellpath = os.path.join(parent, dirname)
-                self.loadShell(shellpath)
+                self.loadShell(shelldict, shellpath)
+        pass #exit for
 
-        logging.info("shell count: %d", len(self._shells))
+        shellordereddict = collections.OrderedDict(sorted(shelldict.items(), key=lambda t: t[0]))
+        for name, shell in shellordereddict.items():
+            self._shells.append(shell)
 
-    def update(self, updatetime):
-        shell = self.getCurShell()
-        return shell.update(updatetime)
+        logging.info("shell scan finish: count %d", len(self._shells))
 
     def getShell(self, index):
         if 0 <= index < len(self._shells):
@@ -74,20 +80,25 @@ class KikkaShell:
 class Shell:
     def __init__(self, shellpath):
         self.shellpath = shellpath  # root path of this shell
-        self.name = ''
         self.id = ''
+        self.name = ''
         self.type = ''
-        self.pnglist = []
         self.author = AuthorInfo()
-        self.shellmenustyle = ShellMenuStyle()
-        self.setting = ShellSetting()
-        self.isInitialized = False
-        self.isLoaded = False
+        self.version = 0
+        self.maxwidth = 0
+        self.collision_sort = 'none'
+        self.animation_sort = 'descend'
 
-        self._base_image = None
+        self.bind = []
+        self.alias = {}
+        self.pnglist = []
+        self.setting = {}
+        self.isLoaded = False
+        self.isInitialized = False
+        self.shellmenustyle = ShellMenuStyle()
+
         self._surfaces = {}
         self._updatetime = 0
-        self._CurfaceID = 0
 
         # path check
         if os.path.exists(shellpath):
@@ -102,6 +113,7 @@ class Shell:
         if self.isLoaded is False:
             logging.info("load shell: %s", self.name)
             self._load_surfaces()
+            self._sort_data()
             self._updatetime = time.clock()
             self.isLoaded = True
         pass
@@ -137,12 +149,19 @@ class Shell:
             value = line[index + 1:]
 
             map[key] = value
+        f.close()
         return map
 
     def _open_surfaces(self, surfaces_path, map=None):
-        newmap = {} if map is None else map
+        surfaces_map = {} if map is None else map
         surfaceID = []
-        is_load_key = True
+
+        the_line_is_key = True
+        struct_type = 0
+        ALIAS_DATA = 1
+        SURFACES_DATA = 2
+        DESCRIPT_DATA = 3
+
         charset = kikka.helper.checkEncoding(surfaces_path)
 
         f = open(surfaces_path, 'r', encoding=charset)
@@ -150,24 +169,56 @@ class Shell:
             line = line.replace("\n", "").replace("\r", "")
             line = line.strip(' ')
 
-            if line == '': continue
-            if line.find('\\') == 0: continue
-            if line.find('//') == 0: continue
-            if line.find('#') == 0: continue
+            if line == '' \
+            or line.find(r'\\') == 0 \
+            or line.find('//') == 0 \
+            or line.find('#') == 0:
+                continue
 
-            if line == '{': is_load_key = False; continue
-            if line == '}': is_load_key = True; surfaceID = []; continue
+            if line == '{':
+                the_line_is_key = False
+                continue
 
-            if is_load_key is False:
+            if line == '}':
+                the_line_is_key = True
+                surfaceID = []
+                continue
+
+            if the_line_is_key is False:
                 # set value
-                for id in surfaceID:
-                    newmap[id].append(line)
+                if struct_type == SURFACES_DATA:
+                    for id in surfaceID:
+                        surfaces_map[id].append(line)
+                elif struct_type == ALIAS_DATA:
+                    index = line.index(',')
+                    id = int(line[0:index])
+                    arr = line[index+2:-1].split(',')
+                    irr = [int(i) for i in arr]
+                    self.alias[id] = irr
+                elif struct_type == DESCRIPT_DATA:
+                    keys = line.replace(' ', '').split(',')
+                    if keys[0] == 'version':
+                        self.version = int(keys[1])
+                    elif keys[0] == 'maxwidth':
+                        self.maxwidth = int(keys[1])
+                    elif keys[0] == 'collision-sort' and keys[1] in ['none', 'ascend', 'descend']:
+                        self.collision_sort = keys[1]
+                    elif keys[0] == 'animation-sort' and keys[1] in ['ascend', 'descend']:
+                        self.animation_sort = keys[1]
+                    else:
+                        self._IgnoreParams(keys[0], keys[1])
             else:
-                # set ID
-                if 'descript' in line or 'alias' in line: continue
+                # check struct ID
+                if 'descript' in line:
+                    struct_type = DESCRIPT_DATA
+                    continue
 
-                str = line
-                keys = str.replace('surface', '').replace(' ', '').split(',')
+                if 'alias' in line:
+                    struct_type = ALIAS_DATA
+                    continue
+
+                struct_type = SURFACES_DATA
+                keys = line.replace('surface', '').replace(' ', '').split(',')
                 for key in keys:
                     if key == '': continue
                     if key[0] == '!':
@@ -178,13 +229,13 @@ class Shell:
                             a = int(v[0])
                             b = int(v[1])
                             for id in range(a, b):
-                                if id in newmap:
+                                if id in surfaces_map:
                                     surfaceID.remove(id)
-                                    newmap.pop(id)
+                                    surfaces_map.pop(id)
                         else:
                             id = int(key)
                             surfaceID.remove(id)
-                            newmap.pop(id)
+                            surfaces_map.pop(id)
                     else:
                         # add ID
                         if '-' in key:
@@ -192,17 +243,20 @@ class Shell:
                             a = int(v[0])
                             b = int(v[1])
                             for id in range(a, b):
-                                if id not in newmap:
+                                if id not in surfaces_map:
                                     surfaceID.append(id)
-                                    newmap[id] = []
+                                    surfaces_map[id] = []
                         else:
                             id = int(key)
-                            if id not in newmap:
-                                surfaceID.append(id)
-                                newmap[id] = []
+                            surfaceID.append(id)
+                            if id not in surfaces_map:
+                                surfaces_map[id] = []
+                    pass
+                pass # exit for
+            pass
         pass  # exit for
         f.close()
-        return newmap
+        return surfaces_map
 
     def _load_descript(self, map):
         for keys, values in map.items():
@@ -281,47 +335,59 @@ class Shell:
                 else:
                     self._IgnoreParams(keys, values)
 
-            elif key[0] == 'sakura':
+            elif key[0] in ['sakura','kero'] or key[0:4] == 'char':
+
+                if key[0] == 'sakura':
+                    sid = 0
+                elif key[0] == 'kero':
+                    sid = 1
+                else:
+                    sid = int(key[5:])
+
+                if sid not in self.setting.keys():
+                    self.setting[sid] = ShellSetting()
+
                 if 'bindgroup' in key[1]:
                     aid = int(key[1][9:])
                     if key[2] == 'name':
                         img = '' if len(value) < 3 else value[2]
-                        self.setting.bindgroups[aid] = BindGroup(aid, value[0], value[1], img)
+                        self.setting[sid].bindgroups[aid] = BindGroup(aid, value[0], value[1], img)
                     elif key[2] == 'default':
-                        self.setting.bindgroups[aid].setDefault(value[0])
+                        self.setting[sid].bindgroups[aid].setDefault(value[0])
                     else:
                         self._IgnoreParams(keys, values)
                 elif 'menuitem' in key[1]:
                     mid = int(key[1][8:])
                     if value[0] != '-':
-                        self.shellmenustyle.menuitem[mid] = int(value[0])
+                        self.setting[sid].clothesmenu[mid] = int(value[0])
                     else:
-                        self.shellmenustyle.menuitem[mid] = -1
+                        self.setting[sid].clothesmenu[mid] = -1
                 elif key[1] == 'balloon':
                     if key[2] == 'offsetx':
-                        self.setting.balloon_offset.setX(int(value[0]))
+                        self.setting[sid].balloon_offset.setX(int(value[0]))
                     elif key[2] == 'offsety':
-                        self.setting.balloon_offset.setY(int(value[0]))
+                        self.setting[sid].balloon_offset.setY(int(value[0]))
                     elif key[2] == 'alignment':
-                        self.setting.balloon_alignment = value[0]
+                        self.setting[sid].balloon_alignment = value[0]
                     else:
                         self._IgnoreParams(keys, values)
                 elif 'bindoption' in key[1]:
                     gid = int(key[1][10:])
                     if key[2] == 'group':
-                        self.setting.bindoption[value[0]] = value[1]
+                        self.setting[sid].bindoption[value[0]] = value[1]
                     else:
                         self._IgnoreParams(keys, values)
                 elif 'defaultx' in key[1]:
-                    self.setting.offset.setX(int(value[0]))
+                    self.setting[sid].offset.setX(int(value[0]))
                 elif 'defaulty' in key[1]:
-                    self.setting.offset.setY(int(value[0]))
+                    self.setting[sid].offset.setY(int(value[0]))
                 elif 'defaultleft' in key[1]:
-                    self.setting.position.setX(int(value[0]))
+                    self.setting[sid].position.setX(int(value[0]))
                 elif 'defaulttop' in key[1]:
-                    self.setting.position.setY(int(value[0]))
+                    self.setting[sid].position.setY(int(value[0]))
                 else:
                     self._IgnoreParams(keys, values)
+
 
             elif key[0] == 'id':
                 self.id = value[0]
@@ -340,8 +406,6 @@ class Shell:
 
             # skip params
             elif key[0] == 'charset' \
-                    or key[0] == 'kero' \
-                    or key[0:4] == 'char' \
                     or key[0] == 'shiori' \
                     or key[0] == 'mode' \
                     or key[0] == 'seriko':
@@ -361,7 +425,8 @@ class Shell:
         i = 2
         while 1:
             surfaces_path = os.path.join(self.shellpath, 'surfaces%d.txt' % i)
-            if not os.path.exists(surfaces_path): break
+            if not os.path.exists(surfaces_path):
+                break
             surfaces_map = self._open_surfaces(surfaces_path, surfaces_map)
             i = i + 1
 
@@ -369,7 +434,20 @@ class Shell:
             self._surfaces[key] = Surface(key, values)
 
     def _IgnoreParams(self, key, values):
-        print('unknow shell params: %s,%s' % (key, values))
+        logging.info('unknow shell params: %s,%s' % (key, values))
+        pass
+
+    def _sort_data(self):
+
+        def _sort(item, reverse=False):
+            return collections.OrderedDict(sorted(item, key=lambda t: t[0], reverse=reverse))
+
+        self._surfaces = _sort(self._surfaces.items())
+        for sid, surface in self._surfaces.items():
+            self._surfaces[sid].elements = _sort(surface.elements.items())
+            self._surfaces[sid].animations = _sort(surface.animations.items(), self.animation_sort == 'ascend')
+            if self.collision_sort != 'none':
+                self._surfaces[sid].CollisionBoxes = _sort(surface.CollisionBoxes.items(), self.collision_sort == 'ascend')
         pass
 
     def getSurface(self, surfacesID):
@@ -377,225 +455,60 @@ class Shell:
             return self._surfaces[surfacesID]
         else:
             logging.error("setCurShell: index[%d] NOT in shells list" % (surfacesID))
-            raise ValueError
-
-    def update(self, updatetime, surfacesID):
-        isNeedUpdate = False
-        self._updatetime += updatetime
-
-        surface = self._surfaces[surfacesID]
-        for aid, ani in surface.animations.items():
-            ret = ani.update(updatetime)
-            if ret is True:
-                isNeedUpdate = True
-
-        return isNeedUpdate
 
     def getCollisionBoxes(self, surfacesID):
         surface = self._surfaces[surfacesID]
         return surface.CollisionBoxes
 
-    def getOffset(self):
-        return self.setting.offset
+    def getOffset(self, soulId):
+        return self.setting[soulId].offset
 
     def getShellMenuStyle(self):
         return self.shellmenustyle
 
+    def addBind(self, aid):
+        if aid not in self.bind:
+            self.bind.append(aid)
+            self.bind.sort()
 
-class Animation:
+    def getBind(self):
+        return self.bind
+
+    def setClothes(self, aid, isEnable=True):
+        if isEnable is True and aid not in self.bind:
+            self.addBind(aid)
+        elif aid in self.bind:
+            self.bind.remove(aid)
+
+
+class AnimationData:
     def __init__(self, id, parent):
         self._parent = parent
         self.ID = id
         self.interval = 'never'
         self.intervalValue = 0
         self.exclusive = False
-        self.patterns = {}
+        self.patterns = OrderedDict()
 
         self.isRuning = False
         self.updatetime = 0
         self.curPattern = -1
         self._lasttime = 0
 
-    def start(self):
-        if self.isRuning is False:
-            self.isRuning = True
-            self.updatetime = time.clock()
-            self.curPattern = -1
-
-    def stop(self):
-        self.isRuning = False
-
-    def randomStart(self):
-        isNeedStart = False
-        timer_interval = kikka.core.getTimerInterval()
-        if self.interval == 'never' \
-                or self.interval == 'talk' \
-                or self.interval == 'bind' \
-                or self.interval == 'yen-e' \
-                or self.interval == 'runonce':
-            isNeedStart = False
-
-        elif self.interval == 'sometimes':
-            # 30% per second
-            r = random.random()
-            isNeedStart = True if r < 0.0003 * timer_interval else False
-
-        elif self.interval == 'rarely':
-            # 10% per second
-            isNeedStart = True if random.random() < 0.0001 * timer_interval else False
-
-        elif self.interval == 'random':
-            # n% per second
-            isNeedStart = True if random.random() < self.intervalValue / 1000 * timer_interval else False
-
-        elif self.interval == 'periodic':
-            now = time.clock()
-            if now - self._lasttime >= self.intervalValue:
-                self._lasttime = now
-                isNeedStart = True
-            else:
-                isNeedStart = False
-
-        elif self.interval == 'always':
-            isNeedStart = True
-
-        # start animation
-        if isNeedStart is True:
-            for pid, pattern in self.patterns.items():
-                self._animationControl(pattern)
-            self.start()
-
-        return isNeedStart
-        pass
-
-    def _animationControl(self, pattern):
-        if pattern.bindAnimation != -1:
-            # this pattern is run a animation and the animation is running
-            return
-
-        if pattern.methodType in ['alternativestart', 'start', 'insert']:
-            r = random.choice(self.patterns[0].aid)
-            if r in self._parent:
-                self._parent[r].start()
-                pattern.bindAnimation = r
-
-        elif pattern.methodType in ['alternativestop', 'stop']:
-            for aid in self.patterns[0].aid:
-                if aid in self._parent:
-                    self._parent[aid].stop()
-                    pattern.bindAnimation = -1
-        pass
-
-    def update(self, updatetime):
-        isNeedUpdate = False
-        if self.isRuning is False and self.randomStart() is True:
-            isNeedUpdate = True
-            return isNeedUpdate
-
-        # updating pattern
-        if self.isRuning is True:
-            self.updatetime += updatetime
-            if self.curPattern < len(self.patterns) - 1 \
-            and self.updatetime > self.patterns[self.curPattern + 1].time:
-                isNeedUpdate = True
-                self.curPattern += 1
-                self.updatetime -= self.patterns[self.curPattern].time
-
-                # skip time==0 pattern
-                while self.curPattern < len(self.patterns) \
-                        and self.patterns[self.curPattern].time == 0:
-                    self._animationControl(self.patterns[self.curPattern])
-                    self.curPattern += 1
-        pass  # end if
-
-        # if run to last Pattern, stop animation
-        if self.curPattern >= len(self.patterns) - 1:
-            self.curPattern = len(self.patterns) - 1
-
-            hasBindAnimationIsRuning = False
-            for pid, pattern in self.patterns.items():
-                if pattern.bindAnimation != -1 \
-                and self._parent[pattern.bindAnimation].isRuning is True:
-                    hasBindAnimationIsRuning = True
-                else:
-                    pattern.bindAnimation = -1
-
-            # stop self when all pattern bindAnimation is stop
-            if hasBindAnimationIsRuning is False:
-                self.updatetime = 0
-                self.isRuning = False
-                #isNeedUpdate = True
-
-            if self.interval == 'always':
-                self.start()
-        return isNeedUpdate
-
-    def getCurSurfaceData(self):
-        if self.curPattern in self.patterns:
-            pattern = self.patterns[self.curPattern]
-            if pattern.isControlPattern():
-                return -1, 0, 0
-            else:
-                return pattern.surfaceID, pattern.offset[0], pattern.offset[1]
-        else:
-            return -1, 0, 0
-        pass
-
 
 class Surface:
-    # surface const
-    ENUM_NORMAL = 0             # 正常 / 素1
-    ENUM_SHY = 1                # 害羞(侧面) / 照れ1
-    ENUM_SURPRISE = 2           # 惊讶 / 驚き
-    ENUM_WORRIED = 3            # 忧郁 / 落込み
-    ENUM_DISAPPOINTED = 4       # 失望 / 
-    ENUM_JOY = 5                # 高兴 / 喜び
-    ENUM_EYE_CLOSURE = 6        # 闭眼 / 目閉じ
-    ENUM_ANGER = 7              # 生气 / 怒り
-    ENUM_FORCED_SMILE = 8       # 苦笑 / 苦笑
-    ENUM_ANGER2 = 9             # 尴尬 / 照れ怒り
-    ENUM_HIDE = 19              # 消失 /
-    ENUM_THINKING = 20          # 思考 / 思考
-    ENUM_ABSENT_MINDED = 21     # 恍惚 / 恍惚
-    ENUM_P90 = 22               # P90 / P90
-    ENUM_DAGGER = 23            # 匕首 / 鉈
-    ENUM_SINGING = 25           # 唱歌 / 歌
-    ENUM_FRONT = 26             # 正面 / 正面
-    ENUM_CHAINSAW = 27          # 电锯 / チェーンソー
-    ENUM_VALENTINE = 28         # 礼物 / バレンタイン
-    ENUM_HAPPINESS = 29         # 幸福 / 幸せ
-    ENUM_SIDEWAYS = 30          # 看斗和 / 横向き
-    ENUM_FIVESEVEN = 32         # FiveseveN(手枪) / FiveseveN
-    ENUM_SURPRISE2 = 33         # 委屈 / 驚き
-    ENUM_KNIFE = 34             # 军刀 / ナイフ
-    ENUM_ENDURE = 35            # 难过 / 耐え
-    ENUM_SLOUCH = 40            # 鞠躬 / 前屈み
-    ENUM_SLOUCH_JOY = 41        # 鞠躬(闭眼) / 喜び（前屈み）
-    ENUM_APRON_TEA = 50         # 围裙(红茶) / エプロン（紅茶）
-    ENUM_APRON_SHY = 51         # 围裙(害羞) / エプロン（照れ）
-    ENUM_NORMAL2 = 100          # 正常2 / 素2
-    ENUM_SHY2 = 101             # 害羞2 / 照れ2
-    ENUM_APRON_COFFEE = 150     # 围裙(咖啡) / エプロン（コーヒー）
-    ENUM_APRON_JPN_TEA = 250    # 围裙(日本茶) / エプロン（日本茶）
-    
-    ENUM_KERO_NORMAL = 10           # 正常(闭眼) / 素
-    ENUM_KERO_SIDEWAYS = 11         # 侧身(睁眼) / 横
-    ENUM_KERO_FRONT = 12            # 正面(睁眼正视) / 正面
-    ENUM_KERO_TURNING = 13          # 转头(扭头无视) / 转头
-    ENUM_KERO_HUMAN_JOY = 110       # 笑(人形) / 笑(人形)
-    ENUM_KERO_HUMAN_NORMAL = 111    # 正常(人形) / 素(人形)
-    ENUM_KERO_HUMAN_SURPRISE = 117  # 惊讶(人形) / 驚き(人形)
-
     def __init__(self, id, values):
         self.ID = id
         self.elements = {}
         self.animations = {}
         self.CollisionBoxes = {}
-        self.offest1 = [0, 0]
-        self.offest2 = [0, 0]
+        self.rect = QRect()
+
+        self.basepos = QPoint(ShellConst.UNSET)
+        self.surfaceCenter = QPoint(ShellConst.UNSET)
+        self.kinokoCenter = QPoint(ShellConst.UNSET)
 
         self._load_surface(values)
-        pass
 
     def _load_surface(self, values):
         for line in values:
@@ -614,7 +527,7 @@ class Surface:
 
             elif matchtype == SurfaceMatchLine.AnimationInterval:
                 aid = int(params[0])
-                ani = Animation(aid, self.animations) if aid not in self.animations else self.animations[aid]
+                ani = AnimationData(aid, self.animations) if aid not in self.animations else self.animations[aid]
                 if ',' in params[1]:
                     p = params[1].split(',')
                     ani.interval = p[0]
@@ -626,41 +539,46 @@ class Surface:
 
             elif matchtype == SurfaceMatchLine.AnimationPattern:
                 aid = int(params[0])
-                ani = Animation(aid, self.animations) if aid not in self.animations else self.animations[aid]
+                ani = AnimationData(aid, self.animations) if aid not in self.animations else self.animations[aid]
                 ani.patterns[int(params[1])] = Pattern(params, EPatternType.Normal)
                 self.animations[aid] = ani
 
             elif matchtype == SurfaceMatchLine.AnimationPatternNew:
                 aid = int(params[0])
-                ani = Animation(aid, self.animations) if aid not in self.animations else self.animations[aid]
+                ani = AnimationData(aid, self.animations) if aid not in self.animations else self.animations[aid]
                 ani.patterns[int(params[1])] = Pattern(params, EPatternType.New)
                 self.animations[aid] = ani
 
             elif matchtype == SurfaceMatchLine.AnimationPatternAlternative:
                 aid = int(params[0])
-                ani = Animation(aid, self.animations) if aid not in self.animations else self.animations[aid]
+                ani = AnimationData(aid, self.animations) if aid not in self.animations else self.animations[aid]
                 ani.patterns[int(params[1])] = Pattern(params, EPatternType.Alternative)
                 self.animations[aid] = ani
 
             elif matchtype == SurfaceMatchLine.AnimationOptionExclusive:
                 aid = int(params[0])
-                ani = Animation(aid, self.animations) if aid not in self.animations else self.animations[aid]
+                ani = AnimationData(aid, self.animations) if aid not in self.animations else self.animations[aid]
                 ani.exclusive = True
                 self.animations[aid] = ani
 
-            elif matchtype == SurfaceMatchLine.OffectPointX:
-                self.offest1[0] = int(params[0])
+            elif matchtype == SurfaceMatchLine.SurfaceCenterX:
+                self.surfaceCenter.setX(int(params[0]))
 
-            elif matchtype == SurfaceMatchLine.OffectPointY:
-                self.offest1[1] = int(params[0])
+            elif matchtype == SurfaceMatchLine.SurfaceCenterY:
+                self.surfaceCenter.setY(int(params[0]))
 
-            elif matchtype == SurfaceMatchLine.OffectKinokoPointX:
-                self.offest2[0] = int(params[0])
+            elif matchtype == SurfaceMatchLine.KinokoCenterX:
+                self.kinokoCenter.setX(int(params[0]))
 
-            elif matchtype == SurfaceMatchLine.OffectKinokoPointY:
-                self.offest1[1] = int(params[0])
+            elif matchtype == SurfaceMatchLine.KinokoCenterY:
+                self.kinokoCenter.setY(int(params[0]))
 
-        pass
+            elif matchtype == SurfaceMatchLine.BaseposX:
+                self.basepos.setX(int(params[0]))
+
+            elif matchtype == SurfaceMatchLine.BaseposX:
+                self.basepos.setY(int(params[0]))
+        pass # exit for
 
 
 class EPatternType(Enum):
@@ -677,21 +595,21 @@ class Pattern:
             self.methodType = params[4]
             self.surfaceID = int(params[2])
             self.time = int(params[3]) * 10
-            self.offset = [int(params[5]), int(params[6])]
+            self.offset = QPoint(int(params[5]), int(params[6]))
             self.aid = [-1]
         elif matchtype == EPatternType.New:
             self.ID = int(params[1])
             self.methodType = params[2]
             self.surfaceID = int(params[3])
             self.time = int(params[4])
-            self.offset = [int(params[5]), int(params[6])]
+            self.offset = QPoint(int(params[5]), int(params[6]))
             self.aid = [-1]
         elif matchtype == EPatternType.Alternative:
             self.ID = int(params[1])
             self.methodType = params[4]
             self.surfaceID = int(params[2])
             self.time = int(params[3])
-            self.offset = [0, 0]
+            self.offset = QPoint()
             if '.' in params[5]:
                 self.aid = list(map(int, params[5].split('.')))
             elif ',' in params[5]:
@@ -732,10 +650,12 @@ class SurfaceMatchLine(Enum):
 
     CollisionBoxes = 300
 
-    OffectPointX = 401
-    OffectPointY = 402
-    OffectKinokoPointX = 403
-    OffectKinokoPointY = 404
+    SurfaceCenterX = 401
+    SurfaceCenterY = 402
+    KinokoCenterX = 403
+    KinokoCenterY = 404
+    BaseposX = 405
+    BaseposY = 406
 
     @staticmethod
     def matchLine(line):
@@ -785,25 +705,35 @@ class SurfaceMatchLine(Enum):
         res = re.match(r'^collision(\d+),(\d+),(\d+),(\d+),(\d+),(\w+)$', line)
         if res is not None: return SurfaceMatchLine.CollisionBoxes, res.groups()
 
-        # Offect PointX
-        # point.centerx,[int] | point.basepos.centerx,[int]
-        res = re.match(r'^point(?:.basepos)?.centerx,(\d+)$', line)
-        if res is not None: return SurfaceMatchLine.OffectPointX, res.groups()
+        # Surface Center X
+        # point.centerx,[int]
+        res = re.match(r'^point.centerx,(\d+)$', line)
+        if res is not None: return SurfaceMatchLine.SurfaceCenterX, res.groups()
 
-        # Offect PointY
-        # point.centery,[int] | point.basepos.centery,[int]
-        res = re.match(r'^point(?:.basepos)?.centery,(\d+)$', line)
-        if res is not None: return SurfaceMatchLine.OffectPointY, res.groups()
+        # Surface Center Y
+        # point.centery,[int]
+        res = re.match(r'^point.centery,(\d+)$', line)
+        if res is not None: return SurfaceMatchLine.SurfaceCenterY, res.groups()
 
-        # Kinoko Offect PointX
+        # Kinoko Center X
         # point.kinoko.centerx,[int]
         res = re.match(r'^point.kinoko.centerx,(\d+)$', line)
-        if res is not None: return SurfaceMatchLine.OffectKinokoPointX, res.groups()
+        if res is not None: return SurfaceMatchLine.KinokoCenterX, res.groups()
 
-        # Kinoko Offect PointY
+        # Kinoko Center Y
         # point.kinoko.centery,[int]
         res = re.match(r'^point.kinoko.centery,(\d+)$', line)
-        if res is not None: return SurfaceMatchLine.OffectKinokoPointY, res.groups()
+        if res is not None: return SurfaceMatchLine.KinokoCenterY, res.groups()
+
+        # basepos X
+        # point.basepos.centerx,[int]
+        res = re.match(r'^point.basepos.centerx,(\d+)$', line)
+        if res is not None: return SurfaceMatchLine.BaseposX, res.groups()
+
+        # basepos Y
+        # point.basepos.centery,[int]
+        res = re.match(r'^point.basepos.centery,(\d+)$', line)
+        if res is not None: return SurfaceMatchLine.BaseposY, res.groups()
 
         # Unknow
         return SurfaceMatchLine.Unknow, None
@@ -822,7 +752,7 @@ class AuthorInfo:
 class ShellMenuStyle:
     def __init__(self):
         self.hidden = False
-        self.menuitem = {}
+
 
         self.font_family = ''
         self.font_size = -1
@@ -857,12 +787,13 @@ class BindGroup:
 class ShellSetting:
     def __init__(self):
         self.name = ''
-        self.offset = QPoint(100, 100)
+        self.offset = QPoint(0, 0)
         self.position = QPoint(0, 0)
         self.balloon_offset = QPoint(0, 0)
         self.balloon_alignment = 'lefttop'
         self.bindoption = {}
         self.bindgroups = {}
+        self.clothesmenu = {}
 
     def addBingGroup(self, aID, bindgroup):
         self.bindgroups[aID] = bindgroup

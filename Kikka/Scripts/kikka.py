@@ -8,7 +8,7 @@ import kikka_shell
 import kikka_core
 import kikka_helper
 import kikka_balloon
-
+import kikka_const
 
 # singletion classes
 helper = kikka_helper.KikkaHelper.this()
@@ -18,3 +18,4 @@ menu = kikka_menu.KikkaMenu.this()
 shell = kikka_shell.KikkaShell.this()
 core = kikka_core.KikkaCore.this()
 balloon = kikka_balloon.KikkaBalloon.this()
+const = kikka_const

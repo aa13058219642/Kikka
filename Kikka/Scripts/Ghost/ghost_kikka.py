@@ -7,7 +7,7 @@ from PyQt5.QtWidgets import QWidget, QPushButton, QStackedLayout, QVBoxLayout, Q
 
 import kikka
 from ghostevent import GhostEvent
-from kikka_shell import Surface
+from kikka_const import SurfaceEnum
 from ghostbase import GhostBase
 from kikka_menu import Menu
 
@@ -18,8 +18,6 @@ TOWA = 1
 class GhostKikka(GhostBase):
     def __init__(self, gid=-1, name='Kikka'):
         GhostBase.__init__(self, gid, name)
-        self.setShell(1)
-        self.setBalloon(0)
         w_kikka = self.addWindow(KIKKA, 0)
         w_towa = self.addWindow(TOWA, 10)
 
@@ -38,7 +36,6 @@ class GhostKikka(GhostBase):
         act = menu.addMenuItem("111", _test_callback)
         act.setShortcut(QKeySequence("Ctrl+T"))
         act.setShortcutContext(Qt.ApplicationShortcut)
-        # act.setShortcutContext(Qt.ApplicationShortcut)
         act.setShortcutVisibleInContextMenu(True)
 
 
@@ -47,8 +44,6 @@ class GhostKikka(GhostBase):
 
 
         # w.s
-
-
 
 
     def initLayout(self):
@@ -139,9 +134,7 @@ class GhostKikka(GhostBase):
 
     def changeShell(self, shellID):
         logging.debug("Please don't peek at me to change clothes!")
-        self.hide()
-        self.setShell(shellID)
-        self.show()
+        GhostBase.changeShell(self, shellID)
 
 # ########################################################################################################
 def resizeWindow(**kwargs):
@@ -154,14 +147,14 @@ def closeDlg(**kwargs):
 
 
 def head_touch(**kwargs):
-    logging.info("head_touch")
+    #logging.info("head_touch")
     if kwargs['nid'] == KIKKA:
-        kikka.core.getGhost(kwargs['gid']).setSurface(kwargs['nid'], Surface.ENUM_JOY)
+        kikka.core.getGhost(kwargs['gid']).setSurface(kwargs['nid'], SurfaceEnum.ENUM_JOY)
     pass
 
 
 def head_click(**kwargs):
-    logging.info("head_click")
+    #logging.info("head_click")
     pass
 
 
@@ -171,51 +164,51 @@ def head_doubleclick(**kwargs):
 
 
 def face_touch(**kwargs):
-    logging.info("face_touch")
+    #logging.info("face_touch")
     if kwargs['nid'] == KIKKA:
-        kikka.core.getGhost(kwargs['gid']).setSurface(kwargs['nid'], Surface.ENUM_ANGER2)
+        kikka.core.getGhost(kwargs['gid']).setSurface(kwargs['nid'], SurfaceEnum.ENUM_ANGER2)
     pass
 
 
 def face_click(**kwargs):
-    logging.info("face_click")
+    #logging.info("face_click")
     pass
 
 
 def face_doubleclick(**kwargs):
-    logging.info("face_doubleclick")
+    #logging.info("face_doubleclick")
     pass
 
 
 def bust_touch(**kwargs):
-    logging.info("bust_touch")
+    #logging.info("bust_touch")
     if kwargs['nid'] == KIKKA:
-        kikka.core.getGhost(kwargs['gid']).setSurface(kwargs['nid'], Surface.ENUM_NORMAL)
+        kikka.core.getGhost(kwargs['gid']).setSurface(kwargs['nid'], SurfaceEnum.ENUM_NORMAL)
     pass
 
 
 def bust_click(**kwargs):
-    logging.info("bust_click")
+    #logging.info("bust_click")
     pass
 
 
 def bust_doubleclick(**kwargs):
-    logging.info("bust_doubleclick")
+    #logging.info("bust_doubleclick")
     pass
 
 
 def hand_touch(**kwargs):
-    logging.info("hand_touch")
+    #logging.info("hand_touch")
     pass
 
 
 def hand_click(**kwargs):
-    logging.info("hand_click")
+    #logging.info("hand_click")
     pass
 
 
 def hand_doubleclick(**kwargs):
-    logging.info("hand_doubleclick")
+    #logging.info("hand_doubleclick")
     pass
 
 
