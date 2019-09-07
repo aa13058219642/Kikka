@@ -11,8 +11,8 @@ import kikka
 from kikka_balloon import Balloon
 
 
-class Dialog(QWidget):
-    def __init__(self, soul, nid):
+class DialogWindow(QWidget):
+    def __init__(self, soul, win_id):
         QWidget.__init__(self)
         self.setWindowFlags(Qt.Tool | Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint)
         self.setAttribute(Qt.WA_TranslucentBackground)
@@ -20,7 +20,7 @@ class Dialog(QWidget):
         # self.setMouseTracking(True)
         # self.setAcceptDrops(True)
         self._soul = soul
-        self.nid = nid
+        self.ID = win_id
         self._ghost = self._soul.getGhost()
         self._shellwindow = self._soul.getShellWindow()
         self._framelessWindowHint = True
@@ -36,7 +36,7 @@ class Dialog(QWidget):
         self.init()
 
     def init(self):
-        rect = self._ghost.memoryRead('DialogRect', [], self.nid)
+        rect = self._ghost.memoryRead('DialogRect', [], self.ID)
         if len(rect)>0:
             self._rect = QRect(rect[0], rect[1], rect[2], rect[3])
             self.resize(self._rect.size())
@@ -49,7 +49,7 @@ class Dialog(QWidget):
 
             self._rect = QRect(QPoint(x, y), self.size())
             rectdata = [x - p_pos.x(), y - p_pos.y(), self.size().width(), self.size().height()]
-            self._ghost.memoryWrite('DialogRect', rectdata, self.nid)
+            self._ghost.memoryWrite('DialogRect', rectdata, self.ID)
         pass
 
     def setFramelessWindowHint(self, boolean):
@@ -69,7 +69,7 @@ class Dialog(QWidget):
             self._rect.setY(self.geometry().y() - self._shellwindow.pos().y())
             self._rect.setSize(self.geometry().size())
             rectdata = [self._rect.x(), self._rect.y(), self._rect.width(), self._rect.height()]
-            self._ghost.memoryWrite('DialogRect', rectdata, self.nid)
+            self._ghost.memoryWrite('DialogRect', rectdata, self.ID)
 
             pos = QPoint(self.pos().x(), self.pos().y())
             self.setWindowFlag(Qt.FramelessWindowHint, True)
@@ -100,11 +100,7 @@ class Dialog(QWidget):
                 new_x = p_pos.x() + p_size.width()
         if self.isFlip != flip:
             self.isFlip = flip
-            balloon = self._ghost.getBalloon()
-            if balloon is not None:
-                self._bgImage = self._ghost.getBalloonImage(self._rect.size(), self.isFlip, self.nid)
-                self._bgPixmap = QPixmap().fromImage(self._bgImage, Qt.AutoColor)
-                self._bgMask = self._bgPixmap.mask()
+            self.repaint()
 
         super().move(new_x, new_y)
         pass
@@ -120,9 +116,7 @@ class Dialog(QWidget):
         pass
 
     def resizeEvent(self, event):
-        balloon = self._ghost.getBalloon()
-        if balloon is not None:
-            self.repaint()
+        self.repaint()
 
     def paintEvent(self, event):
         painter = QPainter(self)
@@ -140,7 +134,7 @@ class Dialog(QWidget):
         self.setStyleSheet(balloon.stylesheet)
 
     def repaint(self):
-        self._bgImage = self._ghost.getBalloonImage(self.size(), self.isFlip, self.nid)
+        self._bgImage = self._ghost.getBalloonImage(self.size(), self.isFlip, self.ID)
         self._bgPixmap = QPixmap().fromImage(self._bgImage, Qt.AutoColor)
         self._bgMask = self._bgPixmap.mask()
         super().repaint()

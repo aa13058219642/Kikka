@@ -14,7 +14,7 @@ class WindowConst:
     DialogWindowDefaultWidth = 200
     DialogWindowDefaultHeight = 220
     DialogWindowDefaultSize = QSize(DialogWindowDefaultWidth, DialogWindowDefaultHeight)
-
+    DialogWindowDefaultMargin = [3, 3, 3, 3]
 
 class SurfaceEnum():
     # surface const

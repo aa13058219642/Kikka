@@ -27,7 +27,7 @@ class GhostKikka(GhostBase):
 
     def initMenu(self):
         mainmenu = self.getMenu(KIKKA)
-        menu = Menu(mainmenu.parent(), self.gid, "kikka menu")
+        menu = Menu(mainmenu.parent(), self.ID, "kikka menu")
         mainmenu.insertMenu(mainmenu.actions()[0], menu)
 
         def _test_callback(index=0, title=''):

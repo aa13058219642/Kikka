@@ -28,10 +28,10 @@ class KikkaMenu:
         pass
 
     @staticmethod
-    def getMenu(gid, nid):
-        ghost = kikka.core.getGhost(gid)
+    def getMenu(ghost_id, soul_id):
+        ghost = kikka.core.getGhost(ghost_id)
         if ghost is not None:
-            return ghost.getMenu(nid)
+            return ghost.getMenu(soul_id)
         else:
             logging.warning('menu lost')
             return None
@@ -46,36 +46,38 @@ class KikkaMenu:
         import kikka
 
         parent = QWidget(flags=Qt.Dialog)
-        mainmenu = Menu(parent, ghost.gid, "Main")
+        mainmenu = Menu(parent, ghost.ID, "Main")
 
         # shell list
-        menu = Menu(mainmenu, ghost.gid, "Shells")
+        menu = Menu(mainmenu, ghost.ID, "Shells")
         group1 = QActionGroup(parent)
         for i in range(kikka.shell.getShellCount()):
-            callbackfunc = lambda checked, id=i: ghost.changeShell(id)
-            act = menu.addMenuItem(kikka.shell.getShell(i).name, callbackfunc, None, group1)
+            shell = kikka.shell.getShellByIndex(i)
+            callbackfunc = lambda checked, name=shell.name: ghost.changeShell(name)
+            act = menu.addMenuItem(shell.unicode_name, callbackfunc, None, group1)
             act.setCheckable(True)
             act.setChecked(True)
         mainmenu.addSubMenu(menu)
 
         # clothes list
-        menu = Menu(mainmenu, ghost.gid, "Clothes")
+        menu = Menu(mainmenu, ghost.ID, "Clothes")
         menu.setEnabled(False)
         mainmenu.addSubMenu(menu)
 
         # balloon list
-        menu = Menu(mainmenu, ghost.gid, "Balloons")
+        menu = Menu(mainmenu, ghost.ID, "Balloons")
         group2 = QActionGroup(parent)
         for i in range(kikka.balloon.getBalloonCount()):
-            callbackfunc = lambda checked, a=i: ghost.setBalloon(a)
-            act = menu.addMenuItem(kikka.balloon.getBalloon(i).name, callbackfunc, None, group2)
+            balloon = kikka.balloon.getBalloonByIndex(i)
+            callbackfunc = lambda checked, name=balloon.name: ghost.setBalloon(name)
+            act = menu.addMenuItem(balloon.unicode_name, callbackfunc, None, group2)
             act.setCheckable(True)
             act.setChecked(True)
         mainmenu.addSubMenu(menu)
 
         # debug option
         if kikka.core.isDebug is True:
-            menu = Menu(mainmenu, ghost.gid, "Debug")
+            menu = Menu(mainmenu, ghost.ID, "Debug")
 
             def callbackfunction1():
                 kikka.core.isDebug = not kikka.core.isDebug
@@ -107,20 +109,21 @@ class KikkaMenu:
         import kikka
 
         parent = QWidget(flags=Qt.Dialog)
-        mainmenu = Menu(parent, ghost.gid, "Main")
+        mainmenu = Menu(parent, ghost.ID, "Main")
 
         # shell list
-        menu = Menu(mainmenu, ghost.gid, "Shells")
+        menu = Menu(mainmenu, ghost.ID, "Shells")
         group1 = QActionGroup(parent)
         for i in range(kikka.shell.getShellCount()):
-            callbackfunc = lambda checked, id=i: ghost.changeShell(id)
-            act = menu.addMenuItem(kikka.shell.getShell(i).name, callbackfunc, None, group1)
+            shellname = kikka.shell.getShellByIndex(i).name
+            callbackfunc = lambda checked, name=shellname: ghost.changeShell(shellname)
+            act = menu.addMenuItem(shellname, callbackfunc, None, group1)
             act.setCheckable(True)
             act.setChecked(True)
         mainmenu.addSubMenu(menu)
 
         # clothes list
-        menu = Menu(mainmenu, ghost.gid, "Clothes")
+        menu = Menu(mainmenu, ghost.ID, "Clothes")
         menu.setEnabled(False)
         mainmenu.addSubMenu(menu)
 

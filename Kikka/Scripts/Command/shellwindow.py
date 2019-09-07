@@ -10,11 +10,11 @@ import kikka
 
 
 class ShellWindow(QWidget):
-    def __init__(self, soul, winid):
+    def __init__(self, soul, win_id):
         QWidget.__init__(self)
         self._soul = soul
         self._ghost = self._soul.getGhost()
-        self.winid = winid
+        self.ID = win_id
         self.setWindowFlags(Qt.Tool | Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint)
         self.setAttribute(Qt.WA_TranslucentBackground)
         self.setAttribute(Qt.WA_DeleteOnClose)
@@ -30,7 +30,7 @@ class ShellWindow(QWidget):
         self._pixmap = None
 
         # size and position
-        rect = self._ghost.memoryRead('ShellRect', [], self.winid)
+        rect = self._ghost.memoryRead('ShellRect', [], self.ID)
         if len(rect) > 0:
             self.move(rect[0], rect[1])
             self.resize(rect[2], rect[3])
@@ -53,7 +53,7 @@ class ShellWindow(QWidget):
             rect = box[0]
             if rect.contains(mx, my) is True:
                 tag = box[1]
-                self._ghost.event_selector(event, tag, nid=self.winid)
+                self._ghost.event_selector(event, tag, nid=self.ID)
                 return
         pass
     
@@ -90,8 +90,8 @@ class ShellWindow(QWidget):
     #     return False
 
     def contextMenuEvent(self, event):
-        self._ghost.showMenu(self.winid, event.globalPos())
-        logging.info('contextMenuEvent')
+        self._ghost.showMenu(self.ID, event.globalPos())
+        # logging.info('contextMenuEvent')
 
     def mousePressEvent(self, event):
         self._mouseLogging("mousePressEvent", event.buttons(), event.globalPos().x(), event.globalPos().y())
@@ -112,7 +112,7 @@ class ShellWindow(QWidget):
         self._mousepos = event.pos()
         if self._isMoving and event.buttons() == Qt.LeftButton:
             self.move(event.globalPos() - self._movepos)
-            self._ghost.getDialog(self.winid).updatePosition()
+            self._ghost.getDialog(self.ID).updatePosition()
             event.accept()
         else:
             self._isMoving = False
@@ -129,7 +129,7 @@ class ShellWindow(QWidget):
         self._isMoving = False
         self._ghost.memoryWrite('ShellRect',
                                 [self.pos().x(), self.pos().y(), self.size().width(), self.size().height()],
-                                self.winid)
+                                self.ID)
 
         self._boxCollision(GhostEvent.MouseUp)
         # eventtag = self._boxCollision()
@@ -141,7 +141,7 @@ class ShellWindow(QWidget):
         self._mouseLogging("mouseDoubleClickEvent", event.buttons(), event.globalPos().x(), event.globalPos().y())
         if event.buttons() == Qt.LeftButton:
             self._isMoving = False
-            self._ghost.getDialog(self.winid).show()
+            self._ghost.getDialog(self.ID).show()
 
         self._boxCollision(GhostEvent.MouseDoubleClick)
         # if self._isMoving is False:
@@ -210,7 +210,7 @@ class ShellWindow(QWidget):
 
             left = image.width() + 3
             line = 1
-            line = drawText(painter, line, left, "Ghost ID: %d" % self._ghost.gid)
+            line = drawText(painter, line, left, "Ghost ID: %d" % self._ghost.ID)
             line = drawText(painter, line, left, "Name: %s" % self._ghost.name)
             line = drawText(painter, line, left, "Soul ID: %d" % self._soul.ID)
             line = drawText(painter, line, left, "surface: %d" % self._soul.getCurrentSurfaceID())

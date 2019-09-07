@@ -1,7 +1,7 @@
 charset,utf-8
 type,balloon
 name,_Default_x3
-id,_Default_x3
+unicode_name,_Default_x3
 craftman,A.A
 
 minimumsize,300,210

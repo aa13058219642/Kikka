@@ -1,11 +1,12 @@
 # coding=utf-8
 import os
 import logging
+import collections
+
+from PyQt5.QtCore import Qt, QRect, QPoint, QSize
 
 import kikka
-from PyQt5.QtCore import Qt, QRect, QPoint, QSize
 from kikka_shell import AuthorInfo
-
 
 class KikkaBalloon:
     _instance = None
@@ -22,70 +23,102 @@ class KikkaBalloon:
         return KikkaBalloon._instance
 
     def _init(self):
-        self._balloons = []
+        self._balloons = {}
         self.balloondir = ''
 
-    def loadBalloon(self, balloonpath):
+    def loadBalloon(self, balloondict, balloonpath):
         balloon = Balloon(balloonpath)
         if balloon.isInitialized is False:
             return
 
         isExist = False
-        for s in self._balloons:
-            if balloon.id == s.id and balloon.name == s.name:
+        for name, b in balloondict.items():
+            if balloon.name == name and balloon.unicode_name == b.unicode_name:
                 isExist = True
                 break
 
         if not isExist:
-            logging.info("scan balloon: %s", balloon.name)
-            self._balloons.append(balloon)
+            logging.info("scan balloon: %s", balloon.unicode_name)
+            balloondict[balloon.name] = balloon
+        else:
+            logging.warning("load fail. balloon exist: %s", balloon.unicode_name)
         pass
 
-    def loadAllBalloon(self, balloondir):
+    def scanBalloon(self, balloondir):
         self.balloondir = balloondir
 
+        balloondict = {}
         for parent, dirnames, filenames in os.walk(balloondir):
             for dirname in dirnames:
                 balloonpath = os.path.join(parent, dirname)
-                self.loadBalloon(balloonpath)
+                self.loadBalloon(balloondict, balloonpath)
+
+        balloonordereddict = collections.OrderedDict(sorted(balloondict.items(), key=lambda t: t[0]))
+        for name, balloon in balloonordereddict.items():
+            self._balloons[name] = balloon
 
         logging.info("balloon count: %d", len(self._balloons))
 
-    def getBalloon(self, index):
-        if 0 <= index < len(self._balloons):
-            balloon = self._balloons[index]
-            return balloon
+    def getBalloon(self, balloonname):
+        if balloonname in self._balloons:
+            return self._balloons[balloonname]
         else:
-            logging.error("getBalloon: index NOT in balloon list")
-            raise ValueError
+            logging.warning("getBalloon: '%s' NOT in balloon list"%balloonname)
+            return None
+        pass
+
+    def getBalloonByIndex(self, index):
+        if 0 <= index < len(self._balloons):
+            for balloon in self._balloons.values():
+                if index>0:
+                    index -= 1
+                    continue
+                else:
+                    return balloon
+        else:
+            logging.warning("getBalloon: index=%d NOT in balloon list"%index)
+            return None
+        pass
 
     def getBalloonCount(self):
         return len(self._balloons)
 
 
 class Balloon:
-    def __init__(self, balloonpath):
-        self.balloonpath = balloonpath  # root path of this shell
+    def __init__(self, resource_path):
+        self.resource_path = resource_path  # root path of this shell
+        self.unicode_name = ''
         self.name = ''
-        self.id = ''
         self.type = ''
         self.author = AuthorInfo()
         self.isInitialized = False
         self.isLoaded = False
         self.pnglist = []
 
-        self.minimumsize = QSize(200, 200)
+        self.minimumsize = kikka.const.WindowConst.DialogWindowDefaultSize
+        self.margin = kikka.const.WindowConst.DialogWindowDefaultMargin
         self.flipBackground = False
         self.noFlipCenter = False
         self.stylesheet = None
-        self.margin = [3, 3, 3, 3]
 
-        self._load_descript()
-        pass
+        self.init()
+
+    def init(self):
+        if not os.path.exists(self.resource_path):
+            return
+        descript_path = os.path.join(self.resource_path, 'descript.txt')
+        if not os.path.exists(descript_path):
+            return
+
+        self._load_descript(descript_path)
+        if self.name == '':
+            self.name = os.path.basename(self.resource_path)
+
+        self.isInitialized = True
 
     def load(self):
         if self.isLoaded is False:
-            logging.info("load balloon: %s", self.name)
+            logging.info("load balloon: %s", self.unicode_name)
             self._load_stylesheet()
 
             # load rect
@@ -108,14 +141,12 @@ class Balloon:
             self.isLoaded = True
         pass
 
-    def _load_descript(self):
+    def _load_descript(self, filepath):
         # load descript
         map = {}
-        descript_path = os.path.join(self.balloonpath, 'descript.txt')
-        if not os.path.exists(descript_path): return
-        charset = kikka.helper.checkEncoding(descript_path)
+        charset = kikka.helper.checkEncoding(filepath)
 
-        f = open(descript_path, 'r', encoding=charset)
+        f = open(filepath, 'r', encoding=charset)
         for line in f:
             line = line.replace("\n", "").replace("\r", "")
             line = line.strip(' ')
@@ -163,10 +194,10 @@ class Balloon:
             elif key[0] == 'margin':
                 self.margin = [int(value[0]), int(value[1]), int(value[2]), int(value[3])]
 
-            elif key[0] == 'id':
-                self.id = value[0]
             elif key[0] == 'name':
                 self.name = value[0]
+            elif key[0] == 'unicode_name':
+                self.unicode_name = value[0]
             elif key[0] == 'type':
                 self.type = value[0]
             elif key[0] == 'craftman' or key[0] == 'craftmanw':
@@ -187,10 +218,9 @@ class Balloon:
             else:
                 self._IgnoreParams(keys, values)
         pass  # exit for
-        self.isInitialized = True
 
     def _load_stylesheet(self):
-        stylesheet_path = os.path.join(self.balloonpath, 'stylesheet.txt')
+        stylesheet_path = os.path.join(self.resource_path, 'stylesheet.txt')
         if not os.path.exists(stylesheet_path): return
 
         charset = kikka.helper.checkEncoding(stylesheet_path)

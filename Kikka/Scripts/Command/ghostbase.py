@@ -11,13 +11,13 @@ from PyQt5.QtWidgets import QActionGroup
 
 import kikka
 from shellwindow import ShellWindow
-from dialogwindow import Dialog
+from dialogwindow import DialogWindow
 from kikka_menu import MenuStyle, Menu
 from soul import Soul
 
 class GhostBase:
-    def __init__(self, gid=-1, name=''):
-        self.gid = gid if gid != -1 else kikka.core.newGhostID()
+    def __init__(self, ghost_id=-1, name=''):
+        self.ID = ghost_id if ghost_id != -1 else kikka.core.newGhostID()
         self.name = name
         self.shell = None
         self.balloon = None
@@ -25,7 +25,6 @@ class GhostBase:
         self._souls = {}
         self._shell_image = {}
         self._balloon_image = {}
-
 
         self.eventlist = {}
         self.animation_list = {}
@@ -40,9 +39,12 @@ class GhostBase:
         self._menustyle = None
         self._clothes = {}
 
+        self.init()
+
+    def init(self):
         kikka.memory.createTable(str('ghost_' + self.name))
-        self.setShell(self.memoryRead('CurrentShellID', 0))
-        self.setBalloon(self.memoryRead('CurrentBalloonID', 0))
+        self.setShell(self.memoryRead('CurrentShellName', ''))
+        self.setBalloon(self.memoryRead('CurrentBalloonName', ''))
 
     def show(self):
         for soul in self._souls.values():
@@ -52,44 +54,48 @@ class GhostBase:
         for soul in self._souls.values():
             soul.hide()
 
-    def showMenu(self, winid, pos):
-        if winid in self._souls.keys():
-            self._souls[winid].showMenu(pos)
+    def showMenu(self, soul_id, pos):
+        if soul_id in self._souls.keys():
+            self._souls[soul_id].showMenu(pos)
         pass
 
-    def addWindow(self, winid, surfaceID=0):
-        self._souls[winid] = Soul(self, winid, surfaceID)
+    def addWindow(self, soul_id, surface_id=0):
+        self._souls[soul_id] = Soul(self, soul_id, surface_id)
+        return self._souls[soul_id].getShellWindow()
 
-        return self._souls[winid].getShellWindow()
-
-    def getShellWindow(self, winid):
-        if winid in self._souls.keys():
-            return self._souls[winid].getShellWindow()
+    def getShellWindow(self, soul_id):
+        if soul_id in self._souls.keys():
+            return self._souls[soul_id].getShellWindow()
         else:
             return None
 
-    def getDialog(self, winid):
-        if winid in self._souls.keys():
-            return self._souls[winid].getDialog()
+    def getDialog(self, soul_id):
+        if soul_id in self._souls.keys():
+            return self._souls[soul_id].getDialog()
         else:
             return None
 
-    def changeShell(self, shellID):
+    def changeShell(self, shellname):
         self.hide()
-        self.setShell(shellID)
+        self.setShell(shellname)
         self.show()
 
-    def setShell(self, shellID):
-        if self.shell is not None and self.shell.id == shellID:
+    def setShell(self, shellname):
+        if self.shell is not None and self.shell.name == shellname:
             return
 
-        self.shell = kikka.shell.getShell(shellID)
+        self.shell = kikka.shell.getShell(shellname)
+        if self.shell is None:
+            self.shell = kikka.shell.getShellByIndex(0)
+            if self.shell is None:
+                raise ValueError("setShell: load defalut shell fail.")
+
         self.shell.load()
         self._menustyle = MenuStyle(self.shell.shellmenustyle)
 
         self._shell_image = {}
         for filename in self.shell.pnglist:
-            p = os.path.join(self.shell.shellpath, filename)
+            p = os.path.join(self.shell.resource_path, filename)
             if p == self.shell.shellmenustyle.background_image \
                     or p == self.shell.shellmenustyle.foreground_image \
                     or p == self.shell.shellmenustyle.sidebar_image:
@@ -99,50 +105,56 @@ class GhostBase:
         for sid in self._souls.keys():
             self.setSurface(sid)
             self.updateClothesMenu(sid)
-        self.memoryWrite('CurrentShellID', shellID)
+        self.memoryWrite('CurrentShellName', self.shell.name)
 
     def getShell(self):
         return self.shell
 
-    def setBalloon(self, balloowinid):
-        self.balloon = kikka.balloon.getBalloon(balloowinid)
+    def setBalloon(self, name):
+        self.balloon = kikka.balloon.getBalloon(name)
+        if self.balloon is None:
+            self.balloon = kikka.balloon.getBalloonByIndex(0)
+            if self.balloon is None:
+                raise ValueError("setBalloon: load defalut balloon fail.")
+
         self.balloon.load()
 
-        for parent, dirnames, filenames in os.walk(self.balloon.balloonpath):
+        for parent, dirnames, filenames in os.walk(self.balloon.resource_path):
             for filename in filenames:
                 if filename[len(filename) - 4:] == '.png':
-                    p = os.path.join(self.balloon.balloonpath, filename)
+                    p = os.path.join(self.balloon.resource_path, filename)
                     self._balloon_image[filename] = kikka.helper.getImage(p)
         self._balloon_image_cache = self._balloon_image['background.png']
 
         for soul in self._souls.values():
             soul.setBalloon(self.balloon)
 
-        # for i in range(len(self._dialogs)):
-        #     self._dialogs[i].setBalloon(self.balloon)
-        #     self._dialogs[i].repaint()
-        self.memoryWrite('CurrentBalloonID', balloowinid)
+        self.memoryWrite('CurrentBalloonName', self.balloon.name)
 
     def getBalloon(self):
         return self.balloon
 
-    def setMenu(self, winid, menu):
-        if winid in self._souls.keys():
-            self._souls[winid].setMenu(menu)
+    def setMenu(self, soul_id, menu):
+        if soul_id in self._souls.keys():
+            self._souls[soul_id].setMenu(menu)
 
-    def getMenu(self, winid=0) :
-        if winid in self._souls.keys():
-            return self._souls[winid].getMenu()
+    def getMenu(self, soul_id=0) :
+        if soul_id in self._souls.keys():
+            return self._souls[soul_id].getMenu()
         else:
             return None
 
     # ###################################################################################
 
-    def setSurface(self, winid, surfaceID=-1):
-        if winid in self._souls.keys():
-            self._souls[winid].setSurface(surfaceID)
+    def setSurface(self, soul_id, surface_id=-1):
+        if soul_id in self._souls.keys():
+            self._souls[soul_id].setSurface(surface_id)
 
-    def getBalloonImage(self, size: QSize, flip=False, winid=-1):
+    def getBalloonImage(self, size: QSize, flip=False, soul_id=-1):
+        if self.balloon is None:
+            logging.warning("getBalloonImage: balloon is None")
+            return kikka.helper.getDefaultImage()
+
         drect = []
         # calculate destination rect
         if len(self.balloon.clipW) == 3:
@@ -183,7 +195,6 @@ class GhostBase:
                 if y > 0: pt.setY(drect[y-1][0].y() + dh[y-1])
                 sz = QSize(dw[x], dh[y])
                 dr.append(QRect(pt, sz))
-                pass
             drect.append(dr)
         pass  # exit for
 
@@ -228,9 +239,9 @@ class GhostBase:
             painter.setPen(Qt.green)
             painter.drawRect(QRect(0, 0, img.width() - 1, img.height() - 1))
             painter.drawText(3, 12, "DialogWindow")
-            painter.drawText(3, 24, "Ghost: %d" % self.gid)
+            painter.drawText(3, 24, "Ghost: %d" % self.ID)
             painter.drawText(3, 36, "Name: %s" % self.name)
-            painter.drawText(3, 48, "winid: %d" % winid)
+            painter.drawText(3, 48, "soul_id: %d" % soul_id)
         return img
 
     def getMenuStyle(self):
@@ -254,14 +265,14 @@ class GhostBase:
 
     # #####################################################################################
 
-    def memoryRead(self, key, default, soulID=0):
-        return kikka.memory.read(str('ghost_' + self.name), key, default, soulID)
+    def memoryRead(self, key, default, soul_id=0):
+        return kikka.memory.read(str('ghost_' + self.name), key, default, soul_id)
 
-    def memoryWrite(self, key, value, soulID=0):
-        kikka.memory.write(str('ghost_' + self.name), key, value, soulID)
+    def memoryWrite(self, key, value, soul_id=0):
+        kikka.memory.write(str('ghost_' + self.name), key, value, soul_id)
 
     def event_selector(self, event, tag, **kwargs):
-        if 'gid' not in kwargs: kwargs['gid'] = self.gid
+        if 'gid' not in kwargs: kwargs['gid'] = self.ID
 
         e = self.getEventList()
         if event in e and tag in e[event]:
@@ -270,7 +281,7 @@ class GhostBase:
     def getEventList(self):
         return self.eventlist
 
-    def updateClothesMenu(self, winid):
-        if winid in self._souls.keys():
-            self._souls[winid].updateClothesMenu()
+    def updateClothesMenu(self, soul_id):
+        if soul_id in self._souls.keys():
+            self._souls[soul_id].updateClothesMenu()
 

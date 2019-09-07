@@ -66,8 +66,8 @@ class KikkaCore:
         self.start()
 
     def addGhost(self, ghost):
-        self._ghosts[ghost.gid] = ghost
-        return ghost.gid
+        self._ghosts[ghost.ID] = ghost
+        return ghost.ID
 
     def getGhost(self, gid):
         if gid in self._ghosts:
@@ -82,13 +82,13 @@ class KikkaCore:
             id = random.randint()
         return id
 
-    def setGhostSurface(self, gid, nid, surfaceID):
-        if gid in self._ghosts:
-            self._ghosts[gid].setSurface(nid, surfaceID)
+    def setGhostSurface(self, ghost_id, soul_id, surface_id):
+        if ghost_id in self._ghosts:
+            self._ghosts[ghost_id].setSurface(soul_id, surface_id)
 
-    def setGhostShell(self, gid, shellID):
-        if gid in self._ghosts:
-            self._ghosts[gid].setShell(shellID)
+    def setGhostShell(self, ghost_id, shell_id):
+        if ghost_id in self._ghosts:
+            self._ghosts[ghost_id].setShell(shell_id)
 
     def start(self):
         self._lasttime = time.clock()

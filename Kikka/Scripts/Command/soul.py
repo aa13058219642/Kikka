@@ -10,7 +10,7 @@ from PyQt5.QtWidgets import QActionGroup
 
 import kikka
 from shellwindow import ShellWindow
-from dialogwindow import Dialog
+from dialogwindow import DialogWindow
 from kikka_const import WindowConst
 
 
@@ -46,7 +46,7 @@ class Soul:
 
     def init(self):
         self._shell_window = ShellWindow(self, self.ID)
-        self._dialog_window = Dialog(self, self.ID)
+        self._dialog_window = DialogWindow(self, self.ID)
 
         if self.ID == 0:
             self._menu = kikka.menu.createSoulMainMenu(self._ghost)
@@ -123,7 +123,7 @@ class Soul:
                     option = bindoption[bindgroup.type]
                     if option == 'multiple':
                         group[bindgroup.type].setExclusive(False)
-                    logging.info("%s %s" % (bindgroup.type, option))
+                    # logging.info("%s %s" % (bindgroup.type, option))
         pass
 
         for v in clothesmenu.values():
@@ -208,7 +208,7 @@ class Soul:
         shell = self._ghost.getShell()
         if surfaceID in shell.alias.keys():
             surfaceID = random.choice(shell.alias[surfaceID])
-        logging.info("setSurface %d", surfaceID)
+        logging.info("setSurface: %d", surfaceID)
         surface = shell.getSurface(surfaceID)
         if surface is None:
             logging.warning("setSurfaces: surfaceID: %d NOT exist" % surfaceID)

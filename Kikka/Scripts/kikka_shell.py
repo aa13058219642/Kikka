@@ -1,9 +1,9 @@
 # coding=utf-8
 import os
 import re
-import logging
-import random
 import time
+import random
+import logging
 import collections
 from enum import Enum
 from collections import OrderedDict
@@ -28,7 +28,7 @@ class KikkaShell:
         return KikkaShell._instance
 
     def _init(self):
-        self._shells = []
+        self._shells = {}
         self.shelldir = ''
 
     def loadShell(self, shelldict, shellpath):
@@ -38,15 +38,15 @@ class KikkaShell:
 
         isExist = False
         for name, s in shelldict.items():
-            if shell.id == s.id and shell.name == name:
+            if shell.name == name and shell.unicode_name == s.unicode_name:
                 isExist = True
                 break
 
         if not isExist:
-            logging.info("scan shell: %s", shell.name)
+            logging.info("scan shell: %s", shell.unicode_name)
             shelldict[shell.name] = shell
         else:
-            logging.warning("load fail. shell name exist: %s", shell.name)
+            logging.warning("load fail. shell exist: %s", shell.unicode_name)
         pass
 
     def scanShell(self, shelldir):
@@ -61,27 +61,40 @@ class KikkaShell:
 
         shellordereddict = collections.OrderedDict(sorted(shelldict.items(), key=lambda t: t[0]))
         for name, shell in shellordereddict.items():
-            self._shells.append(shell)
+            self._shells[name] = shell
 
         logging.info("shell scan finish: count %d", len(self._shells))
 
-    def getShell(self, index):
-        if 0 <= index < len(self._shells):
-            shell = self._shells[index]
-            return shell
+    def getShell(self, shellname):
+        if shellname in self._shells:
+            return self._shells[shellname]
         else:
-            logging.error("getShell: index NOT in shell list")
-            raise ValueError
+            logging.warning("getShell: '%s' NOT in shell list"%shellname)
+            return None
+        pass
+
+    def getShellByIndex(self, index):
+        if 0 <= index < len(self._shells):
+            for shell in self._shells.values():
+                if index>0:
+                    index -= 1
+                    continue
+                else:
+                    return shell
+        else:
+            logging.warning("getShell: index=%d NOT in shell list"%index)
+            return None
+        pass
 
     def getShellCount(self):
         return len(self._shells)
 
 
 class Shell:
-    def __init__(self, shellpath):
-        self.shellpath = shellpath  # root path of this shell
-        self.id = ''
+    def __init__(self, resource_path):
+        self.resource_path = resource_path  # root path of this shell
         self.name = ''
+        self.unicode_name = ''
         self.type = ''
         self.author = AuthorInfo()
         self.version = 0
@@ -100,18 +113,31 @@ class Shell:
         self._surfaces = {}
         self._updatetime = 0
 
+        self.init()
+
+    def init(self):
         # path check
-        if os.path.exists(shellpath):
-            descript_map = self._open_descript()
-            if descript_map is not None:
-                self._load_descript(descript_map)
-                self._loadPNGindex()
-                self.isInitialized = True
-        pass
+        if not os.path.exists(self.resource_path):
+            return
+
+        descript_path = os.path.join(self.resource_path, 'descript.txt')
+        if not os.path.exists(descript_path):
+            return
+
+        descript_map = self._open_descript(descript_path)
+        if descript_map is None:
+            return
+
+        self._load_descript(descript_map)
+        self._loadPNGindex()
+        if self.name == '':
+            self.name = os.path.basename(self.resource_path)
+
+        self.isInitialized = True
 
     def load(self):
         if self.isLoaded is False:
-            logging.info("load shell: %s", self.name)
+            logging.info("load shell: %s", self.unicode_name)
             self._load_surfaces()
             self._sort_data()
             self._updatetime = time.clock()
@@ -119,21 +145,17 @@ class Shell:
         pass
 
     def _loadPNGindex(self):
-        for parent, dirnames, filenames in os.walk(self.shellpath):
+        for parent, dirnames, filenames in os.walk(self.resource_path):
             for filename in filenames:
                 if filename[len(filename) - 4:] == '.png':
                     self.pnglist.append(filename)
         pass
 
-    def _open_descript(self):
-        descript_path = os.path.join(self.shellpath, 'descript.txt')
-        if not os.path.exists(descript_path):
-            return None
-
+    def _open_descript(self, filepath):
         map = {}
-        charset = kikka.helper.checkEncoding(descript_path)
+        charset = kikka.helper.checkEncoding(filepath)
 
-        f = open(descript_path, 'r', encoding=charset)
+        f = open(filepath, 'r', encoding=charset)
         for line in f:
             line = line.replace("\n", "").replace("\r", "")
             line = line.strip(' ')
@@ -284,7 +306,7 @@ class Shell:
                         else:
                             self._IgnoreParams(keys, values)
                     elif key[2] == 'bitmap' and key[3] == 'filename':
-                        self.shellmenustyle.background_image = os.path.join(self.shellpath, value[0])
+                        self.shellmenustyle.background_image = os.path.join(self.resource_path, value[0])
                     elif key[2] == 'alignment':
                         self.shellmenustyle.background_alignment = value[0]
                     else:
@@ -300,7 +322,7 @@ class Shell:
                         else:
                             self._IgnoreParams(keys, values)
                     elif key[2] == 'bitmap' and key[3] == 'filename':
-                        self.shellmenustyle.foreground_image = os.path.join(self.shellpath, value[0])
+                        self.shellmenustyle.foreground_image = os.path.join(self.resource_path, value[0])
                     elif key[2] == 'alignment':
                         self.shellmenustyle.foreground_alignment = value[0]
                     else:
@@ -327,7 +349,7 @@ class Shell:
                             self._IgnoreParams(keys, values)
                 elif key[1] == 'sidebar':
                     if key[2] == 'bitmap' and key[3] == 'filename':
-                        self.shellmenustyle.sidebar_image = os.path.join(self.shellpath, value[0])
+                        self.shellmenustyle.sidebar_image = os.path.join(self.resource_path, value[0])
                     elif key[2] == 'alignment':
                         self.shellmenustyle.sidebar_alignment = value[0]
                     else:
@@ -390,9 +412,9 @@ class Shell:
 
 
             elif key[0] == 'id':
-                self.id = value[0]
-            elif key[0] == 'name':
                 self.name = value[0]
+            elif key[0] == 'name':
+                self.unicode_name = value[0]
             elif key[0] == 'type':
                 self.type = value[0]
             elif key[0] == 'craftman' or key[0] == 'craftmanw':
@@ -418,13 +440,13 @@ class Shell:
         pass
 
     def _load_surfaces(self):
-        surfaces_path = os.path.join(self.shellpath, 'surfaces.txt')
+        surfaces_path = os.path.join(self.resource_path, 'surfaces.txt')
         if not os.path.exists(surfaces_path): return
         surfaces_map = self._open_surfaces(surfaces_path)
 
         i = 2
         while 1:
-            surfaces_path = os.path.join(self.shellpath, 'surfaces%d.txt' % i)
+            surfaces_path = os.path.join(self.resource_path, 'surfaces%d.txt' % i)
             if not os.path.exists(surfaces_path):
                 break
             surfaces_map = self._open_surfaces(surfaces_path, surfaces_map)

@@ -42,7 +42,7 @@ class KikkaApp:
         # start
 
         kikka.shell.scanShell(kikka.helper.getPath(kikka.helper.PATH_SHELL))
-        kikka.balloon.loadAllBalloon(kikka.helper.getPath(kikka.helper.PATH_BALLOON))
+        kikka.balloon.scanBalloon(kikka.helper.getPath(kikka.helper.PATH_BALLOON))
 
         kikka.core.start()
         kikka.app.start()
