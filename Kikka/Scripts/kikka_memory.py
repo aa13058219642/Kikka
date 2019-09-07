@@ -79,7 +79,7 @@ class DeepMemory:
     def createTable(self, table_name):
         try:
             name = str('T_' + table_name).upper()
-            sql = "create table if not exists %s(key text primary key not null, value text, soul integer)"%name
+            sql = "create table if not exists %s(key text not null, soul integer not null, value text, primary key (key, soul))"%name
             self._sql_worker.execute(sql)
         except ValueError:
             logging.warning('read table memory fail: key[%s]' % table_name)
@@ -108,10 +108,10 @@ class DeepMemory:
     def write(self, table_name, key, value, soul=0):
         try:
             name = str('T_' + table_name).upper()
-            sql = "insert or replace into %s(key, value, soul) values(?, ?, ?)" % name
+            sql = "insert or replace into %s(key, soul, value) values(?, ?, ?)" % name
 
             value = str(value) if isinstance(value, (list, dict)) is False else json.dumps(value)
-            self._sql_worker.execute(sql, (key, value, soul))
+            self._sql_worker.execute(sql, (key, soul, value))
         except Exception:
             logging.warning('write memory fail: key[%s]' % key)
 
