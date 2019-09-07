@@ -11,7 +11,7 @@ from collections import OrderedDict
 from PyQt5.QtCore import QPoint, QRect
 
 import kikka
-from kikka_const import ShellConst
+from kikka_const import WindowConst
 
 class KikkaShell:
     _instance = None
@@ -504,9 +504,9 @@ class Surface:
         self.CollisionBoxes = {}
         self.rect = QRect()
 
-        self.basepos = QPoint(ShellConst.UNSET)
-        self.surfaceCenter = QPoint(ShellConst.UNSET)
-        self.kinokoCenter = QPoint(ShellConst.UNSET)
+        self.basepos = QPoint(WindowConst.UNSET)
+        self.surfaceCenter = QPoint(WindowConst.UNSET)
+        self.kinokoCenter = QPoint(WindowConst.UNSET)
 
         self._load_surface(values)
 

@@ -20,9 +20,9 @@ class Dialog(QWidget):
         # self.setMouseTracking(True)
         # self.setAcceptDrops(True)
         self._soul = soul
-        self._ghost = self._soul.getGhost()
-        self._shellwindow = self._ghost.getShellWindow(nid)
         self.nid = nid
+        self._ghost = self._soul.getGhost()
+        self._shellwindow = self._soul.getShellWindow()
         self._framelessWindowHint = True
         self.isFlip = False
         self.setWindowTitle(self._ghost.name)
@@ -31,6 +31,25 @@ class Dialog(QWidget):
         self._bgImage = None
         self._bgPixmap = None
         self._bgMask = None
+        self._rect = None
+
+        self.init()
+
+    def init(self):
+        rect = self._ghost.memoryRead('DialogRect', [], self.nid)
+        if len(rect)>0:
+            self._rect = QRect(rect[0], rect[1], rect[2], rect[3])
+            self.resize(self._rect.size())
+        else:
+            p_pos = self._shellwindow.pos()
+            p_size = self._shellwindow.size()
+            self.resize(kikka.const.WindowConst.DialogWindowDefaultSize)
+            x = int(p_pos.x() - self.size().width())
+            y = int(p_pos.y() + p_size.height() / 2 - self.size().height())
+
+            self._rect = QRect(QPoint(x, y), self.size())
+            rectdata = [x - p_pos.x(), y - p_pos.y(), self.size().width(), self.size().height()]
+            self._ghost.memoryWrite('DialogRect', rectdata, self.nid)
         pass
 
     def setFramelessWindowHint(self, boolean):
@@ -42,19 +61,17 @@ class Dialog(QWidget):
             self.setEnabled(False)
 
             self.show()
-            offset = QPoint(self.geometry().x() - self.pos().x(), self.geometry().y() - self.pos().y())
-            self.move(self.pos().x() - offset.x(), self.pos().y() - offset.y())
+            self.move(2*self.pos().x() - self.geometry().x(), 2*self.pos().y() - self.geometry().y())
             self.update()
             self.activateWindow()
         else:
-            sz = QSize(self.geometry().size())
-            p_pos = self._ghost.getShellWindow(self.nid).pos()
-            geometry = QPoint(self.geometry().x(), self.geometry().y())
-            pos = QPoint(self.pos().x(), self.pos().y())
-            self._ghost.memoryWrite('DialogRect',
-                                    [geometry.x() - p_pos.x(), geometry.y() - p_pos.y(), sz.width(), sz.height()],
-                                    self.nid)
+            self._rect.setX(self.geometry().x() - self._shellwindow.pos().x())
+            self._rect.setY(self.geometry().y() - self._shellwindow.pos().y())
+            self._rect.setSize(self.geometry().size())
+            rectdata = [self._rect.x(), self._rect.y(), self._rect.width(), self._rect.height()]
+            self._ghost.memoryWrite('DialogRect', rectdata, self.nid)
 
+            pos = QPoint(self.pos().x(), self.pos().y())
             self.setWindowFlag(Qt.FramelessWindowHint, True)
             self.setWindowOpacity(1)
             self.setEnabled(True)
@@ -66,42 +83,30 @@ class Dialog(QWidget):
         if self._framelessWindowHint is False:
             return
 
-        shellwindow = self._ghost.getShellWindow(self.nid)
-        p_pos = shellwindow.pos()
-        p_size = shellwindow.size()
-        rect = self._ghost.memoryRead('DialogRect', [], self.nid)
-
-        if len(rect) > 0:
-            x = rect[0] + p_pos.x()
-            y = rect[1] + p_pos.y()
-            self.resize(rect[2], rect[3])
-        else:
-            x = int(p_pos.x() - self.size().width())
-            y = int(p_pos.y() + p_size.height() / 2 - self.size().height())
-            self.resize(200, 220)
-            self._ghost.memoryWrite('DialogRect',
-                                    [x - p_pos.x(), y - p_pos.y(), self.size().width(), self.size().height()],
-                                    self.nid)
-        pass
+        p_pos = self._shellwindow.pos()
+        p_size = self._shellwindow.size()
+        new_x = self._rect.x() + p_pos.x()
+        new_y = self._rect.y() + p_pos.y()
+        self.resize(self._rect.size())
 
         flip = False
         sw, sh = kikka.helper.getScreenResolution()
-        if x + self.width() > sw or x < 0:
+        if new_x + self.width() > sw or new_x < 0:
             flip = True
-            x = int(p_pos.x()*2 + p_size.width() - x - self.width())
-            if x + self.width() > sw:
-                x = p_pos.x() - self.width()
-            if x < 0:
-                x = p_pos.x() + p_size.width()
+            new_x = int(p_pos.x()*2 + p_size.width() - new_x - self.width())
+            if new_x + self.width() > sw:
+                new_x = p_pos.x() - self.width()
+            if new_x < 0:
+                new_x = p_pos.x() + p_size.width()
         if self.isFlip != flip:
             self.isFlip = flip
             balloon = self._ghost.getBalloon()
             if balloon is not None:
-                self._bgImage = self._ghost.getBalloonImage(self.size(), self.isFlip, self.nid)
+                self._bgImage = self._ghost.getBalloonImage(self._rect.size(), self.isFlip, self.nid)
                 self._bgPixmap = QPixmap().fromImage(self._bgImage, Qt.AutoColor)
                 self._bgMask = self._bgPixmap.mask()
 
-        super().move(x, y)
+        super().move(new_x, new_y)
         pass
 
     def show(self):

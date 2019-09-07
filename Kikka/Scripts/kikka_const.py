@@ -2,15 +2,19 @@
 
 from PyQt5.QtCore import QPoint, QSize
 
+KikkaMemoryFileName = 'Kikka.memory'
 
-class ShellConst:
+class WindowConst:
     UNSET = QPoint(0x7FFFFFFF, 0x7FFFFFFF)
-    ImageWidth = 500
-    ImageHeight = 500
-    ImageBaseX = ImageWidth / 2
-    ImageBaseY = ImageHeight / 2
-    ImageOffset = QPoint(ImageBaseX, ImageBaseY)
-    ImageSize = QSize(ImageWidth, ImageHeight)
+    ShellWindowDefaultWidth = 500
+    ShellWindowDefaultHeight = 500
+    ShellWindowDefaultCenter = QPoint(ShellWindowDefaultWidth / 2, ShellWindowDefaultHeight)
+    ShellWindowDefaultSize = QSize(ShellWindowDefaultWidth, ShellWindowDefaultHeight)
+
+    DialogWindowDefaultWidth = 200
+    DialogWindowDefaultHeight = 220
+    DialogWindowDefaultSize = QSize(DialogWindowDefaultWidth, DialogWindowDefaultHeight)
+
 
 class SurfaceEnum():
     # surface const

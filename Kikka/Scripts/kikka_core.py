@@ -47,11 +47,10 @@ class KikkaCore:
         self.signal = KikkaCoreSignal()
         self.signal.show.connect(self.show)
         self.signal.hide.connect(self.hide)
-
+        kikka.memory.createTable("kikka_core")
         pass
 
     def getAppState(self):
-
         return self._app_state
 
     def hide(self):

@@ -8,7 +8,7 @@ import ctypes
 
 from PyQt5.QtGui import QPainter, QIcon
 from PyQt5.QtCore import Qt, QTimer
-from PyQt5.QtWidgets import QApplication, QSystemTrayIcon,QWidget
+from PyQt5.QtWidgets import QApplication, QSystemTrayIcon, QWidget
 
 import kikka
 
@@ -35,11 +35,11 @@ class KikkaApp:
 
         logging.info("")
         logging.info("Hey~ Kikka here %s" % ("-" * 40))
+        kikka.memory.awake(kikka.const.KikkaMemoryFileName)
 
     def _load(self):
         time.sleep(1)
         # start
-        kikka.memory.awake()
 
         kikka.shell.scanShell(kikka.helper.getPath(kikka.helper.PATH_SHELL))
         kikka.balloon.loadAllBalloon(kikka.helper.getPath(kikka.helper.PATH_BALLOON))
@@ -79,7 +79,6 @@ class KikkaApp:
             t1 = threading.Thread(target=self._guard)
             t1.setDaemon(True)
             t1.start()
-
         except Exception:
             logging.exception("error:create guard thread fail")
 

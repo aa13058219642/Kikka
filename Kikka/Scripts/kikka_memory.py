@@ -14,6 +14,7 @@ from struct import pack
 from Crypto.Cipher import AES
 
 import kikka
+import kikka_const
 
 
 class KikkaMemory:
@@ -31,94 +32,66 @@ class KikkaMemory:
         return KikkaMemory._instance
 
     def _init(self):
-        pass
+        self._deepmemory = None
+        self._filepath = None
 
-    def awake(self):
-        self._filepath = 'Kikka.memory'
-        memoryEsists = os.path.exists(self._filepath)
-        self._deepmemory = DeepMemory(sqlite3.connect(self._filepath))
+    def awake(self, filemane):
+        if self._deepmemory is not None:
+            self._deepmemory.close()
 
-        if not memoryEsists:
+        self._filepath = filemane
+        memoryEsists = os.path.exists(filemane)
+        self._deepmemory = DeepMemory(filemane)
+        if memoryEsists:
             logging.info("awake kikka memory")
             self._deepmemory.awake()
         logging.info("linked kikka memory")
 
-    def read(self, key, default=''):
-        db = DeepMemory(sqlite3.connect(self._filepath))
-        return db.read(key, default, DeepMemory.TYPE_NORMAL)
+    def createTable(self, table_name):
+        self._deepmemory.createTable(table_name)
 
-    def readDeepMemory(self, key, default):
-        db = DeepMemory(sqlite3.connect(self._filepath))
-        return db.read(key, default, DeepMemory.TYPE_DEEP)
+    def read(self, table_name, key, default='', soulID=0):
+        logging.debug("kikka memory read %s"%key)
+        return self._deepmemory.read(table_name, key, default, soulID)
 
-    def readInitialMemory(self, key, default):
-        db = DeepMemory(sqlite3.connect(self._filepath))
-        return db.read(key, default, DeepMemory.TYPE_INITIAL)
+    def write(self, table_name, key, value, soulID=0):
+        logging.debug("kikka memory write %s"%key)
+        return self._deepmemory.write(table_name, key, value, soulID)
 
-    def write(self, key, value):
-        db = DeepMemory(sqlite3.connect(self._filepath))
-        return db.write(key, value, DeepMemory.TYPE_NORMAL)
-
-    def writeDeepMemory(self, key, value):
-        db = DeepMemory(sqlite3.connect(self._filepath))
-        return db.write(key, value, DeepMemory.TYPE_DEEP)
-
-    def writeInitialMemory(self, key, value, _key):
-        db = DeepMemory(sqlite3.connect(self._filepath))
-        return db.write(key, value, DeepMemory.TYPE_INITIAL, _key)
-
+    def execute(self, query, values=None):
+        return self._deepmemory.execute(query, values)
 
 class DeepMemory:
-    TYPE_NORMAL = 0
-    TYPE_DEEP = 1
-    TYPE_INITIAL = 2
-
-    def __init__(self, conn):
-        self._name = 'Kikka'
-        self._conn = conn
-        self._cursor = conn.cursor()
-
-        # Memory key ID
-        self._key0 = 228671358270678769733151434401261
-        self._key = 609416633504213051421056566850573
-        self._dkey = nextprime(int(kikka.helper.getShortMD5(self._name)[:-2], 16))
+    def __init__(self, filename):
+        self._sql_worker = Sqlite3Worker(filename)
 
     def __del__(self):
-        self._cursor.close()
-        self._conn.close()
+        self.close()
 
     def awake(self):
-        sql = 'create table if not exists T_DICT(__KEY__ text primary key not null, __TYPE__ integer, __VALUE__ text)'
-        self._cursor.execute(sql)
+        pass
 
-        InitialMemory = '''
-        ///6f0HWMetmDuhxXP7Mkklt06ofrDunx2B7g0pbD5tzkQUKMkRGMkNpTqKwld2WIcdm8kTS+UwVaI8h
-        D/P1/aYPCqgBot06hFYatFXvGi294jcAaPWAXzgWsbrQuf5xOzWw+CkB5yZwsJkviunACws5sgGXwcDA
-        IhlqChphfZH3EVJ6EKYa8GNe/VDofpzDL5i1/fwFDzomUXPdREWr+TSaznwZP6G86CvejhsckFQN2WiS
-        86ZyBr1HQ6VSgzmMoNEgIs9Y2nlW73kZtxWrCQoCMep7L27Ip+XLTm6cwvU=
-        '''
-        js = json.loads(self.decrypt(InitialMemory, True))
-        parameters = [(k, v[0], v[1]) for k, v in js.items()]
-        sql = 'insert into T_DICT(__KEY__, __TYPE__, __VALUE__) values(?, ?, ?)'
-        self._conn.executemany(sql, parameters)
-        self._conn.commit()
+    def close(self):
+        if self._sql_worker is not None:
+            self._sql_worker.close()
+            self._sql_worker = None
 
-    def read(self, key, default, readtype):
+    def createTable(self, table_name):
         try:
-            value = default
-            if readtype == self.TYPE_DEEP: key = "_%s_" % key
-            elif readtype == self.TYPE_INITIAL: key = "__%s__" % key
+            name = str('T_' + table_name).upper()
+            sql = "create table if not exists %s(key text primary key not null, value text, soul integer)"%name
+            self._sql_worker.execute(sql)
+        except ValueError:
+            logging.warning('read table memory fail: key[%s]' % table_name)
 
-            sql = 'select __VALUE__, __TYPE__ from T_DICT where __KEY__=?'
-            sql_result = self._cursor.execute(sql, [key])
-            f = sql_result.fetchall()
-            if len(f) != 0:
-                if readtype != f[0][1]:
-                    logging.warning('read error: Permission denied')
-                    return default
-                if readtype == self.TYPE_DEEP: value = self.decrypt(f[0][0], False)
-                elif readtype == self.TYPE_INITIAL: value = self.decrypt(f[0][0], True)
-                else: value = f[0][0]
+    def read(self, table_name, key, default, soul=0):
+        try:
+            name = str('T_' + table_name).upper()
+            sql = "select value from %s where key=? and soul=?" % name
+
+            result = self._sql_worker.execute(sql, (key, soul))
+            if len(result) != 0:
+                value = result[0][0]
             else:
                 return default
 
@@ -128,142 +101,207 @@ class DeepMemory:
             elif isinstance(default, list) is True: return json.loads(value)
             elif isinstance(default, dict) is True: return json.loads(value)
             else: return default
-
         except ValueError:
             logging.warning('read memory fail: key[%s]' % key)
             return default
 
-    def write(self, key, value, writetype, _key=''):
+    def write(self, table_name, key, value, soul=0):
         try:
+            name = str('T_' + table_name).upper()
+            sql = "insert or replace into %s(key, value, soul) values(?, ?, ?)" % name
+
             value = str(value) if isinstance(value, (list, dict)) is False else json.dumps(value)
-            if writetype == self.TYPE_NORMAL:
-                pass
-            elif writetype == self.TYPE_DEEP:
-                value = self.encrypt(value)
-                key = "_%s_" % key
-            elif writetype == self.TYPE_INITIAL:
-                value = self.encrypt(value, _key)
-                key = "__%s__" % key
-            else:
-                return
-
-            sql = 'select __VALUE__, __TYPE__ from T_DICT where __KEY__=?'
-            sql_result = self._cursor.execute(sql, [key])
-            f = sql_result.fetchall()
-            if len(f) != 0:
-                if writetype != f[0][1]:
-                    logging.warning('Permission denied')
-                    return
-                if value == f[0][1]:
-                    return
-
-            sql = 'insert or replace into T_DICT(__KEY__, __TYPE__, __VALUE__) values(?, ?, ?)'
-            self._cursor.execute(sql, [str(key), writetype, str(value)])
-            self._conn.commit()
+            self._sql_worker.execute(sql, (key, value, soul))
         except Exception:
             logging.warning('write memory fail: key[%s]' % key)
+
+    def execute(self, query, values=None):
+        return self._sql_worker.execute(query, values)
+
+
+# ###########################################################################################################
+# Copyright (c) 2014 Palantir Technologies
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+# THE SOFTWARE.
+#
+# """Thread safe sqlite3 interface."""
+#
+# __author__ = "Shawn Lee"
+# __email__ = "shawnl@palantir.com"
+# __license__ = "MIT"
+
+import logging
+import queue
+import sqlite3
+import threading
+import time
+import uuid
+
+class Sqlite3Worker(threading.Thread):
+    """Sqlite thread safe object.
+    Example:
+        from sqlite3worker import Sqlite3Worker
+        sql_worker = Sqlite3Worker("/tmp/test.sqlite")
+        sql_worker.execute(
+            "CREATE TABLE tester (timestamp DATETIME, uuid TEXT)")
+        sql_worker.execute(
+            "INSERT into tester values (?, ?)", ("2010-01-01 13:00:00", "bow"))
+        sql_worker.execute(
+            "INSERT into tester values (?, ?)", ("2011-02-02 14:14:14", "dog"))
+        sql_worker.execute("SELECT * from tester")
+        sql_worker.close()
+    """
+    def __init__(self, file_name, max_queue_size=100):
+        """Automatically starts the thread.
+        Args:
+            file_name: The name of the file.
+            max_queue_size: The max queries that will be queued.
+        """
+        threading.Thread.__init__(self)
+        self.daemon = True
+        self.sqlite3_conn = sqlite3.connect(file_name, check_same_thread=False, detect_types=sqlite3.PARSE_DECLTYPES)
+        self.sqlite3_cursor = self.sqlite3_conn.cursor()
+        self.sql_queue = queue.Queue(maxsize=max_queue_size)
+        self.results = {}
+        self.max_queue_size = max_queue_size
+        self.exit_set = False
+        # Token that is put into queue when close() is called.
+        self.exit_token = str(uuid.uuid4())
+        self.start()
+        self.thread_running = True
+
+    def run(self):
+        """Thread loop.
+        This is an infinite loop.  The iter method calls self.sql_queue.get()
+        which blocks if there are not values in the queue.  As soon as values
+        are placed into the queue the process will continue.
+        If many executes happen at once it will churn through them all before
+        calling commit() to speed things up by reducing the number of times
+        commit is called.
+        """
+        logging.debug("run: Thread started")
+        execute_count = 0
+        for token, query, values in iter(self.sql_queue.get, None):
+            logging.debug("sql_queue: %s", self.sql_queue.qsize())
+            if token != self.exit_token:
+                logging.debug("run: %s", query)
+                self.run_query(token, query, values)
+                execute_count += 1
+                # Let the executes build up a little before committing to disk
+                # to speed things up.
+                if self.sql_queue.empty() \
+                or execute_count == self.max_queue_size:
+                    logging.debug("run: commit")
+                    self.sqlite3_conn.commit()
+                    execute_count = 0
+            pass # exit if
+
+            # Only exit if the queue is empty. Otherwise keep getting
+            # through the queue until it's empty.
+            if self.exit_set and self.sql_queue.empty():
+                self.sqlite3_conn.commit()
+                self.sqlite3_conn.close()
+                self.thread_running = False
+                return
         pass
 
-    def encrypt(self, message, key=''):
-        e = self._dkey if key == '' else nextprime(int(kikka.helper.getShortMD5(key)[:-2], 16))
-        n = self._key if key == '' else self._key0
-
-        kl = self._byte_size(n)
-        k = random.randint(n//2, n)
-        encrypted = pow(k, e, n)
-        encrypted_msg1 = self._int2bytes((~encrypted) & 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF, kl)
-
-        m = str(k)
-        ak = m[:8*min(max(len(m)//8, 2), 4)].encode()
-        msg = self._pad(message, AES.block_size).encode()
-        aes = AES.new(ak, AES.MODE_CBC, encrypted_msg1[:AES.block_size])
-        encrypted_msg2 = aes.encrypt(msg)
-        b_msg = base64.b64encode(encrypted_msg1 + encrypted_msg2).decode()
-        return b_msg
-
-    def decrypt(self, message, isInitial):
-        n = self._key if isInitial is False else self._key0
-
-        message = base64.b64decode(message)
-        encrypted_msg1 = message[:16]
-        encrypted_msg2 = message[16:]
-        encrypted = (~int(binascii.hexlify(encrypted_msg1), 16)) & 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
-        k = pow(encrypted, self._dkey, n)
-
-        m = str(k)
-        ak = m[:8*min(max(len(m)//8, 2), 4)].encode()
-        aes = AES.new(ak, AES.MODE_CBC, encrypted_msg1[:AES.block_size])
-        msg = aes.decrypt(encrypted_msg2)
-        message = self._unpad(msg).decode()
-        return message
-
-    def _pad(self, s, blick_size):
-        return s + (blick_size - len(s) % blick_size) * chr(blick_size - len(s) % blick_size)
-
-    def _unpad(self, s):
-        return s[:-ord(s[len(s)-1:])]
-
-    def _byte_size(self, number):
-        if number == 0:
-            ret = 1
+    def run_query(self, token, query, values):
+        """Run a query.
+        Args:
+            token: A uuid object of the query you want returned.
+            query: A sql query with ? placeholders for values.
+            values: A tuple of values to replace "?" in query.
+        """
+        if query.lower().strip().startswith("select"):
+            try:
+                self.sqlite3_cursor.execute(query, values)
+                self.results[token] = self.sqlite3_cursor.fetchall()
+            except sqlite3.Error as err:
+                # Put the error into the output queue since a response
+                # is required.
+                self.results[token] = ("Query returned error: %s: %s: %s" % (query, values, err))
+                logging.error("Query returned error: %s: %s: %s", query, values, err)
+            pass
         else:
             try:
-                num = number.bit_length()
-            except AttributeError:
-                raise TypeError('bit_size(num) only supports integers, not %r' % type(number))
+                self.sqlite3_cursor.execute(query, values)
+            except sqlite3.Error as err:
+                logging.error(
+                    "Query returned error: %s: %s: %s", query, values, err)
+        pass
 
-            quanta, mod = divmod(num, 8)
-            if mod:
-                quanta += 1
-            ret = quanta
-        return ret
+    def close(self):
+        """Close down the thread and close the sqlite3 database file."""
+        self.exit_set = True
+        self.sql_queue.put((self.exit_token, "", ""), timeout=5)
+        # Sleep and check that the thread is done before returning.
+        while self.thread_running:
+            time.sleep(.01)  # Don't kill the CPU waiting.
 
-    def _int2bytes(self, number, fill_size=None, chunk_size=None):
-        if number < 0: raise ValueError("Number must be an unsigned integer: %d" % number)
-        if fill_size and chunk_size: raise ValueError("You can either fill or pad chunks, but not both")
+    @property
+    def queue_size(self):
+        """Return the queue size."""
+        return self.sql_queue.qsize()
 
-        # Ensure these are integers.
-        number & 1
-        raw_bytes = b''
+    def query_results(self, token):
+        """Get the query results for a specific token.
+        Args:
+            token: A uuid object of the query you want returned.
+        Returns:
+            Return the results of the query when it's executed by the thread.
+        """
+        delay = .001
+        while True:
+            if token in self.results:
+                return_val = self.results[token]
+                del self.results[token]
+                return return_val
+            # Double back on the delay to a max of 8 seconds.  This prevents
+            # a long lived select statement from trashing the CPU with this
+            # infinite loop as it's waiting for the query results.
+            logging.debug("Sleeping: %s %s", delay, token)
+            time.sleep(delay)
+            if delay < 8:
+                delay += delay
+        pass
 
-        # Pack the integer one machine word at a time into bytes.
-        num = number
-        word_bits, _, max_uint, pack_type = self._get_word_alignment(num)
-        pack_format = ">%s" % pack_type
-        while num > 0:
-            raw_bytes = pack(pack_format, num & max_uint) + raw_bytes
-            num >>= word_bits
-        return raw_bytes
-
-    def _get_word_alignment(self, num, force_arch=64, _machine_word_size=-1):
-        MAX_INT = sys.maxsize
-        MAX_INT64 = (1 << 63) - 1
-        MAX_INT32 = (1 << 31) - 1
-        MAX_INT16 = (1 << 15) - 1
-
-        # Determine the word size of the processor.
-        if _machine_word_size == -1:
-            if MAX_INT == MAX_INT64: _machine_word_size = 64  # 64-bit processor.
-            elif MAX_INT == MAX_INT32: _machine_word_size = 32  # 32-bit processor.
-            else: _machine_word_size = 64 # Else we just assume 64-bit processor keeping up with modern times.
-
-        max_uint64 = 0xffffffffffffffff
-        max_uint32 = 0xffffffff
-        max_uint16 = 0xffff
-        max_uint8 = 0xff
-
-        if force_arch == 64 and _machine_word_size >= 64 and num > max_uint32:
-            # 64-bit unsigned integer.
-            return 64, 8, max_uint64, "Q"
-        elif num > max_uint16:
-            # 32-bit unsigned integer
-            return 32, 4, max_uint32, "L"
-        elif num > max_uint8:
-            # 16-bit unsigned integer.
-            return 16, 2, max_uint16, "H"
+    def execute(self, query, values=None):
+        """Execute a query.
+        Args:
+            query: The sql string using ? for placeholders of dynamic values.
+            values: A tuple of values to be replaced into the ? of the query.
+        Returns:
+            If it's a select query it will return the results of the query.
+        """
+        if self.exit_set:
+            logging.debug("Exit set, not running: %s", query)
+            return "Exit Called"
+        logging.debug("execute: %s", query)
+        values = values or []
+        # A token to track this query with.
+        token = str(uuid.uuid4())
+        # If it's a select we queue it up with a token to mark the results
+        # into the output queue so we know what results are ours.
+        if query.lower().strip().startswith("select"):
+            self.sql_queue.put((token, query, values), timeout=5)
+            return self.query_results(token)
         else:
-            # 8-bit unsigned integer.
-            return 8, 1, max_uint8, "B"
+            self.sql_queue.put((token, query, values), timeout=5)
 
-
-
+    pass

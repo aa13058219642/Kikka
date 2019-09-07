@@ -11,11 +11,12 @@ import kikka_balloon
 import kikka_const
 
 # singletion classes
+const = kikka_const
 helper = kikka_helper.KikkaHelper.this()
-app = kikka_app.KikkaApp.this()
 memory = kikka_memory.KikkaMemory.this()
+app = kikka_app.KikkaApp.this()
 menu = kikka_menu.KikkaMenu.this()
 shell = kikka_shell.KikkaShell.this()
 core = kikka_core.KikkaCore.this()
 balloon = kikka_balloon.KikkaBalloon.this()
-const = kikka_const
+

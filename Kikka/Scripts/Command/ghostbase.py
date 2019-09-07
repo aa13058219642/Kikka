@@ -40,6 +40,7 @@ class GhostBase:
         self._menustyle = None
         self._clothes = {}
 
+        kikka.memory.createTable(str('ghost_' + self.name))
         self.setShell(self.memoryRead('CurrentShellID', 0))
         self.setBalloon(self.memoryRead('CurrentBalloonID', 0))
 
@@ -253,21 +254,11 @@ class GhostBase:
 
     # #####################################################################################
 
-    def memoryRead(self, key, default, winid=0):
-        key = '%s_%d_%d' % (key, self.gid, winid)
-        if kikka.core.isDebug:
-            value = kikka.memory.read(key, default)
-        else:
-            value = kikka.memory.readDeepMemory(key, default)
-        return value
+    def memoryRead(self, key, default, soulID=0):
+        return kikka.memory.read(str('ghost_' + self.name), key, default, soulID)
 
-    def memoryWrite(self, key, value, winid=0):
-        key = '%s_%d_%d' % (key, self.gid, winid)
-        if kikka.core.isDebug:
-            kikka.memory.write(key, value)
-        else:
-            kikka.memory.writeDeepMemory(key, value)
-        pass
+    def memoryWrite(self, key, value, soulID=0):
+        kikka.memory.write(str('ghost_' + self.name), key, value, soulID)
 
     def event_selector(self, event, tag, **kwargs):
         if 'gid' not in kwargs: kwargs['gid'] = self.gid

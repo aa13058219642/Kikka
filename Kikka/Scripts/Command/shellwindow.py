@@ -170,7 +170,6 @@ class ShellWindow(QWidget):
         pass
 
     def getMousePose(self):
-
         return self._movepos.x(), self._movepos.y()
 
     ###############################################################################################################

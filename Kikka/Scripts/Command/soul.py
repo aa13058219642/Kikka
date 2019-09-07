@@ -11,7 +11,7 @@ from PyQt5.QtWidgets import QActionGroup
 import kikka
 from shellwindow import ShellWindow
 from dialogwindow import Dialog
-from kikka_const import ShellConst
+from kikka_const import WindowConst
 
 
 class Soul:
@@ -276,8 +276,8 @@ class Soul:
     def updateDrawRect(self):
         if self._surface.ID == -1:
             self._draw_offset = self._ghost.getShell().getOffset(self.ID)
-            self._size = kikka.const.ShellConst.ImageSize
-            self._center_point = QPoint(self._size.width()/2, self._size.height())
+            self._size = kikka.const.WindowConst.ShellWindowDefaultSize
+            self._center_point = kikka.const.WindowConst.ShellWindowDefaultCenter
             self._base_rect = QRect(self._draw_offset, self._size)
         else:
             shell_image = self._ghost.getShellImage()
@@ -299,7 +299,7 @@ class Soul:
             self._draw_offset = QPoint(baserect.x() - rect.x(), baserect.y() - rect.y())
             self._size = rect.size()
 
-            if self._surface.basepos != ShellConst.UNSET:
+            if self._surface.basepos != WindowConst.UNSET:
                 self._center_point = self._surface.basepos
             else:
                 self._center_point = QPoint(self._size.width() / 2, self._size.height())
