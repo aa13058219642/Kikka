@@ -51,7 +51,6 @@ class KikkaApp:
         from ghost_kikka import GhostKikka
         gid = kikka.core.addGhost(GhostKikka())
         kikka.menu.setAppMenu(kikka.core.getGhost(gid).getMenu())
-        kikka.menu.setAppMenu(kikka.menu.createTestMenu())
 
         logging.info('kikka load done ################################')
         self._loadingWindow.close()

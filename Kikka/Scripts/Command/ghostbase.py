@@ -80,10 +80,9 @@ class GhostBase:
         self.setShell(shellname)
         self.show()
 
-    def setShell(self, shellname):
-        if self.shell is not None and self.shell.name == shellname:
-            return
-
+    def reloadShell(self, shellname=None):
+        if shellname==None:
+            shellname = self.shell.name
         self.shell = kikka.shell.getShell(shellname)
         if self.shell is None:
             self.shell = kikka.shell.getShellByIndex(0)
@@ -105,6 +104,11 @@ class GhostBase:
         for sid in self._souls.keys():
             self.setSurface(sid)
             self.updateClothesMenu(sid)
+
+    def setShell(self, shellname):
+        if self.shell is not None and self.shell.name == shellname:
+            return
+        self.reloadShell(shellname)
         self.memoryWrite('CurrentShellName', self.shell.name)
 
     def getShell(self):
@@ -265,11 +269,15 @@ class GhostBase:
 
     # #####################################################################################
 
-    def memoryRead(self, key, default, soul_id=0):
-        return kikka.memory.read(str('ghost_' + self.name), key, default, soul_id)
+    def memoryRead(self, key, default, soul_id=0, table_name=None):
+        if table_name is None:
+            table_name = str('ghost_' + self.name)
+        return kikka.memory.read(table_name, key, default, soul_id)
 
-    def memoryWrite(self, key, value, soul_id=0):
-        kikka.memory.write(str('ghost_' + self.name), key, value, soul_id)
+    def memoryWrite(self, key, value, soul_id=0, table_name=None):
+        if table_name is None:
+            table_name = str('ghost_' + self.name)
+        kikka.memory.write(table_name, key, value, soul_id)
 
     def event_selector(self, event, tag, **kwargs):
         if 'gid' not in kwargs: kwargs['gid'] = self.ID

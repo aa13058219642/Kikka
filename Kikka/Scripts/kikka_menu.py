@@ -87,6 +87,10 @@ class KikkaMenu:
                 kikka.shell.isDebug = not kikka.shell.isDebug
                 kikka.core.repaint()
 
+            def callbackfunction3():
+                ghost.getShell().reload()
+                ghost.reloadShell()
+
             act = menu.addMenuItem("Show ghost data", callbackfunction1)
             act.setCheckable(True)
             act.setChecked(kikka.core.isDebug is True)
@@ -95,13 +99,16 @@ class KikkaMenu:
             act.setCheckable(True)
             act.setChecked(kikka.shell.isDebug is True)
 
+            act = menu.addMenuItem("reload shell", callbackfunction3)
+
+            menu.addSubMenu(KikkaMenu.createTestMenu(menu))
+
             mainmenu.addSubMenu(menu)
             mainmenu.addSeparator()
 
         from kikka_app import KikkaApp
         callbackfunc = lambda: KikkaApp.this().exitApp()
         mainmenu.addMenuItem("Exit", callbackfunc)
-
         return mainmenu
 
     @staticmethod
@@ -135,7 +142,7 @@ class KikkaMenu:
         return mainmenu
 
     @staticmethod
-    def createTestMenu():
+    def createTestMenu(parent=None):
         # test callback function
         def _test_callback(index=0, title=''):
             logging.info("MainMenu_callback: click [%d] %s" % (index, title))
@@ -293,10 +300,10 @@ class KikkaMenu:
             for i in range(100): text = " " * 600; menu.addMenuItem(text)
             imagetestmenu.addSubMenu(menu)
 
-
-        parten = QWidget(flags=Qt.Dialog)
+        if parent == None:
+            parent = QWidget(flags=Qt.Dialog)
         icon = QIcon(r"icon.ico")
-        testmenu = Menu(parten, 0, "Main")
+        testmenu = Menu(parent, 0, "TestMenu")
 
         _test_Exit(testmenu)
         testmenu.addSeparator()

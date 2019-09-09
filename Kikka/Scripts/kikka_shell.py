@@ -144,6 +144,11 @@ class Shell:
             self.isLoaded = True
         pass
 
+    def reload(self):
+        self.init()
+        self.isLoaded = False
+        self.load()
+
     def _loadPNGindex(self):
         for parent, dirnames, filenames in os.walk(self.resource_path):
             for filename in filenames:

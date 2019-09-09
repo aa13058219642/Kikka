@@ -26,25 +26,22 @@ class GhostKikka(GhostBase):
         self.initMenu()
 
     def initMenu(self):
-        mainmenu = self.getMenu(KIKKA)
-        menu = Menu(mainmenu.parent(), self.ID, "kikka menu")
-        mainmenu.insertMenu(mainmenu.actions()[0], menu)
-
-        def _test_callback(index=0, title=''):
-            logging.info("GhostKikka_callback: click [%d] %s" % (index, title))
-
-        act = menu.addMenuItem("111", _test_callback)
-        act.setShortcut(QKeySequence("Ctrl+T"))
-        act.setShortcutContext(Qt.ApplicationShortcut)
-        act.setShortcutVisibleInContextMenu(True)
-
-
-        w = self.getShellWindow(KIKKA)
-        w.addAction(act)
-
-
-        # w.s
-
+        # mainmenu = self.getMenu(KIKKA)
+        # menu = Menu(mainmenu.parent(), self.ID, "kikka menu")
+        # mainmenu.insertMenu(mainmenu.actions()[0], menu)
+        #
+        # def _test_callback(index=0, title=''):
+        #     logging.info("GhostKikka_callback: click [%d] %s" % (index, title))
+        #
+        # act = menu.addMenuItem("111", _test_callback)
+        # act.setShortcut(QKeySequence("Ctrl+T"))
+        # act.setShortcutContext(Qt.ApplicationShortcut)
+        # act.setShortcutVisibleInContextMenu(True)
+        #
+        #
+        # w = self.getShellWindow(KIKKA)
+        # w.addAction(act)
+        pass
 
     def initLayout(self):
         dlg = self.getDialog(KIKKA)
