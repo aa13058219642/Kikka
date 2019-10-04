@@ -372,7 +372,7 @@ class Animation:
         self.exclusive = animation_data.exclusive
 
         self.isRunning = False
-        self.isFinish = False
+        self.isFinish = True
         self._updatetime = 0
         self._curPattern = -1
         self._lasttime = 0
@@ -423,8 +423,7 @@ class Animation:
 
         elif self.interval == 'sometimes':
             # 30% per second
-            r = random.random()
-            isNeedStart = True if r < 0.0003 * timer_interval else False
+            isNeedStart = True if random.random() < 0.0003 * timer_interval else False
 
         elif self.interval == 'rarely':
             # 10% per second
