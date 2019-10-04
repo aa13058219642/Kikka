@@ -7,12 +7,9 @@ from collections import OrderedDict
 
 from PyQt5.QtCore import Qt, QPoint, QRect, QSize, QRectF
 from PyQt5.QtGui import QImage, QPainter, QColor, QPixmap
-from PyQt5.QtWidgets import QActionGroup
 
 import kikka
-from shellwindow import ShellWindow
-from dialogwindow import DialogWindow
-from kikka_menu import MenuStyle, Menu
+from kikka_menu import MenuStyle
 from soul import Soul
 
 class GhostBase:
@@ -22,22 +19,16 @@ class GhostBase:
         self.shell = None
         self.balloon = None
 
-        self._souls = {}
+        self._souls = OrderedDict()
         self._shell_image = {}
         self._balloon_image = {}
 
         self.eventlist = {}
         self.animation_list = {}
 
-        self._shellwindows = {}
-        self._dialogs = {}
-        self._surfaces = {}
-        self._surface_base_image = {}
-        self._surface_image = {}
         self._balloon_image_cache = None
-        self._menus = {}
         self._menustyle = None
-        self._clothes = {}
+        self._isLockOnTaskbar = True
 
         self.init()
 
@@ -46,9 +37,10 @@ class GhostBase:
         self.loadClothBind()
         self.setShell(self.memoryRead('CurrentShellName', ''))
         self.setBalloon(self.memoryRead('CurrentBalloonName', ''))
+        self.setIsLockOnTaskbar(self.memoryRead('isLockOnTaskbar', True))
 
     def show(self):
-        for soul in self._souls.values():
+        for soul in reversed(self._souls.values()):
             soul.show()
 
     def hide(self):
@@ -155,7 +147,6 @@ class GhostBase:
         for i in range(count):
             shell = kikka.shell.getShellByIndex(i)
             data[shell.name] = shell.bind
-        print(data)
         self.memoryWrite('ClothBind', data)
 
     def loadClothBind(self):
@@ -168,6 +159,20 @@ class GhostBase:
             if shell is None:
                 continue
             shell.bind = data[name]
+
+    def resetWindowsPosition(self, usingDefaultPos=True, lockOnTaskbar=False):
+        rightOffect = 0
+        for soul in self._souls.values():
+            soul.resetWindowsPosition(usingDefaultPos, lockOnTaskbar | self._isLockOnTaskbar, rightOffect)
+            rightOffect += soul.getSize().width()
+
+    def setIsLockOnTaskbar(self, isLock):
+        self._isLockOnTaskbar = isLock
+        self.memoryWrite("isLockOnTaskbar", isLock)
+        self.resetWindowsPosition(False)
+
+    def getIsLockOnTaskbar(self):
+        return self._isLockOnTaskbar
 
     # ###################################################################################
 

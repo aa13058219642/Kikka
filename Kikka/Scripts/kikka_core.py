@@ -12,6 +12,7 @@ from ghostbase import GhostBase
 class KikkaCoreSignal(QObject):
     hide = pyqtSignal()
     show = pyqtSignal()
+    screenClientSizeChange = pyqtSignal()
 
 
 class KikkaCore:
@@ -47,6 +48,7 @@ class KikkaCore:
         self.signal = KikkaCoreSignal()
         self.signal.show.connect(self.show)
         self.signal.hide.connect(self.hide)
+        self.signal.screenClientSizeChange.connect(self.screenClientSizeChange)
         kikka.memory.createTable("kikka_core")
         pass
 
@@ -63,6 +65,12 @@ class KikkaCore:
         self._app_state = KikkaCore.APP_STATE.SHOW
         for _, g in self._ghosts.items():
             g.show()
+        self.start()
+
+    def screenClientSizeChange(self):
+        self._app_state = KikkaCore.APP_STATE.SHOW
+        for _, g in self._ghosts.items():
+            g.resetWindowsPosition(False)
         self.start()
 
     def addGhost(self, ghost):

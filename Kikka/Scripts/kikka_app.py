@@ -84,20 +84,16 @@ class KikkaApp:
     def _guard(self):
         try:
             time.sleep(1)
+
+            width = 0
+            height = 0
             while 1:
-                result = self._watchFullScreenProgress()
-                if result != self._hasFullScreenProgress:
-                    self._hasFullScreenProgress = result
-                    if result:
-                        kikka.core.signal.hide.emit()
-                    else:
-                        kikka.core.signal.show.emit()
+                self._watchFullScreenProgress()
+
+                width, height = self._watchScreenClientSizeChange(width, height)
 
                 if self.isDebug is False:
-                    result = self._watchKikkaExeProgress()
-                    if result is False:
-                        logging.warning("Kikka.exe lost")
-                        self.exitApp()
+                    self._watchKikkaExeProgress()
 
                 time.sleep(3)
         except Exception:
@@ -105,7 +101,7 @@ class KikkaApp:
         # exit while
 
     def _watchFullScreenProgress(self):
-        hasFullScreenProgress = False
+        hasProgress = False
         foreground_hwnd = win32gui.GetForegroundWindow()
         desktop_hwnd = win32gui.GetDesktopWindow()
         my_hwnd = ctypes.windll.user32.GetShellWindow()
@@ -123,8 +119,15 @@ class KikkaApp:
             and frect[1] == drect[1] \
             and frect[2] == drect[2] \
             and frect[3] == drect[3]:
-                hasFullScreenProgress = True
-        return hasFullScreenProgress
+                hasProgress = True
+
+        if hasProgress != self._hasFullScreenProgress:
+            self._hasFullScreenProgress = hasProgress
+            if hasProgress:
+                kikka.core.signal.hide.emit()
+            else:
+                kikka.core.signal.show.emit()
+        pass
 
     def _watchKikkaExeProgress(self):
         kikkaHere = False
@@ -136,7 +139,20 @@ class KikkaApp:
                 continue
             if p.name() == 'Kikka.exe':
                 kikkaHere = True
-        return kikkaHere
+
+        if kikkaHere is False:
+            logging.warning("Kikka.exe lost")
+            self.exitApp()
+        pass
+
+    def _watchScreenClientSizeChange(self, old_width, old_height):
+        rect = QApplication.instance().desktop().availableGeometry()
+        width = rect.width()
+        height = rect.height()
+        if width!=old_width or height != old_height:
+            kikka.core.signal.screenClientSizeChange.emit()
+        return width, height
+
 
     def _createTrayIcon(self):
         qapp = QApplication.instance()

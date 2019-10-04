@@ -75,9 +75,11 @@ class KikkaMenu:
             act.setChecked(True)
         mainmenu.addSubMenu(menu)
 
+        optionmenu = KikkaMenu.createOptionMenu(parent, ghost)
+        mainmenu.addSubMenu(optionmenu)
+
         # debug option
         if kikka.core.isDebug is True:
-            menu = Menu(mainmenu, ghost.ID, "Debug")
 
             def callbackfunction1():
                 kikka.core.isDebug = not kikka.core.isDebug
@@ -91,6 +93,8 @@ class KikkaMenu:
                 ghost.getShell().reload()
                 ghost.reloadShell()
 
+            menu = Menu(mainmenu, ghost.ID, "Debug")
+
             act = menu.addMenuItem("Show ghost data", callbackfunction1)
             act.setCheckable(True)
             act.setChecked(kikka.core.isDebug is True)
@@ -103,6 +107,7 @@ class KikkaMenu:
 
             menu.addSubMenu(KikkaMenu.createTestMenu(menu))
 
+            mainmenu.addSeparator()
             mainmenu.addSubMenu(menu)
             mainmenu.addSeparator()
 
@@ -134,13 +139,28 @@ class KikkaMenu:
         menu.setEnabled(False)
         mainmenu.addSubMenu(menu)
 
-
         from kikka_app import KikkaApp
         callbackfunc = lambda: KikkaApp.this().exitApp()
         mainmenu.addMenuItem("Exit", callbackfunc)
 
         return mainmenu
 
+    @staticmethod
+    def createOptionMenu(parent, ghost):
+        import kikka
+        optionmenu = Menu(parent, ghost.ID, "Option")
+
+        callbackfunc1 = lambda checked: ghost.resetWindowsPosition(True, False)
+        act = optionmenu.addMenuItem("Reset Shell Position", callbackfunc1)
+
+        callbackfunc2 = lambda checked, ghost=ghost: ghost.setIsLockOnTaskbar(checked)
+        act = optionmenu.addMenuItem("Lock on taskbar", callbackfunc2)
+        act.setCheckable(True)
+        act.setChecked(ghost.getIsLockOnTaskbar())
+
+        return optionmenu
+
+    # ###########################################################################
     @staticmethod
     def createTestMenu(parent=None):
         # test callback function

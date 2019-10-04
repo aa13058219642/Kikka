@@ -815,7 +815,7 @@ class ShellSetting:
     def __init__(self):
         self.name = ''
         self.offset = QPoint(0, 0)
-        self.position = QPoint(0, 0)
+        self.position = QPoint(WindowConst.UNSET)
         self.balloon_offset = QPoint(0, 0)
         self.balloon_alignment = 'lefttop'
         self.bindoption = {}

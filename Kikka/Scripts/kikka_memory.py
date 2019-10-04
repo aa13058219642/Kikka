@@ -96,6 +96,7 @@ class DeepMemory:
                 return default
 
             if isinstance(default, str) is True: return str(value)
+            elif isinstance(default, bool) is True: return value == 'True'
             elif isinstance(default, int) is True: return int(value)
             elif isinstance(default, float) is True: return float(value)
             elif isinstance(default, list) is True: return json.loads(value)

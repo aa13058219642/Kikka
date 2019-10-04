@@ -26,6 +26,7 @@ class Soul:
 
         self._shell_window = None
         self._dialog_window = None
+        self._size = None
 
         self._surface = None
         self._animations = {}
@@ -55,6 +56,9 @@ class Soul:
 
         if self._balloon is not None:
             self._dialog_window.setBalloon(self._balloon)
+
+        self._size = self._shell_window.size()
+        self.resetWindowsPosition(False, self._ghost.getIsLockOnTaskbar())
 
     def show(self):
         self._shell_window.show()
@@ -244,6 +248,23 @@ class Soul:
 
     def getBaseRect(self):
         return QRect(self._base_rect)
+
+    def resetWindowsPosition(self, usingDefaultPos=True, isLockTaskBar=True, rightOffset=0):
+        shell = self._ghost.getShell()
+
+        w, h = kikka.helper.getScreenClientRect()
+        if usingDefaultPos is True:
+            pos = QPoint(shell.setting[self.ID].position)
+            if pos.x() == WindowConst.UNSET.x():
+                pos.setX(w - self._size.width() - rightOffset)
+        else:
+            pos = self._shell_window.pos()
+
+        if isLockTaskBar is True or pos.y() == WindowConst.UNSET.y():
+            pos.setY(h - self._size.height())
+
+        self._shell_window.move(pos)
+        self._shell_window.saveShellRect()
 
     # ################################################################
 

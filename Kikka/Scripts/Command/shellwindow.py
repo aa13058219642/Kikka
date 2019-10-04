@@ -15,12 +15,6 @@ class ShellWindow(QWidget):
         self._soul = soul
         self._ghost = self._soul.getGhost()
         self.ID = win_id
-        self.setWindowFlags(Qt.Tool | Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint)
-        self.setAttribute(Qt.WA_TranslucentBackground)
-        self.setAttribute(Qt.WA_DeleteOnClose)
-        self.setMouseTracking(True)
-        self.setAcceptDrops(True)
-        #self.setContextMenuPolicy(Qt.ActionsContextMenu)
 
         self._isMoving = False
         self._offset = QPoint(0, 0)
@@ -29,11 +23,22 @@ class ShellWindow(QWidget):
         self._mousepos = QPoint(0, 0)
         self._pixmap = None
 
+        self._init()
+
+    def _init(self):
+        self.setWindowFlags(Qt.Tool | Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint)
+        self.setAttribute(Qt.WA_TranslucentBackground)
+        self.setAttribute(Qt.WA_DeleteOnClose)
+        self.setMouseTracking(True)
+        self.setAcceptDrops(True)
+        #self.setContextMenuPolicy(Qt.ActionsContextMenu)
+
         # size and position
         rect = self._ghost.memoryRead('ShellRect', [], self.ID)
         if len(rect) > 0:
             self.move(rect[0], rect[1])
             self.resize(rect[2], rect[3])
+
 
     def setBoxes(self, boxes, offset):
         self._boxes = {}
@@ -60,6 +65,15 @@ class ShellWindow(QWidget):
     def _mouseLogging(self, event, button, x, y):
         page_sizes = dict((n, x) for x, n in vars(Qt).items() if isinstance(n, Qt.MouseButton))
         logging.debug("%s %s (%d, %d)", event, page_sizes[button], x, y)
+
+    def getMousePose(self):
+        return self._movepos.x(), self._movepos.y()
+
+    def saveShellRect(self):
+        self._ghost.memoryWrite('ShellRect',
+                                [self.pos().x(), self.pos().y(), self.size().width(), self.size().height()],
+                                self.ID)
+        pass
 
     # ##############################################################################################################
     # Event
@@ -111,7 +125,13 @@ class ShellWindow(QWidget):
         # self._mouseLogging("mouseMoveEvent", event.buttons(), event.globalPos().x(), event.globalPos().y())
         self._mousepos = event.pos()
         if self._isMoving and event.buttons() == Qt.LeftButton:
-            self.move(event.globalPos() - self._movepos)
+            if self._ghost.getIsLockOnTaskbar() is False:
+                self.move(event.globalPos() - self._movepos)
+            else:
+                pos = QPoint(event.globalPos() - self._movepos)
+                pos.setY(kikka.helper.getScreenClientRect()[1]-self.height())
+                self.move(pos)
+
             self._ghost.getDialog(self.ID).updatePosition()
             event.accept()
         else:
@@ -127,9 +147,7 @@ class ShellWindow(QWidget):
     def mouseReleaseEvent(self, event):
         self._mouseLogging("mouseReleaseEvent", event.buttons(), event.globalPos().x(), event.globalPos().y())
         self._isMoving = False
-        self._ghost.memoryWrite('ShellRect',
-                                [self.pos().x(), self.pos().y(), self.size().width(), self.size().height()],
-                                self.ID)
+        self.saveShellRect()
 
         self._boxCollision(GhostEvent.MouseUp)
         # eventtag = self._boxCollision()
@@ -169,8 +187,6 @@ class ShellWindow(QWidget):
             logging.info("drop file: %s" % url.toLocalFile())
         pass
 
-    def getMousePose(self):
-        return self._movepos.x(), self._movepos.y()
 
     ###############################################################################################################
     # paint event
