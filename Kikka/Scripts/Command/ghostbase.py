@@ -43,6 +43,7 @@ class GhostBase:
 
     def init(self):
         kikka.memory.createTable(str('ghost_' + self.name))
+        self.loadClothBind()
         self.setShell(self.memoryRead('CurrentShellName', ''))
         self.setBalloon(self.memoryRead('CurrentBalloonName', ''))
 
@@ -147,6 +148,26 @@ class GhostBase:
             return self._souls[soul_id].getMenu()
         else:
             return None
+
+    def saveClothBind(self):
+        data = {}
+        count = kikka.shell.getShellCount()
+        for i in range(count):
+            shell = kikka.shell.getShellByIndex(i)
+            data[shell.name] = shell.bind
+        print(data)
+        self.memoryWrite('ClothBind', data)
+
+    def loadClothBind(self):
+        data = self.memoryRead('ClothBind', {})
+        if len(data)<=0:
+            return
+
+        for name in data.keys():
+            shell = kikka.shell.getShell(name)
+            if shell is None:
+                continue
+            shell.bind = data[name]
 
     # ###################################################################################
 

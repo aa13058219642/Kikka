@@ -160,10 +160,12 @@ class Soul:
                 self._clothes[bindgroup.type] = -1
                 self.setClothes(bindgroup.aID, False)
                 act.setChecked(not act.isChecked())
+                self._ghost.saveClothBind()
         else:
             self.setClothes(lastcloth, False)
             self._clothes[bindgroup.type] = bindgroup.aID
             self.setClothes(bindgroup.aID, True)
+            self._ghost.saveClothBind()
 
         self.setSurface(-1)
         logging.info("clickClothesMenuItem: %s %s", act.text(), act.isChecked())
