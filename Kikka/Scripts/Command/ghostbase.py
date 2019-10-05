@@ -25,7 +25,7 @@ class GhostBase:
         self.ID = ghost_id if ghost_id != -1 else kikka.core.newGhostID()
         self.name = name
         self.shell = None
-        self.balloon = None
+        self._balloon = None
         self.signal = KikkaGhostSignal()
 
         self._souls = OrderedDict()
@@ -43,7 +43,6 @@ class GhostBase:
 
     def init(self):
         kikka.memory.createTable(str('ghost_' + self.name))
-        self.loadClothBind()
         self.setShell(self.memoryRead('CurrentShellName', ''))
         self.setBalloon(self.memoryRead('CurrentBalloonName', ''))
         self.setIsLockOnTaskbar(self.memoryRead('isLockOnTaskbar', True))
@@ -118,28 +117,28 @@ class GhostBase:
         return self.shell
 
     def setBalloon(self, name):
-        self.balloon = kikka.balloon.getBalloon(name)
-        if self.balloon is None:
-            self.balloon = kikka.balloon.getBalloonByIndex(0)
-            if self.balloon is None:
+        self._balloon = kikka.balloon.getBalloon(name)
+        if self._balloon is None:
+            self._balloon = kikka.balloon.getBalloonByIndex(0)
+            if self._balloon is None:
                 raise ValueError("setBalloon: load defalut balloon fail.")
 
-        self.balloon.load()
+        self._balloon.load()
 
-        for parent, dirnames, filenames in os.walk(self.balloon.resource_path):
+        for parent, dirnames, filenames in os.walk(self._balloon.resource_path):
             for filename in filenames:
                 if filename[len(filename) - 4:] == '.png':
-                    p = os.path.join(self.balloon.resource_path, filename)
+                    p = os.path.join(self._balloon.resource_path, filename)
                     self._balloon_image[filename] = kikka.helper.getImage(p)
         self._balloon_image_cache = self._balloon_image['background.png']
 
         for soul in self._souls.values():
-            soul.setBalloon(self.balloon)
+            soul.setBalloon(self._balloon)
 
-        self.memoryWrite('CurrentBalloonName', self.balloon.name)
+        self.memoryWrite('CurrentBalloonName', self._balloon.name)
 
     def getBalloon(self):
-        return self.balloon
+        return self._balloon
 
     def setMenu(self, soul_id, menu):
         if soul_id in self._souls.keys():
@@ -150,25 +149,6 @@ class GhostBase:
             return self._souls[soul_id].getMenu()
         else:
             return None
-
-    def saveClothBind(self):
-        data = {}
-        count = kikka.shell.getShellCount()
-        for i in range(count):
-            shell = kikka.shell.getShellByIndex(i)
-            data[shell.name] = shell.bind
-        self.memoryWrite('ClothBind', data)
-
-    def loadClothBind(self):
-        data = self.memoryRead('ClothBind', {})
-        if len(data)<=0:
-            return
-
-        for name in data.keys():
-            shell = kikka.shell.getShell(name)
-            if shell is None:
-                continue
-            shell.bind = data[name]
 
     def resetWindowsPosition(self, usingDefaultPos=True, lockOnTaskbar=False):
         rightOffect = 0
@@ -191,45 +171,45 @@ class GhostBase:
             self._souls[soul_id].setSurface(surface_id)
 
     def getBalloonImage(self, size: QSize, flip=False, soul_id=-1):
-        if self.balloon is None:
+        if self._balloon is None:
             logging.warning("getBalloonImage: balloon is None")
             return kikka.helper.getDefaultImage()
 
         drect = []
         # calculate destination rect
-        if len(self.balloon.clipW) == 3:
-            dw = [self.balloon.clipW[0],
-                  size.width() - self.balloon.clipW[0] - self.balloon.clipW[2],
-                  self.balloon.clipW[2]]
-        elif len(self.balloon.clipW) == 5:
-            sw = size.width() - self.balloon.clipW[0] - self.balloon.clipW[2] - self.balloon.clipW[4]
-            dw = [self.balloon.clipW[0],
+        if len(self._balloon.clipW) == 3:
+            dw = [self._balloon.clipW[0],
+                  size.width() - self._balloon.clipW[0] - self._balloon.clipW[2],
+                  self._balloon.clipW[2]]
+        elif len(self._balloon.clipW) == 5:
+            sw = size.width() - self._balloon.clipW[0] - self._balloon.clipW[2] - self._balloon.clipW[4]
+            dw = [self._balloon.clipW[0],
                   sw // 2,
-                  self.balloon.clipW[2],
+                  self._balloon.clipW[2],
                   sw - sw // 2,
-                  self.balloon.clipW[4]]
+                  self._balloon.clipW[4]]
         else:
             sw = size.width() // 3
             dw = [sw, size.width() - sw*2, sw]
 
-        if len(self.balloon.clipH) == 3:
-            dh = [self.balloon.clipH[0],
-                  size.height() - self.balloon.clipH[0] - self.balloon.clipH[2],
-                  self.balloon.clipH[2]]
-        elif len(self.balloon.clipH) == 5:
-            sh = size.height() - self.balloon.clipH[0] - self.balloon.clipH[2] - self.balloon.clipH[4]
-            dh = [self.balloon.clipH[0],
+        if len(self._balloon.clipH) == 3:
+            dh = [self._balloon.clipH[0],
+                  size.height() - self._balloon.clipH[0] - self._balloon.clipH[2],
+                  self._balloon.clipH[2]]
+        elif len(self._balloon.clipH) == 5:
+            sh = size.height() - self._balloon.clipH[0] - self._balloon.clipH[2] - self._balloon.clipH[4]
+            dh = [self._balloon.clipH[0],
                   sh // 2,
-                  self.balloon.clipH[2],
+                  self._balloon.clipH[2],
                   sh - sh // 2,
-                  self.balloon.clipH[4]]
+                  self._balloon.clipH[4]]
         else:
             sh = size.height() // 3
             dh = [sh, size.height() - sh*2, sh]
 
-        for y in range(len(self.balloon.clipH)):
+        for y in range(len(self._balloon.clipH)):
             dr = []
-            for x in range(len(self.balloon.clipW)):
+            for x in range(len(self._balloon.clipW)):
                 pt = QPoint(0, 0)
                 if x > 0: pt.setX(dr[x-1].x() + dw[x-1])
                 if y > 0: pt.setY(drect[y-1][0].y() + dh[y-1])
@@ -244,18 +224,18 @@ class GhostBase:
         painter = QPainter(img)
         painter.setCompositionMode(QPainter.CompositionMode_Source)
 
-        for y in range(len(self.balloon.clipH)):
-            for x in range(len(self.balloon.clipW)):
-                painter.drawPixmap(drect[y][x], pixmap, self.balloon.bgRect[y][x])
+        for y in range(len(self._balloon.clipH)):
+            for x in range(len(self._balloon.clipW)):
+                painter.drawPixmap(drect[y][x], pixmap, self._balloon.bgRect[y][x])
         painter.end()
 
         # flip or not
-        if self.balloon.flipBackground is True and flip is True:
+        if self._balloon.flipBackground is True and flip is True:
             img = img.mirrored(True, False)
-            if self.balloon.noFlipCenter is True and len(self.balloon.clipW) == 5 and len(self.balloon.clipH) == 5:
+            if self._balloon.noFlipCenter is True and len(self._balloon.clipW) == 5 and len(self._balloon.clipH) == 5:
                 painter = QPainter(img)
                 painter.setCompositionMode(QPainter.CompositionMode_Source)
-                painter.drawPixmap(drect[2][2], pixmap, self.balloon.bgRect[2][2])
+                painter.drawPixmap(drect[2][2], pixmap, self._balloon.bgRect[2][2])
                 painter.end()
 
         # debug draw
@@ -263,8 +243,8 @@ class GhostBase:
             painter = QPainter(img)
             painter.fillRect(QRect(0, 0, 200, 64), QColor(0, 0, 0, 64))
             painter.setPen(Qt.red)
-            for y in range(len(self.balloon.clipH)):
-                for x in range(len(self.balloon.clipW)):
+            for y in range(len(self._balloon.clipH)):
+                for x in range(len(self._balloon.clipW)):
                     if x in (0, 2, 4) and y in (0, 2, 4):
                         continue
                     rectf = QRect(drect[y][x])
@@ -273,7 +253,7 @@ class GhostBase:
                 if y > 0:
                     painter.drawLine(drect[y][0].x(), drect[y][0].y(), drect[y][0].x() + img.width(), drect[y][0].y())
 
-            for x in range(1, len(self.balloon.clipW)):
+            for x in range(1, len(self._balloon.clipW)):
                 painter.drawLine(drect[0][x].x(), drect[0][x].y(), drect[0][x].x(), drect[0][x].y() + img.height())
 
             painter.setPen(Qt.green)

@@ -102,7 +102,7 @@ class Shell:
         self.collision_sort = 'none'
         self.animation_sort = 'descend'
 
-        self.bind = []
+        self.bind = {}
         self.alias = {}
         self.pnglist = []
         self.setting = {}
@@ -493,19 +493,27 @@ class Shell:
     def getShellMenuStyle(self):
         return self.shellmenustyle
 
-    def addBind(self, aid):
-        if aid not in self.bind:
-            self.bind.append(aid)
-            self.bind.sort()
+    def addBind(self, soulID, aid):
+        if soulID not in self.bind.keys():
+            self.bind[soulID] = []
 
-    def getBind(self):
-        return self.bind
+        if aid not in self.bind[soulID]:
+            self.bind[soulID].append(aid)
+            self.bind[soulID].sort()
 
-    def setClothes(self, aid, isEnable=True):
-        if isEnable is True and aid not in self.bind:
-            self.addBind(aid)
-        elif aid in self.bind:
-            self.bind.remove(aid)
+    def getBind(self, soulID):
+        if soulID not in self.bind.keys():
+            self.bind[soulID] = []
+        return self.bind[soulID]
+
+    def setClothes(self, soulID, aid, isEnable=True):
+        if soulID not in self.bind.keys():
+            self.bind[soulID] = []
+
+        if isEnable is True and aid not in self.bind[soulID]:
+            self.addBind(soulID, aid)
+        elif isEnable is False and aid in self.bind[soulID]:
+            self.bind[soulID].remove(aid)
 
 
 class AnimationData:
@@ -821,7 +829,3 @@ class ShellSetting:
         self.bindoption = {}
         self.bindgroups = {}
         self.clothesmenu = {}
-
-    def addBingGroup(self, aID, bindgroup):
-        self.bindgroups[aID] = bindgroup
-

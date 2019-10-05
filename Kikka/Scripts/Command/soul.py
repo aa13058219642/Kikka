@@ -20,7 +20,6 @@ class Soul:
         self.ID = soulid
         self._ghost = ghost
 
-        self._balloon = None
         self._menu = None
         self._menustyle = None
 
@@ -31,13 +30,11 @@ class Soul:
         self._surface = None
         self._animations = {}
         self._clothes = {}
-        self._bind = []
 
         self._draw_offset = []
         self._base_image = None
         self._surface_image = None
         self._soul_image = None
-        self._balloon_image_cache = None
         self._center_point = QPoint()
         self._base_rect = QRect()
 
@@ -54,8 +51,19 @@ class Soul:
         else:
             self._menu = kikka.menu.createSoulDefaultMenu(self._ghost)
 
-        if self._balloon is not None:
-            self._dialog_window.setBalloon(self._balloon)
+        self.loadClothBind()
+        shellmenu = self._menu.getSubMenu("Shells")
+        if shellmenu is not None:
+            act = shellmenu.getAction(self._ghost.getShell().unicode_name)
+            act.setChecked(True)
+
+        balloon = self._ghost.getBalloon()
+        if balloon is not None:
+            self._dialog_window.setBalloon(balloon)
+            balloonmenu = self._menu.getSubMenu("Balloons")
+            if balloonmenu is not None:
+                act = balloonmenu.getAction(balloon.name)
+                act.setChecked(True)
 
         self._size = self._shell_window.size()
         self.resetWindowsPosition(False, self._ghost.getIsLockOnTaskbar())
@@ -86,9 +94,6 @@ class Soul:
         self._dialog_window.setBalloon(balloon)
         self._dialog_window.repaint()
 
-    def getBalloon(self):
-        return self._balloon
-
     def setMenu(self, Menu):
         self._menu = Menu
 
@@ -99,6 +104,7 @@ class Soul:
         shell = self._ghost.getShell()
         setting = shell.setting[self.ID]
         clothesmenu = OrderedDict(sorted(setting.clothesmenu.items()))
+        clothesbind = shell.getBind(self.ID)
         bindgroups = setting.bindgroups
         bindoption = setting.bindoption
 
@@ -130,20 +136,24 @@ class Soul:
                     # logging.info("%s %s" % (bindgroup.type, option))
         pass
 
-        for v in clothesmenu.values():
-            if v == -1:
+        for aid in clothesmenu.values():
+            if aid == -1:
                 menu.addSeparator()
-            elif v in bindgroups.keys():
-                bindgroup = bindgroups[v]
+            elif aid in bindgroups.keys():
+                bindgroup = bindgroups[aid]
                 text = "%s - %s" % (bindgroup.type, bindgroup.title)
+
                 act = menu.addMenuItem(text, group=group[bindgroup.type])
                 callbackfunc = lambda checked, act=act, bindgroup=bindgroup: self.clickClothesMenuItem(checked, act, bindgroup)
                 act.triggered.connect(callbackfunc)
                 act.setCheckable(True)
+                act.setData(aid)
+
                 if bindgroup.type not in self._clothes.keys():
                     self._clothes[bindgroup.type] = -1
 
-                if bindgroup.default is True and len(self._ghost.getShell().getBind()) == 0:
+                if (len(clothesbind) == 0 and bindgroup.default is True) \
+                or (len(clothesbind) > 0 and aid in clothesbind):
                     self._clothes[bindgroup.type] = bindgroup.aID
                     act.setChecked(True)
                     self.setClothes(bindgroup.aID, True)
@@ -164,15 +174,35 @@ class Soul:
                 self._clothes[bindgroup.type] = -1
                 self.setClothes(bindgroup.aID, False)
                 act.setChecked(not act.isChecked())
-                self._ghost.saveClothBind()
         else:
             self.setClothes(lastcloth, False)
             self._clothes[bindgroup.type] = bindgroup.aID
             self.setClothes(bindgroup.aID, True)
-            self._ghost.saveClothBind()
 
         self.setSurface(-1)
+        self.saveClothBind()
         logging.info("clickClothesMenuItem: %s %s", act.text(), act.isChecked())
+
+    def saveClothBind(self):
+        data = {}
+        count = kikka.shell.getShellCount()
+        for i in range(count):
+            shell = kikka.shell.getShellByIndex(i)
+            if len(shell.bind)>0:
+                data[shell.name] = shell.bind[self.ID]
+        self.memoryWrite('ClothBind', data)
+
+    def loadClothBind(self):
+        data = self.memoryRead('ClothBind', {})
+        if len(data)<=0:
+            return
+
+        for name in data.keys():
+            shell = kikka.shell.getShell(name)
+            if shell is None:
+                continue
+
+            shell.bind[self.ID] = data[name]
         pass
 
     def resetAnimation(self, animations):
@@ -234,7 +264,7 @@ class Soul:
         return self._surface.ID
 
     def setClothes(self, aid, isEnable=True):
-        self._ghost.getShell().setClothes(aid, isEnable)
+        self._ghost.getShell().setClothes(self.ID, aid, isEnable)
         self.repaint()
 
     def getSize(self):
@@ -265,6 +295,12 @@ class Soul:
 
         self._shell_window.move(pos)
         self._shell_window.saveShellRect()
+
+    def memoryRead(self, key, default):
+        return self._ghost.memoryRead(key, default, self.ID)
+
+    def memoryWrite(self, key, value):
+        self._ghost.memoryWrite(key, value, self.ID)
 
     # ################################################################
 
@@ -512,7 +548,7 @@ class Animation:
         return isNeedUpdate
 
     def draw(self, destImage):
-        if self.ID in self._soul.getGhost().getShell().getBind():
+        if self.ID in self._soul.getGhost().getShell().getBind(self._soul.ID):
             for p in self.patterns.values():
                 self.doPattern(p)
                 offset = self._soul.getDrawOffset() + self._drawOffset

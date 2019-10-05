@@ -3,15 +3,15 @@
 from enum import Enum
 
 class GhostEvent(Enum):
-    MouseDown = 0
-    MouseMove = 1
-    MouseUp = 2
-    MouseDoubleClick = 3
-    WheelEvent = 4
+    EventNone       = 0
+    MouseDown       = 1
+    MouseMove       = 2
+    MouseTouch      = 3
+    MouseUp         = 4
+    MouseDoubleClick = 5
+    WheelEvent      = 6
 
-    MouseTouch = 10
-
-    CustomEvent = 99
+    CustomEvent = 100
 
 
 

@@ -35,31 +35,77 @@ class KikkaMemory:
         self._deepmemory = None
         self._filepath = None
 
-    def awake(self, filemane):
+    def awake(self, filename):
         if self._deepmemory is not None:
             self._deepmemory.close()
 
-        self._filepath = filemane
-        memoryEsists = os.path.exists(filemane)
-        self._deepmemory = DeepMemory(filemane)
+        self._filepath = filename
+        memoryEsists = os.path.exists(filename)
+        self._sql_worker = Sqlite3Worker(filename)
+
         if memoryEsists:
+            # create new database
             logging.info("awake kikka memory")
-            self._deepmemory.awake()
+
         logging.info("linked kikka memory")
 
+    def close(self):
+        if self._sql_worker is not None:
+            self._sql_worker.close()
+            self._sql_worker = None
+
+
     def createTable(self, table_name):
-        self._deepmemory.createTable(table_name)
+        try:
+            name = str('T_' + table_name).upper()
+            sql = "create table if not exists %s(key text not null, soul integer not null, value text, primary key (key, soul))"%name
+            self._sql_worker.execute(sql)
+        except ValueError:
+            logging.warning('read table memory fail: key[%s]' % table_name)
 
     def read(self, table_name, key, default='', soulID=0):
         logging.debug("kikka memory read %s"%key)
-        return self._deepmemory.read(table_name, key, default, soulID)
+        try:
+            name = str('T_' + table_name).upper()
+            sql = "select value from %s where key=? and soul=?" % name
+
+            result = self._sql_worker.execute(sql, (key, soulID))
+            if len(result) != 0:
+                value = result[0][0]
+            else:
+                return default
+
+            if isinstance(default, str) is True: return str(value)
+            elif isinstance(default, bool) is True: return value == 'True'
+            elif isinstance(default, int) is True: return int(value)
+            elif isinstance(default, float) is True: return float(value)
+            elif isinstance(default, list) is True: return json.loads(value)
+            elif isinstance(default, dict) is True: return json.loads(value)
+            else: return default
+        except ValueError:
+            logging.warning('read memory fail: key[%s]' % key)
+            return default
 
     def write(self, table_name, key, value, soulID=0):
         logging.debug("kikka memory write %s"%key)
-        return self._deepmemory.write(table_name, key, value, soulID)
+        try:
+            name = str('T_' + table_name).upper()
+            sql = "insert or replace into %s(key, soul, value) values(?, ?, ?)" % name
+
+            if isinstance(value, dict) is True:
+                for k in value.keys():
+                    if isinstance(k, (bool, int, float)) is False:
+                        continue
+                    logging.warning("when write dict to memory, the key of bool, int or float will be converted to string")
+                    break
+
+            value = str(value) if isinstance(value, (list, dict)) is False else json.dumps(value)
+            self._sql_worker.execute(sql, (key, soulID, value))
+        except Exception:
+            logging.warning('write memory fail: key[%s]' % key)
 
     def execute(self, query, values=None):
-        return self._deepmemory.execute(query, values)
+        return self._sql_worker.execute(query, values)
 
 class DeepMemory:
     def __init__(self, filename):
@@ -72,6 +118,8 @@ class DeepMemory:
         pass
 
     def close(self):
+        logging.info("__del__")
+
         if self._sql_worker is not None:
             self._sql_worker.close()
             self._sql_worker = None
@@ -110,6 +158,13 @@ class DeepMemory:
         try:
             name = str('T_' + table_name).upper()
             sql = "insert or replace into %s(key, soul, value) values(?, ?, ?)" % name
+
+            if isinstance(value, dict) is True:
+                for k in value.keys():
+                    if isinstance(k, (bool, int, float)) is False:
+                        continue
+                    logging.warning("when write dict to memory, the key of bool, int or float will be converted to string")
+                    break
 
             value = str(value) if isinstance(value, (list, dict)) is False else json.dumps(value)
             self._sql_worker.execute(sql, (key, soul, value))

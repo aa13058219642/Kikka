@@ -55,8 +55,8 @@ class KikkaMenu:
             shell = kikka.shell.getShellByIndex(i)
             callbackfunc = lambda checked, name=shell.name: ghost.changeShell(name)
             act = menu.addMenuItem(shell.unicode_name, callbackfunc, None, group1)
+            act.setData(shell.name)
             act.setCheckable(True)
-            act.setChecked(True)
         mainmenu.addSubMenu(menu)
 
         # clothes list
@@ -72,7 +72,6 @@ class KikkaMenu:
             callbackfunc = lambda checked, name=balloon.name: ghost.setBalloon(name)
             act = menu.addMenuItem(balloon.unicode_name, callbackfunc, None, group2)
             act.setCheckable(True)
-            act.setChecked(True)
         mainmenu.addSubMenu(menu)
 
         optionmenu = KikkaMenu.createOptionMenu(parent, ghost)
@@ -109,10 +108,10 @@ class KikkaMenu:
 
             mainmenu.addSeparator()
             mainmenu.addSubMenu(menu)
-            mainmenu.addSeparator()
 
         from kikka_app import KikkaApp
         callbackfunc = lambda: KikkaApp.this().exitApp()
+        mainmenu.addSeparator()
         mainmenu.addMenuItem("Exit", callbackfunc)
         return mainmenu
 
@@ -127,11 +126,11 @@ class KikkaMenu:
         menu = Menu(mainmenu, ghost.ID, "Shells")
         group1 = QActionGroup(parent)
         for i in range(kikka.shell.getShellCount()):
-            shellname = kikka.shell.getShellByIndex(i).name
-            callbackfunc = lambda checked, name=shellname: ghost.changeShell(shellname)
-            act = menu.addMenuItem(shellname, callbackfunc, None, group1)
+            shell = kikka.shell.getShellByIndex(i)
+            callbackfunc = lambda checked, name=shell.name: ghost.changeShell(name)
+            act = menu.addMenuItem(shell.unicode_name, callbackfunc, None, group1)
+            act.setData(shell.name)
             act.setCheckable(True)
-            act.setChecked(True)
         mainmenu.addSubMenu(menu)
 
         # clothes list
@@ -457,6 +456,38 @@ class Menu(QMenu):
         self.confirmMenuSize(act, menu.title())
         return act
 
+    def getSubMenu(self, menuName):
+        for i in range(len(self.actions())):
+            act = self.actions()[i]
+            text = act.text()
+            if act.text() == menuName:
+                return act.menu()
+        return None
+
+    def getAction(self, actionName):
+        for i in range(len(self.actions())):
+            act = self.actions()[i]
+            text = act.text()
+            if act.text() == actionName:
+                return act
+        return None
+
+    def getActionByData(self, data):
+        for i in range(len(self.actions())):
+            act = self.actions()[i]
+            if act.data() == data:
+                return act
+        return None
+
+    def checkAction(self, actionName, isChecked):
+        for i in range(len(self.actions())):
+            act = self.actions()[i]
+            if act.text() != actionName:
+                continue
+
+            act.setChecked(isChecked)
+        pass
+
     def confirmMenuSize(self, item, text=''):
         s = self.sizeHint()
         w, h = kikka.helper.getScreenResolution()
@@ -526,7 +557,7 @@ class Menu(QMenu):
             act = self.actions()[i]
 
             if act.isVisible() is False \
-                    or (self.separatorsCollapsible() and previousWasSeparator and act.isSeparator()):
+            or (self.separatorsCollapsible() and previousWasSeparator and act.isSeparator()):
                 # we continue, this action will get an empty QRect
                 self._aRect[i] = QRect()
                 continue

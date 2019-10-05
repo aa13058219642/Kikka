@@ -16,7 +16,7 @@ class GhostKikka(GhostBase):
     def __init__(self, gid=-1, name='Kikka'):
         GhostBase.__init__(self, gid, name)
         w_kikka = self.addWindow(KIKKA, 0)
-        w_towa = self.addWindow(TOWA, 10)
+        w_towa = self.addWindow(TOWA, 110)
 
         # self.initEvent()
         self.bindEvent()
@@ -106,55 +106,57 @@ class GhostKikka(GhostBase):
     def initEvent(self):
         e = {}
 
-        tag = ['Head', 'Face', 'Bust', 'Hand']
-        e[GhostEvent.MouseDown] = {}
-        e[GhostEvent.MouseDown]['Head'] = head_click
-        e[GhostEvent.MouseDown]['Face'] = face_click
-        e[GhostEvent.MouseDown]['Bust'] = bust_click
-        e[GhostEvent.MouseDown]['Hand'] = hand_click
-
-        e[GhostEvent.MouseMove] = {}
-        e[GhostEvent.MouseMove]['Head'] = head_touch
-        e[GhostEvent.MouseMove]['Face'] = face_touch
-        e[GhostEvent.MouseMove]['Bust'] = bust_touch
-        e[GhostEvent.MouseMove]['Hand'] = hand_touch
-
-        e[GhostEvent.MouseDoubleClick] = {}
-        e[GhostEvent.MouseDoubleClick]['Head'] = head_doubleclick
-        e[GhostEvent.MouseDoubleClick]['Face'] = face_doubleclick
-        e[GhostEvent.MouseDoubleClick]['Bust'] = bust_doubleclick
-        e[GhostEvent.MouseDoubleClick]['Hand'] = hand_doubleclick
-
-        e[GhostEvent.CustomEvent]={}
-        e[GhostEvent.CustomEvent]['ResizeWindow'] = resizeWindow
-        e[GhostEvent.CustomEvent]['CloseDialog'] = closeDlg
+        # tag = ['Head', 'Face', 'Bust', 'Hand']
+        # e[GhostEvent.MouseDown] = {}
+        # e[GhostEvent.MouseDown]['Head'] = head_click
+        # e[GhostEvent.MouseDown]['Face'] = face_click
+        # e[GhostEvent.MouseDown]['Bust'] = bust_click
+        # e[GhostEvent.MouseDown]['Hand'] = hand_click
+        #
+        # e[GhostEvent.MouseMove] = {}
+        # e[GhostEvent.MouseMove]['Head'] = head_touch
+        # e[GhostEvent.MouseMove]['Face'] = face_touch
+        # e[GhostEvent.MouseMove]['Bust'] = bust_touch
+        # e[GhostEvent.MouseMove]['Hand'] = hand_touch
+        #
+        # e[GhostEvent.MouseDoubleClick] = {}
+        # e[GhostEvent.MouseDoubleClick]['Head'] = head_doubleclick
+        # e[GhostEvent.MouseDoubleClick]['Face'] = face_doubleclick
+        # e[GhostEvent.MouseDoubleClick]['Bust'] = bust_doubleclick
+        # e[GhostEvent.MouseDoubleClick]['Hand'] = hand_doubleclick
+        #
+        # e[GhostEvent.CustomEvent]={}
+        # e[GhostEvent.CustomEvent]['ResizeWindow'] = resizeWindow
+        # e[GhostEvent.CustomEvent]['CloseDialog'] = closeDlg
         self.eventlist = e
 
     def bindEvent(self):
-        self.bindGhostEvent(GhostEvent.MouseMove, 'Head', head_touch)
-        self.bindGhostEvent(GhostEvent.CustomEvent, 'ResizeWindow', resizeWindow)
-        self.bindGhostEvent(GhostEvent.CustomEvent, 'CloseDialog', closeDlg)
+        self.bindGhostEvent(GhostEvent.MouseTouch, 'Head', self.head_touch)
+
+
+        self.bindGhostEvent(GhostEvent.CustomEvent, 'ResizeWindow', self.resizeWindow)
+        self.bindGhostEvent(GhostEvent.CustomEvent, 'CloseDialog', self.closeDlg)
 
 
     def changeShell(self, shellID):
         logging.debug("Please don't peek at me to change clothes!")
         GhostBase.changeShell(self, shellID)
 
-# ########################################################################################################
-def resizeWindow(param):
-    dlg = kikka.core.getGhost(param['GhostID']).getDialog(param['SoulID'])
-    dlg.setFramelessWindowHint(param['bool'])
+    # ########################################################################################################
+    def resizeWindow(self, param):
+        dlg = kikka.core.getGhost(param['GhostID']).getDialog(param['SoulID'])
+        dlg.setFramelessWindowHint(param['bool'])
 
 
-def closeDlg(param):
-    kikka.core.getGhost(param['GhostID']).getDialog(param['SoulID']).hide()
+    def closeDlg(self, param):
+        kikka.core.getGhost(param['GhostID']).getDialog(param['SoulID']).hide()
 
 
-def head_touch(param):
-    # logging.info("head_touch")
-    if param['SoulID'] == KIKKA:
-        kikka.core.getGhost(param['GhostID']).setSurface(param['SoulID'], SurfaceEnum.ENUM_JOY)
-    pass
+    def head_touch(self, param):
+        logging.info("head_touch")
+        if param['SoulID'] == KIKKA:
+            kikka.core.getGhost(param['GhostID']).setSurface(param['SoulID'], SurfaceEnum.ENUM_JOY)
+        pass
 
 
 def head_click(**kwargs):

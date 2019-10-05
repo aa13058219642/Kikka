@@ -36,7 +36,7 @@ class DialogWindow(QWidget):
         self.init()
 
     def init(self):
-        rect = self._ghost.memoryRead('DialogRect', [], self.ID)
+        rect = self._soul.memoryRead('DialogRect', [])
         if len(rect)>0:
             self._rect = QRect(rect[0], rect[1], rect[2], rect[3])
             self.resize(self._rect.size())
@@ -49,7 +49,7 @@ class DialogWindow(QWidget):
 
             self._rect = QRect(QPoint(x, y), self.size())
             rectdata = [x - p_pos.x(), y - p_pos.y(), self.size().width(), self.size().height()]
-            self._ghost.memoryWrite('DialogRect', rectdata, self.ID)
+            self._soul.memoryWrite('DialogRect', rectdata)
         pass
 
     def setFramelessWindowHint(self, boolean):
@@ -69,7 +69,7 @@ class DialogWindow(QWidget):
             self._rect.setY(self.geometry().y() - self._shellwindow.pos().y())
             self._rect.setSize(self.geometry().size())
             rectdata = [self._rect.x(), self._rect.y(), self._rect.width(), self._rect.height()]
-            self._ghost.memoryWrite('DialogRect', rectdata, self.ID)
+            self._soul.memoryWrite('DialogRect', rectdata)
 
             pos = QPoint(self.pos().x(), self.pos().y())
             self.setWindowFlag(Qt.FramelessWindowHint, True)

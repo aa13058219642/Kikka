@@ -2,7 +2,7 @@
 import logging
 
 from PyQt5.QtCore import Qt, QRect, QPoint
-from PyQt5.QtGui import QPixmap, QPainter, QColor, QImage, QFont
+from PyQt5.QtGui import QPixmap, QPainter, QColor, QImage, QCursor
 from PyQt5.QtWidgets import QWidget
 
 from ghostevent import GhostEvent
@@ -22,6 +22,8 @@ class ShellWindow(QWidget):
         self._movepos = QPoint(0, 0)
         self._mousepos = QPoint(0, 0)
         self._pixmap = None
+        self._touchType = None
+        self._touchTick = 0
 
         self._init()
 
@@ -34,7 +36,7 @@ class ShellWindow(QWidget):
         #self.setContextMenuPolicy(Qt.ActionsContextMenu)
 
         # size and position
-        rect = self._ghost.memoryRead('ShellRect', [], self.ID)
+        rect = self._soul.memoryRead('ShellRect', [])
         if len(rect) > 0:
             self.move(rect[0], rect[1])
             self.resize(rect[2], rect[3])
@@ -55,19 +57,32 @@ class ShellWindow(QWidget):
         my = self._mousepos.y()
         for cid, box in self._boxes.items():
             rect = box[0]
-            if rect.contains(mx, my) is True:
-                tag = box[1]
-                # self._ghost.event_selector(event, tag, nid=self.ID)
-                param = {}
-                param['EventType'] = eventType
-                param['EventTag'] = tag
-                param['ShellWindowID'] = self.ID
-                param['SoulID'] = self._soul.ID
-                param['QEvent'] = event
-                self._ghost.emitGhostEvent(eventType, tag, param)
-                return
-        pass
-    
+            if rect.contains(mx, my) is False:
+                continue
+
+            tag = box[1]
+            param = {}
+            param['EventType'] = eventType
+            param['EventTag'] = tag
+            param['ShellWindowID'] = self.ID
+            param['SoulID'] = self._soul.ID
+            param['QEvent'] = event
+            self._ghost.emitGhostEvent(eventType, tag, param)
+
+            # Touch
+            if self._touchType == eventType:
+                self._touchTick += 1
+            else:
+                self._touchTick = 1
+                self._touchType = eventType
+
+            TouchArea = rect.width() * rect.height()
+            if self._touchTick > TouchArea / 40:
+                self._touchTick = 0
+                self._ghost.emitGhostEvent(GhostEvent.MouseTouch, tag, param)
+            return tag
+        return None
+
     def _mouseLogging(self, event, button, x, y):
         page_sizes = dict((n, x) for x, n in vars(Qt).items() if isinstance(n, Qt.MouseButton))
         logging.debug("%s %s (%d, %d)", event, page_sizes[button], x, y)
@@ -76,10 +91,8 @@ class ShellWindow(QWidget):
         return self._movepos.x(), self._movepos.y()
 
     def saveShellRect(self):
-        self._ghost.memoryWrite('ShellRect',
-                                [self.pos().x(), self.pos().y(), self.size().width(), self.size().height()],
-                                self.ID)
-        pass
+        rect = [self.pos().x(), self.pos().y(), self.size().width(), self.size().height()]
+        self._soul.memoryWrite('ShellRect', rect)
 
     # ##############################################################################################################
     # Event
@@ -138,7 +151,13 @@ class ShellWindow(QWidget):
         else:
             self._isMoving = False
 
-        self._boxCollision(GhostEvent.MouseMove, event)
+        tag = self._boxCollision(GhostEvent.MouseMove, event)
+        if tag == 'Bust':
+            self.setCursor(QCursor(Qt.OpenHandCursor))
+        elif tag is None:
+            self.setCursor(QCursor(Qt.ArrowCursor))
+        else:
+            self.setCursor(QCursor(Qt.PointingHandCursor))
 
     def mouseReleaseEvent(self, event):
         self._mouseLogging("mouseReleaseEvent", event.buttons(), event.globalPos().x(), event.globalPos().y())
@@ -168,7 +187,6 @@ class ShellWindow(QWidget):
         for url in urls:
             logging.info("drop file: %s" % url.toLocalFile())
         pass
-
 
     ###############################################################################################################
     # paint event
@@ -212,7 +230,7 @@ class ShellWindow(QWidget):
             line = drawText(painter, line, left, "Name: %s" % self._ghost.name)
             line = drawText(painter, line, left, "Soul ID: %d" % self._soul.ID)
             line = drawText(painter, line, left, "surface: %d" % self._soul.getCurrentSurfaceID())
-            line = drawText(painter, line, left, "bind: %s" % shell.getBind())
+            line = drawText(painter, line, left, "bind: %s" % shell.getBind(self._soul.ID))
             line = drawText(painter, line, left, "animations: %s" % self._soul.getRunningAnimation())
             line = drawText(painter, line, left, "shell offset: %d %d" % (shell_offset.x(), shell_offset.y()), Qt.green)
             line = drawText(painter, line, left, "draw offset: %d %d" % (draw_offset.x(), draw_offset.y()), Qt.blue)
