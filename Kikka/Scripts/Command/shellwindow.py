@@ -39,7 +39,6 @@ class ShellWindow(QWidget):
             self.move(rect[0], rect[1])
             self.resize(rect[2], rect[3])
 
-
     def setBoxes(self, boxes, offset):
         self._boxes = {}
         self._offset = offset
@@ -48,7 +47,7 @@ class ShellWindow(QWidget):
             rect.moveTopLeft(col.Point1 + offset)
             self._boxes[cid] = (rect, col.tag)
 
-    def _boxCollision(self, event):
+    def _boxCollision(self, eventType, event):
         if self._isMoving is True:
             return
 
@@ -58,7 +57,14 @@ class ShellWindow(QWidget):
             rect = box[0]
             if rect.contains(mx, my) is True:
                 tag = box[1]
-                self._ghost.event_selector(event, tag, nid=self.ID)
+                # self._ghost.event_selector(event, tag, nid=self.ID)
+                param = {}
+                param['EventType'] = eventType
+                param['EventTag'] = tag
+                param['ShellWindowID'] = self.ID
+                param['SoulID'] = self._soul.ID
+                param['QEvent'] = event
+                self._ghost.emitGhostEvent(eventType, tag, param)
                 return
         pass
     
@@ -104,8 +110,8 @@ class ShellWindow(QWidget):
     #     return False
 
     def contextMenuEvent(self, event):
-        self._ghost.showMenu(self.ID, event.globalPos())
         # logging.info('contextMenuEvent')
+        self._ghost.showMenu(self.ID, event.globalPos())
 
     def mousePressEvent(self, event):
         self._mouseLogging("mousePressEvent", event.buttons(), event.globalPos().x(), event.globalPos().y())
@@ -114,12 +120,7 @@ class ShellWindow(QWidget):
             self._isMoving = True
             event.accept()
 
-        self._boxCollision(GhostEvent.MouseDown)
-        # if self._isMoving is False:
-        #     eventtag = self._boxCollision()
-        #     if eventtag is not None:
-        #         self._ghost.event_selector(self.nid, GhostEvent.MouseDown, eventtag)
-        pass
+        self._boxCollision(GhostEvent.MouseDown, event)
 
     def mouseMoveEvent(self, event):
         # self._mouseLogging("mouseMoveEvent", event.buttons(), event.globalPos().x(), event.globalPos().y())
@@ -137,23 +138,14 @@ class ShellWindow(QWidget):
         else:
             self._isMoving = False
 
-        self._boxCollision(GhostEvent.MouseMove)
-        # if self._isMoving is False:
-        #     eventtag = self._boxCollision()
-        #     if eventtag is not None:
-        #         self._ghost.event_selector(self.nid, GhostEvent.MouseMove, eventtag)
-        pass
+        self._boxCollision(GhostEvent.MouseMove, event)
 
     def mouseReleaseEvent(self, event):
         self._mouseLogging("mouseReleaseEvent", event.buttons(), event.globalPos().x(), event.globalPos().y())
         self._isMoving = False
         self.saveShellRect()
 
-        self._boxCollision(GhostEvent.MouseUp)
-        # eventtag = self._boxCollision()
-        # if eventtag is not None:
-        #     self._ghost.event_selector(self.nid, GhostEvent.MouseUp, eventtag)
-        pass
+        self._boxCollision(GhostEvent.MouseUp, event)
 
     def mouseDoubleClickEvent(self, event):
         self._mouseLogging("mouseDoubleClickEvent", event.buttons(), event.globalPos().x(), event.globalPos().y())
@@ -161,21 +153,11 @@ class ShellWindow(QWidget):
             self._isMoving = False
             self._ghost.getDialog(self.ID).show()
 
-        self._boxCollision(GhostEvent.MouseDoubleClick)
-        # if self._isMoving is False:
-        #     eventtag = self._boxCollision()
-        #     if eventtag is not None:
-        #         self._ghost.event_selector(self.nid, GhostEvent.MouseDoubleClick, eventtag)
-        pass
+        self._boxCollision(GhostEvent.MouseDoubleClick, event)
 
     def wheelEvent(self, event):
         # self._mouseLogging("wheelEvent", btn, event.pos().x(), event.pos().y())
-        self._boxCollision(GhostEvent.WheelEvent)
-        # if self._isMoving is False:
-        #     eventtag = self._boxCollision()
-        #     if eventtag is not None:
-        #         self._ghost.event_selector(self.nid, GhostEvent.WheelEvent, eventtag)
-        pass
+        self._boxCollision(GhostEvent.WheelEvent, event)
 
     def dragEnterEvent(self, event):
 

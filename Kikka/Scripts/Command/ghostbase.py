@@ -3,27 +3,36 @@ import logging
 import os
 import time
 import random
+
 from collections import OrderedDict
 
-from PyQt5.QtCore import Qt, QPoint, QRect, QSize, QRectF
+from PyQt5.QtCore import Qt, QPoint, QRect, QSize, pyqtSignal, QObject
 from PyQt5.QtGui import QImage, QPainter, QColor, QPixmap
 
 import kikka
 from kikka_menu import MenuStyle
 from soul import Soul
+from ghostevent import GhostEvent
+
+
+class KikkaGhostSignal(QObject):
+    ghostEvent = pyqtSignal(GhostEvent, str, dict)
+
 
 class GhostBase:
+
     def __init__(self, ghost_id=-1, name=''):
         self.ID = ghost_id if ghost_id != -1 else kikka.core.newGhostID()
         self.name = name
         self.shell = None
         self.balloon = None
+        self.signal = KikkaGhostSignal()
 
         self._souls = OrderedDict()
         self._shell_image = {}
         self._balloon_image = {}
 
-        self.eventlist = {}
+        self._eventlist = {}
         self.animation_list = {}
 
         self._balloon_image_cache = None
@@ -38,6 +47,7 @@ class GhostBase:
         self.setShell(self.memoryRead('CurrentShellName', ''))
         self.setBalloon(self.memoryRead('CurrentBalloonName', ''))
         self.setIsLockOnTaskbar(self.memoryRead('isLockOnTaskbar', True))
+        self.signal.ghostEvent.connect(self.ghostEvent)
 
     def show(self):
         for soul in reversed(self._souls.values()):
@@ -305,17 +315,44 @@ class GhostBase:
             table_name = str('ghost_' + self.name)
         kikka.memory.write(table_name, key, value, soul_id)
 
-    def event_selector(self, event, tag, **kwargs):
-        if 'gid' not in kwargs: kwargs['gid'] = self.ID
-
-        e = self.getEventList()
-        if event in e and tag in e[event]:
-            e[event][tag](**kwargs)
-
-    def getEventList(self):
-        return self.eventlist
-
     def updateClothesMenu(self, soul_id):
         if soul_id in self._souls.keys():
             self._souls[soul_id].updateClothesMenu()
 
+    def bindGhostEvent(self, eventType, tag, callbackFunc):
+        if eventType not in self._eventlist.keys():
+            self._eventlist[eventType] = {}
+
+        if tag not in self._eventlist[eventType].keys():
+            self._eventlist[eventType][tag] = []
+
+        self._eventlist[eventType][tag].append(callbackFunc)
+
+    def removeGhostEvent(self, eventType, tag=None, callbackFunc=None):
+        if eventType not in self._eventlist.keys():
+            return
+
+        if tag is None:
+            self._eventlist[eventType].clear()
+            return
+
+        if tag in self._eventlist[eventType].keys():
+            if callbackFunc is None:
+                self._eventlist[eventType][tag].clear()
+            else:
+                self._eventlist[eventType][tag].remove(callbackFunc)
+        pass
+
+    def emitGhostEvent(self, eventType, tag, param=None):
+        argv = param if param is not None else {}
+        if 'GhostID' not in argv.keys():
+            argv['GhostID'] = self.ID
+        self.signal.ghostEvent.emit(eventType, tag, argv)
+
+    def ghostEvent(self, eventType, tag, argv=None):
+        if eventType in self._eventlist.keys() \
+        and tag in self._eventlist[eventType].keys() \
+        and len(self._eventlist[eventType][tag])>0:
+            for eventFunc in self._eventlist[eventType][tag]:
+                eventFunc(argv)
+        pass

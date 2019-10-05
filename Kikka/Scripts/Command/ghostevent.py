@@ -1,6 +1,6 @@
 # coding=utf-8
-from enum import Enum
 
+from enum import Enum
 
 class GhostEvent(Enum):
     MouseDown = 0
@@ -8,6 +8,8 @@ class GhostEvent(Enum):
     MouseUp = 2
     MouseDoubleClick = 3
     WheelEvent = 4
+
+    MouseTouch = 10
 
     CustomEvent = 99
 

@@ -7,7 +7,7 @@ from enum import Enum
 from PyQt5.QtCore import QTimer, QObject, pyqtSignal
 
 import kikka
-from ghostbase import GhostBase
+
 
 class KikkaCoreSignal(QObject):
     hide = pyqtSignal()
