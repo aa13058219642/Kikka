@@ -1,11 +1,11 @@
 # coding=utf-8
 import logging
+import random
 
 from PyQt5.QtWidgets import QWidget, QPushButton, QStackedLayout, QVBoxLayout, QHBoxLayout, QLabel, QGridLayout
 
 import kikka
-from ghostevent import GhostEvent
-from kikka_const import SurfaceEnum
+from kikka_const import SurfaceEnum, GhostEvent
 from ghostbase import GhostBase
 
 KIKKA = 0
@@ -16,10 +16,8 @@ class GhostKikka(GhostBase):
     def __init__(self, gid=-1, name='Kikka'):
         GhostBase.__init__(self, gid, name)
         w_kikka = self.addWindow(KIKKA, 0)
-        w_towa = self.addWindow(TOWA, 110)
+        w_towa = self.addWindow(TOWA, 10)
 
-        # self.initEvent()
-        self.bindEvent()
         self.initLayout()
         self.initMenu()
 
@@ -83,60 +81,50 @@ class GhostKikka(GhostBase):
             page.setLayout(girdlayout)
             self._stackedLayout.addWidget(page)
 
+        callback_ResizeWindow = lambda : self.emitGhostEvent(kikka.helper.makeGhostEventParam(self.ID, GhostEvent.CustomEvent, 'ResizeWindow', {'bool':False, 'SoulID':KIKKA}))
+        callback_CloseDialog = lambda : self.emitGhostEvent(kikka.helper.makeGhostEventParam(self.ID, GhostEvent.CustomEvent, 'CloseDialog', {'bool':False, 'SoulID':KIKKA}))
+
         # 2.1 page1
-        param = {}
-        param['bool'] = False
-        param['SoulID'] = KIKKA
-        callbackfunc = lambda : self.emitGhostEvent(GhostEvent.CustomEvent, 'ResizeWindow', param)
         for i in range(3):
             girdlayout = self._girdlayouts[i]
             for j in range(5):
                 but = QPushButton("move%d(%d)" % (i, j))
-                but.clicked.connect(callbackfunc)
+                but.clicked.connect(callback_ResizeWindow)
                 girdlayout.addWidget(but, j, 0)
 
                 but2 = QPushButton("close%d(%d)" % (i, j))
-                but2.clicked.connect(lambda : self.emitGhostEvent(GhostEvent.CustomEvent, 'CloseDialog', param))
+                but2.clicked.connect(callback_CloseDialog)
                 girdlayout.addWidget(but2, j, 1)
             but = QPushButton("move%d(%d)" % (i, 5))
-            but.clicked.connect(callbackfunc)
+            but.clicked.connect(callback_ResizeWindow)
             girdlayout.addWidget(but, 5, 0)
         dlg.setLayout(self._mainLayout)
 
-    def initEvent(self):
-        e = {}
+    def ghostEvent(self, param):
+        super().ghostEvent(param)
 
-        # tag = ['Head', 'Face', 'Bust', 'Hand']
-        # e[GhostEvent.MouseDown] = {}
-        # e[GhostEvent.MouseDown]['Head'] = head_click
-        # e[GhostEvent.MouseDown]['Face'] = face_click
-        # e[GhostEvent.MouseDown]['Bust'] = bust_click
-        # e[GhostEvent.MouseDown]['Hand'] = hand_click
-        #
-        # e[GhostEvent.MouseMove] = {}
-        # e[GhostEvent.MouseMove]['Head'] = head_touch
-        # e[GhostEvent.MouseMove]['Face'] = face_touch
-        # e[GhostEvent.MouseMove]['Bust'] = bust_touch
-        # e[GhostEvent.MouseMove]['Hand'] = hand_touch
-        #
-        # e[GhostEvent.MouseDoubleClick] = {}
-        # e[GhostEvent.MouseDoubleClick]['Head'] = head_doubleclick
-        # e[GhostEvent.MouseDoubleClick]['Face'] = face_doubleclick
-        # e[GhostEvent.MouseDoubleClick]['Bust'] = bust_doubleclick
-        # e[GhostEvent.MouseDoubleClick]['Hand'] = hand_doubleclick
-        #
-        # e[GhostEvent.CustomEvent]={}
-        # e[GhostEvent.CustomEvent]['ResizeWindow'] = resizeWindow
-        # e[GhostEvent.CustomEvent]['CloseDialog'] = closeDlg
-        self.eventlist = e
+        self.surfaceEvent(param)
+        if param.eventType == GhostEvent.CustomEvent:
+            if param.eventTag == 'ResizeWindow':
+                self.resizeWindow(param)
+            elif param.eventTag == 'CloseDialog':
+                self.closeDlg(param)
 
-    def bindEvent(self):
-        self.bindGhostEvent(GhostEvent.MouseTouch, 'Head', self.head_touch)
-
-
-        self.bindGhostEvent(GhostEvent.CustomEvent, 'ResizeWindow', self.resizeWindow)
-        self.bindGhostEvent(GhostEvent.CustomEvent, 'CloseDialog', self.closeDlg)
-
+    def surfaceEvent(self, param):
+        ghost = kikka.core.getGhost(param.ghostID)
+        sid = param.data['SoulID']
+        if sid == KIKKA:
+            if param.eventType == GhostEvent.MouseTouch:
+                if param.eventTag == 'Head':
+                    faceID = random.choice([SurfaceEnum.NORMAL, SurfaceEnum.SHY, SurfaceEnum.HAPPINESS, SurfaceEnum.SHY2])
+                    ghost.setSurface(sid, faceID)
+                elif param.eventTag == 'Face':
+                    ghost.setSurface(sid, SurfaceEnum.EYE_CLOSURE)
+                elif param.eventTag == 'Bust':
+                    ghost.setSurface(sid, SurfaceEnum.DISAPPOINTED)
+        elif sid == TOWA:
+            pass
+        pass
 
     def changeShell(self, shellID):
         logging.debug("Please don't peek at me to change clothes!")
@@ -144,80 +132,9 @@ class GhostKikka(GhostBase):
 
     # ########################################################################################################
     def resizeWindow(self, param):
-        dlg = kikka.core.getGhost(param['GhostID']).getDialog(param['SoulID'])
-        dlg.setFramelessWindowHint(param['bool'])
-
+        dlg = kikka.core.getGhost(param.ghostID).getDialog(param.data['SoulID'])
+        dlg.setFramelessWindowHint(param.data['bool'])
 
     def closeDlg(self, param):
-        kikka.core.getGhost(param['GhostID']).getDialog(param['SoulID']).hide()
-
-
-    def head_touch(self, param):
-        logging.info("head_touch")
-        if param['SoulID'] == KIKKA:
-            kikka.core.getGhost(param['GhostID']).setSurface(param['SoulID'], SurfaceEnum.ENUM_JOY)
-        pass
-
-
-def head_click(**kwargs):
-    #logging.info("head_click")
-    pass
-
-
-def head_doubleclick(**kwargs):
-    logging.info("head_doubleclick")
-    pass
-
-
-def face_touch(**kwargs):
-    #logging.info("face_touch")
-    if kwargs['nid'] == KIKKA:
-        kikka.core.getGhost(kwargs['gid']).setSurface(kwargs['nid'], SurfaceEnum.ENUM_ANGER2)
-    pass
-
-
-def face_click(**kwargs):
-    #logging.info("face_click")
-    pass
-
-
-def face_doubleclick(**kwargs):
-    #logging.info("face_doubleclick")
-    pass
-
-
-def bust_touch(**kwargs):
-    #logging.info("bust_touch")
-    if kwargs['nid'] == KIKKA:
-        kikka.core.getGhost(kwargs['gid']).setSurface(kwargs['nid'], SurfaceEnum.ENUM_NORMAL)
-    pass
-
-
-def bust_click(**kwargs):
-    #logging.info("bust_click")
-    pass
-
-
-def bust_doubleclick(**kwargs):
-    #logging.info("bust_doubleclick")
-    pass
-
-
-def hand_touch(**kwargs):
-    #logging.info("hand_touch")
-    pass
-
-
-def hand_click(**kwargs):
-    #logging.info("hand_click")
-    pass
-
-
-def hand_doubleclick(**kwargs):
-    #logging.info("hand_doubleclick")
-    pass
-
-
-
-
+        kikka.core.getGhost(param.ghostID).getDialog(param.data['SoulID']).hide()
 

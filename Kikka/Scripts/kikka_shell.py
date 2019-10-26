@@ -11,7 +11,7 @@ from collections import OrderedDict
 from PyQt5.QtCore import QPoint, QRect
 
 import kikka
-from kikka_const import WindowConst
+from kikka_const import WindowConst, SurfaceEnum, SurfaceNameEnum
 
 class KikkaShell:
     _instance = None
@@ -111,6 +111,7 @@ class Shell:
         self.shellmenustyle = ShellMenuStyle()
 
         self._surfaces = {}
+        self._surfacesName = {}
         self._updatetime = 0
 
         self.init()
@@ -139,6 +140,7 @@ class Shell:
         if self.isLoaded is False:
             logging.info("load shell: %s", self.unicode_name)
             self._load_surfaces()
+            self._load_surfaceTable()
             self._sort_data()
             self._updatetime = time.clock()
             self.isLoaded = True
@@ -444,9 +446,36 @@ class Shell:
                 self._IgnoreParams(keys, values)
         pass
 
+    def _load_surfaceTable(self):
+        table_path = os.path.join(self.resource_path, 'surfacetable.txt')
+        if not os.path.exists(table_path):
+            return
+
+        charset = kikka.helper.checkEncoding(table_path)
+        f = open(table_path, 'r', encoding=charset)
+        for line in f:
+            line = line.replace("\n", "").replace("\r", "")
+            line = line.strip(' ')
+
+            if line == '' \
+            or line.find(r'\\') == 0 \
+            or line.find('//') == 0 \
+            or line.find('#') == 0:
+                continue
+
+            try:
+                keys = line.replace(' ', '').split(',')
+                ID = int(keys[0])
+                if ID in self._surfaces:
+                    self._surfaces[ID].unicode_name = keys[1]
+            except:
+                continue
+        pass  # exit for
+
     def _load_surfaces(self):
         surfaces_path = os.path.join(self.resource_path, 'surfaces.txt')
-        if not os.path.exists(surfaces_path): return
+        if not os.path.exists(surfaces_path):
+            return
         surfaces_map = self._open_surfaces(surfaces_path)
 
         i = 2
@@ -475,17 +504,26 @@ class Shell:
             self._surfaces[sid].animations = _sort(surface.animations.items(), self.animation_sort == 'ascend')
             if self.collision_sort != 'none':
                 self._surfaces[sid].CollisionBoxes = _sort(surface.CollisionBoxes.items(), self.collision_sort == 'ascend')
-        pass
+
+        self._surfacesName = {}
+        for sid, surface in self._surfaces.items():
+            self._surfacesName[sid] = (surface.name, surface.unicode_name)
 
     def getSurface(self, surfacesID):
         if surfacesID in self._surfaces:
             return self._surfaces[surfacesID]
         else:
-            logging.error("setCurShell: index[%d] NOT in shells list" % (surfacesID))
+            logging.error("getSurface: surfaceID: %d NOT exist" % (surfacesID))
+            return None
+
+    def getSurfaceNameList(self):
+        return self._surfacesName
 
     def getCollisionBoxes(self, surfacesID):
-        surface = self._surfaces[surfacesID]
-        return surface.CollisionBoxes
+        if surfacesID in self._surfaces:
+            return self._surfaces[surfacesID].CollisionBoxes
+        else:
+            return {}
 
     def getOffset(self, soulId):
         return self.setting[soulId].offset
@@ -534,6 +572,8 @@ class AnimationData:
 class Surface:
     def __init__(self, id, values):
         self.ID = id
+        self.name = SurfaceNameEnum[id] if id in SurfaceNameEnum.keys() else 'Surface%d'%id
+        self.unicode_name = None
         self.elements = {}
         self.animations = {}
         self.CollisionBoxes = {}

@@ -12,11 +12,10 @@ from PyQt5.QtGui import QImage, QPainter, QColor, QPixmap
 import kikka
 from kikka_menu import MenuStyle
 from soul import Soul
-from ghostevent import GhostEvent
-
+from kikka_helper import GhostEventParam
 
 class KikkaGhostSignal(QObject):
-    ghostEvent = pyqtSignal(GhostEvent, str, dict)
+    ghostEvent = pyqtSignal(GhostEventParam)
 
 
 class GhostBase:
@@ -170,6 +169,14 @@ class GhostBase:
         if soul_id in self._souls.keys():
             self._souls[soul_id].setSurface(surface_id)
 
+    def getCurrentSurface(self, soul_id):
+        if soul_id in self._souls.keys():
+            return self._souls[soul_id].getCurrentSurface()
+
+    def getCurrentSurfaceID(self, soul_id):
+        if soul_id in self._souls.keys():
+            return self._souls[soul_id].getCurrentSurfaceID()
+
     def getBalloonImage(self, size: QSize, flip=False, soul_id=-1):
         if self._balloon is None:
             logging.warning("getBalloonImage: balloon is None")
@@ -299,40 +306,9 @@ class GhostBase:
         if soul_id in self._souls.keys():
             self._souls[soul_id].updateClothesMenu()
 
-    def bindGhostEvent(self, eventType, tag, callbackFunc):
-        if eventType not in self._eventlist.keys():
-            self._eventlist[eventType] = {}
+    def emitGhostEvent(self, param):
+        self.signal.ghostEvent.emit(param)
 
-        if tag not in self._eventlist[eventType].keys():
-            self._eventlist[eventType][tag] = []
-
-        self._eventlist[eventType][tag].append(callbackFunc)
-
-    def removeGhostEvent(self, eventType, tag=None, callbackFunc=None):
-        if eventType not in self._eventlist.keys():
-            return
-
-        if tag is None:
-            self._eventlist[eventType].clear()
-            return
-
-        if tag in self._eventlist[eventType].keys():
-            if callbackFunc is None:
-                self._eventlist[eventType][tag].clear()
-            else:
-                self._eventlist[eventType][tag].remove(callbackFunc)
+    def ghostEvent(self, param=None):
         pass
 
-    def emitGhostEvent(self, eventType, tag, param=None):
-        argv = param if param is not None else {}
-        if 'GhostID' not in argv.keys():
-            argv['GhostID'] = self.ID
-        self.signal.ghostEvent.emit(eventType, tag, argv)
-
-    def ghostEvent(self, eventType, tag, argv=None):
-        if eventType in self._eventlist.keys() \
-        and tag in self._eventlist[eventType].keys() \
-        and len(self._eventlist[eventType][tag])>0:
-            for eventFunc in self._eventlist[eventType][tag]:
-                eventFunc(argv)
-        pass

@@ -3,11 +3,24 @@ import os
 import sys
 import hashlib
 import logging
+import copy
 
 from win32api import GetSystemMetrics
 from PyQt5.QtCore import QSize, QPoint
 from PyQt5.QtGui import QImage, QPainter
 from PyQt5.QtWidgets import QApplication
+
+
+class GhostEventParam():
+    def __init__(self, ghostID, eventType=0, eventTag='', data=None):
+        self.ghostID = ghostID
+        self.eventType = eventType
+        self.eventTag = eventTag
+        self.data = {} if data is None else data
+
+    def copy(self):
+        return GhostEventParam(self.ghostID, self.eventType, self.eventTag, copy.deepcopy(self.data))
+
 
 class KikkaHelper:
     _instance = None
@@ -131,7 +144,7 @@ class KikkaHelper:
         md5.update(s.encode())
         return md5.hexdigest()[8:24]
 
-
-
-
+    @staticmethod
+    def makeGhostEventParam(ghostID, eventType=0, eventTag='', data=None):
+        return GhostEventParam(ghostID, eventType, eventTag, data)
 

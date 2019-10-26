@@ -27,6 +27,7 @@ class Soul:
         self._dialog_window = None
         self._size = None
 
+        self._default_surfaceID = surfaceID
         self._surface = None
         self._animations = {}
         self._clothes = {}
@@ -39,8 +40,6 @@ class Soul:
         self._base_rect = QRect()
 
         self.init()
-        self.setSurface(surfaceID)
-        self.updateClothesMenu()
 
     def init(self):
         self._shell_window = ShellWindow(self, self.ID)
@@ -67,6 +66,10 @@ class Soul:
 
         self._size = self._shell_window.size()
         self.resetWindowsPosition(False, self._ghost.getIsLockOnTaskbar())
+
+        self.setSurface(self._default_surfaceID)
+        self.updateClothesMenu()
+        kikka.menu.updateTestSurface(self._menu, self._ghost, self._default_surfaceID)
 
     def show(self):
         self._shell_window.show()
@@ -234,34 +237,42 @@ class Soul:
             logging.warning("animation %d NOT exist!" % aid)
 
     def setSurface(self, surfaceID=-1):
-        if self._surface is not None and self._surface.ID == surfaceID:
-            return
-
-        # -1 for update surface
-        if surfaceID == -1:
+        if self._surface is None:
+            surfaceID = surfaceID if surfaceID != -1 else self._default_surfaceID
+        elif surfaceID == -1:
             surfaceID = self._surface.ID
+        elif surfaceID == self._surface.ID:
+            return
 
         shell = self._ghost.getShell()
         if surfaceID in shell.alias.keys():
             surfaceID = random.choice(shell.alias[surfaceID])
-        logging.info("setSurface: %d", surfaceID)
-        surface = shell.getSurface(surfaceID)
-        if surface is None:
-            logging.warning("setSurfaces: surfaceID: %d NOT exist" % surfaceID)
-            return
 
-        self._surface = surface
-        self.resetAnimation(surface.animations)
+        surface = shell.getSurface(surfaceID)
+        if surface is None and surfaceID != self._default_surfaceID:
+            logging.info("get default surface %d", self._default_surfaceID)
+            surface = shell.getSurface(self._default_surfaceID)
+            surfaceID = self._default_surfaceID
+
+        if surface is None:
+            logging.error("setSurface FAIL")
+            self._surface = None
+            surfaceID = -1
+            self.resetAnimation({})
+        else:
+            logging.info("setSurface: %3d - %s(%s)", surface.ID, surface.name, surface.unicode_name)
+            self._surface = surface
+            self.resetAnimation(surface.animations)
         self.updateDrawRect()
         self.repaint()
         self._shell_window.setBoxes(shell.getCollisionBoxes(surfaceID), self._draw_offset)
-        pass
+        kikka.menu.updateTestSurface(self._menu, self._ghost, surfaceID)
 
     def getCurrentSurface(self):
         return self._surface
 
     def getCurrentSurfaceID(self):
-        return self._surface.ID
+        return self._surface.ID if self._surface is not None else -1
 
     def setClothes(self, aid, isEnable=True):
         self._ghost.getShell().setClothes(self.ID, aid, isEnable)
@@ -333,7 +344,7 @@ class Soul:
             return kikka.helper.getDefaultImage()
 
     def updateDrawRect(self):
-        if self._surface.ID == -1:
+        if self._surface is None or self._surface.ID == -1:
             self._draw_offset = self._ghost.getShell().getOffset(self.ID)
             self._size = kikka.const.WindowConst.ShellWindowDefaultSize
             self._center_point = kikka.const.WindowConst.ShellWindowDefaultCenter
@@ -373,6 +384,10 @@ class Soul:
         painter.fillRect(self._base_image.rect(), Qt.transparent)
         painter.end()
         del painter
+
+        if self._surface is None:
+            return
+
         if len(self._surface.elements) > 0:
             for i, ele in self._surface.elements.items():
                 if ele.filename in shell_image:
@@ -384,7 +399,6 @@ class Soul:
             painter.setCompositionMode(QPainter.CompositionMode_SourceOver)
             painter.drawImage(self._draw_offset, img)
             painter.end()
-
         # self._base_image.save("_base_image.png")
         pass
 
@@ -558,25 +572,6 @@ class Animation:
             kikka.helper.drawImage(destImage, self._image, offset.x(), offset.y(), self._drawType)
 
         return destImage
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

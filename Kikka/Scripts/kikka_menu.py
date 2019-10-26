@@ -102,12 +102,12 @@ class KikkaMenu:
             act.setCheckable(True)
             act.setChecked(kikka.shell.isDebug is True)
 
-            act = menu.addMenuItem("reload shell", callbackfunction3)
-
+            act = menu.addSubMenu(Menu(menu, ghost.ID, "TestSurface"))
             menu.addSubMenu(KikkaMenu.createTestMenu(menu))
 
             mainmenu.addSeparator()
             mainmenu.addSubMenu(menu)
+        pass
 
         from kikka_app import KikkaApp
         callbackfunc = lambda: KikkaApp.this().exitApp()
@@ -338,6 +338,41 @@ class KikkaMenu:
         _test_Exit(testmenu)
 
         return testmenu
+
+    @staticmethod
+    def updateTestSurface(menu, ghost, curSurface=-1):
+        if kikka.core.isDebug is False or menu is None:
+            return
+
+        debugmenu = None
+        for act in menu.actions():
+            if act.text() == 'Debug':
+                debugmenu = act.menu()
+                break
+
+        if debugmenu is None:
+            return
+
+        sufacemenu = None
+        for act in debugmenu.actions():
+            if act.text() == 'TestSurface':
+                sufacemenu = act.menu()
+                break
+
+        if sufacemenu is None:
+            return
+
+        sufacemenu.clear()
+        surfacelist = ghost.getShell().getSurfaceNameList()
+        group = QActionGroup(sufacemenu.parent())
+        for surfaceID, item in surfacelist.items():
+            callbackfunc = lambda checked, surfaceID=surfaceID: ghost.setSurface(0, surfaceID)
+            name = "%3d - %s(%s)" % (surfaceID, item[0], item[1])
+            act = sufacemenu.addMenuItem(name, callbackfunc, None, group)
+            act.setCheckable(True)
+            if surfaceID == curSurface:
+                act.setChecked(True)
+        pass
 
 
 class MenuStyle:

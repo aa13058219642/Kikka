@@ -1,11 +1,12 @@
 # coding=utf-8
 import logging
+import math
 
 from PyQt5.QtCore import Qt, QRect, QPoint
 from PyQt5.QtGui import QPixmap, QPainter, QColor, QImage, QCursor
 from PyQt5.QtWidgets import QWidget
 
-from ghostevent import GhostEvent
+from kikka_const import GhostEvent
 import kikka
 
 
@@ -23,6 +24,7 @@ class ShellWindow(QWidget):
         self._mousepos = QPoint(0, 0)
         self._pixmap = None
         self._touchType = None
+        self._touchPlace = None
         self._touchTick = 0
 
         self._init()
@@ -61,25 +63,28 @@ class ShellWindow(QWidget):
                 continue
 
             tag = box[1]
-            param = {}
-            param['EventType'] = eventType
-            param['EventTag'] = tag
-            param['ShellWindowID'] = self.ID
-            param['SoulID'] = self._soul.ID
-            param['QEvent'] = event
-            self._ghost.emitGhostEvent(eventType, tag, param)
+            param = kikka.helper.makeGhostEventParam(self._ghost.ID, eventType, tag)
+            param.data['ShellWindowID'] = self.ID
+            param.data['SoulID'] = self._soul.ID
+            param.data['QEvent'] = event
+            self._ghost.emitGhostEvent(param)
 
             # Touch
-            if self._touchType == eventType:
+            if self._touchType == eventType and self._touchPlace == tag:
                 self._touchTick += 1
             else:
                 self._touchTick = 1
                 self._touchType = eventType
+                self._touchPlace = tag
 
             TouchArea = rect.width() * rect.height()
-            if self._touchTick > TouchArea / 40:
+            requestTick = max(30, math.sqrt(TouchArea))
+            # print(self._touchTick, requestTick)
+            if self._touchTick > requestTick:
                 self._touchTick = 0
-                self._ghost.emitGhostEvent(GhostEvent.MouseTouch, tag, param)
+                param.eventType = GhostEvent.MouseTouch
+                param.eventTag = tag
+                self._ghost.emitGhostEvent(param)
             return tag
         return None
 
@@ -192,6 +197,8 @@ class ShellWindow(QWidget):
     # paint event
 
     def paintEvent(self, event):
+        if self._pixmap is None:
+            return
         painter = QPainter(self)
         painter.drawPixmap(QPoint(), self._pixmap)
 
@@ -245,14 +252,15 @@ class ShellWindow(QWidget):
             drawPoint(painter, surface_center, Qt.red)
 
             surface = self._soul.getCurrentSurface()
-            for cid, col in surface.CollisionBoxes.items():
-                painter.setPen(Qt.red)
-                rect = QRect(col.Point1, col.Point2)
-                rect.moveTopLeft(col.Point1 + draw_offset)
-                painter.drawRect(rect)
-                painter.fillRect(rect, QColor(255, 255, 255, 64))
-                painter.setPen(Qt.black)
-                painter.drawText(rect, Qt.AlignCenter, col.tag)
+            if surface is not None:
+                for cid, col in surface.CollisionBoxes.items():
+                    painter.setPen(Qt.red)
+                    rect = QRect(col.Point1, col.Point2)
+                    rect.moveTopLeft(col.Point1 + draw_offset)
+                    painter.drawRect(rect)
+                    painter.fillRect(rect, QColor(255, 255, 255, 64))
+                    painter.setPen(Qt.black)
+                    painter.drawText(rect, Qt.AlignCenter, col.tag)
             pass
         painter.end()
         return img
