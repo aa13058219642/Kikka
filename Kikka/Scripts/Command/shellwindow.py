@@ -35,7 +35,7 @@ class ShellWindow(QWidget):
         self.setAttribute(Qt.WA_DeleteOnClose)
         self.setMouseTracking(True)
         self.setAcceptDrops(True)
-        #self.setContextMenuPolicy(Qt.ActionsContextMenu)
+        # self.setContextMenuPolicy(Qt.ActionsContextMenu)
 
         # size and position
         rect = self._soul.memoryRead('ShellRect', [])
@@ -78,7 +78,7 @@ class ShellWindow(QWidget):
                 self._touchPlace = tag
 
             TouchArea = rect.width() * rect.height()
-            requestTick = max(30, math.sqrt(TouchArea))
+            requestTick = max(30.0, math.sqrt(TouchArea))
             # print(self._touchTick, requestTick)
             if self._touchTick > requestTick:
                 self._touchTick = 0
@@ -209,15 +209,15 @@ class ShellWindow(QWidget):
 
     def debugDraw(self, image):
 
-        def drawText(painter, line, left, msg, color=Qt.white):
-            painter.setPen(color)
-            painter.drawText(left, line*12, msg)
-            return line+1
+        def drawText(_painter, _line, _left, msg, color=Qt.white):
+            _painter.setPen(color)
+            _painter.drawText(_left, _line*12, msg)
+            return _line+1
 
-        def drawPoint(painter, point, color=Qt.red):
-            painter.setPen(color)
-            painter.drawEllipse(QRect( point.x()-5, point.y()-5, 10, 10))
-            painter.drawPoint( point.x(), point.y())
+        def drawPoint(_painter, point, color=Qt.red):
+            _painter.setPen(color)
+            _painter.drawEllipse(QRect(point.x() - 5, point.y() - 5, 10, 10))
+            _painter.drawPoint(point.x(), point.y())
 
         shell = self._ghost.getShell()
         shell_offset = shell.getOffset(self._soul.ID)
@@ -271,8 +271,6 @@ class ShellWindow(QWidget):
         return img
 
     def setImage(self, image):
-        # image = QImage(r"C:\\test.png")
-
         if kikka.core.isDebug | kikka.shell.isDebug:
             image = self.debugDraw(image)
         pixmap = QPixmap().fromImage(image, Qt.AutoColor)

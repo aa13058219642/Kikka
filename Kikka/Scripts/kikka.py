@@ -19,4 +19,3 @@ menu = kikka_menu.KikkaMenu.this()
 shell = kikka_shell.KikkaShell.this()
 core = kikka_core.KikkaCore.this()
 balloon = kikka_balloon.KikkaBalloon.this()
-

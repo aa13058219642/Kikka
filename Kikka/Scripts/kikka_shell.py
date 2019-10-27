@@ -2,7 +2,6 @@
 import os
 import re
 import time
-import random
 import logging
 import collections
 from enum import Enum
@@ -11,7 +10,8 @@ from collections import OrderedDict
 from PyQt5.QtCore import QPoint, QRect
 
 import kikka
-from kikka_const import WindowConst, SurfaceEnum, SurfaceNameEnum
+from kikka_const import WindowConst, SurfaceNameEnum
+
 
 class KikkaShell:
     _instance = None
@@ -57,7 +57,7 @@ class KikkaShell:
             for dirname in dirnames:
                 shellpath = os.path.join(parent, dirname)
                 self.loadShell(shelldict, shellpath)
-        pass #exit for
+        pass  # exit for
 
         shellordereddict = collections.OrderedDict(sorted(shelldict.items(), key=lambda t: t[0]))
         for name, shell in shellordereddict.items():
@@ -69,20 +69,20 @@ class KikkaShell:
         if shellname in self._shells:
             return self._shells[shellname]
         else:
-            logging.warning("getShell: '%s' NOT in shell list"%shellname)
+            logging.warning("getShell: '%s' NOT in shell list" % shellname)
             return None
         pass
 
     def getShellByIndex(self, index):
         if 0 <= index < len(self._shells):
             for shell in self._shells.values():
-                if index>0:
+                if index > 0:
                     index -= 1
                     continue
                 else:
                     return shell
         else:
-            logging.warning("getShell: index=%d NOT in shell list"%index)
+            logging.warning("getShell: index=%d NOT in shell list" % index)
             return None
         pass
 
@@ -281,7 +281,7 @@ class Shell:
                             if id not in surfaces_map:
                                 surfaces_map[id] = []
                     pass
-                pass # exit for
+                pass  # exit for
             pass
         pass  # exit for
         f.close()
@@ -417,7 +417,6 @@ class Shell:
                 else:
                     self._IgnoreParams(keys, values)
 
-
             elif key[0] == 'id':
                 self.name = value[0]
             elif key[0] == 'name':
@@ -513,17 +512,14 @@ class Shell:
         if surfacesID in self._surfaces:
             return self._surfaces[surfacesID]
         else:
-            logging.error("getSurface: surfaceID: %d NOT exist" % (surfacesID))
+            logging.error("getSurface: surfaceID: %d NOT exist" % surfacesID)
             return None
 
     def getSurfaceNameList(self):
         return self._surfacesName
 
     def getCollisionBoxes(self, surfacesID):
-        if surfacesID in self._surfaces:
-            return self._surfaces[surfacesID].CollisionBoxes
-        else:
-            return {}
+        return self._surfaces[surfacesID].CollisionBoxes if surfacesID in self._surfaces else {}
 
     def getOffset(self, soulId):
         return self.setting[soulId].offset
@@ -572,7 +568,7 @@ class AnimationData:
 class Surface:
     def __init__(self, id, values):
         self.ID = id
-        self.name = SurfaceNameEnum[id] if id in SurfaceNameEnum.keys() else 'Surface%d'%id
+        self.name = SurfaceNameEnum[id] if id in SurfaceNameEnum.keys() else 'Surface%d' % id
         self.unicode_name = None
         self.elements = {}
         self.animations = {}
@@ -653,7 +649,7 @@ class Surface:
 
             elif matchtype == SurfaceMatchLine.BaseposX:
                 self.basepos.setY(int(params[0]))
-        pass # exit for
+        pass  # exit for
 
 
 class EPatternType(Enum):
@@ -827,7 +823,6 @@ class AuthorInfo:
 class ShellMenuStyle:
     def __init__(self):
         self.hidden = False
-
 
         self.font_family = ''
         self.font_size = -1

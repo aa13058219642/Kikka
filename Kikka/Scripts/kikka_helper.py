@@ -5,13 +5,12 @@ import hashlib
 import logging
 import copy
 
-from win32api import GetSystemMetrics
 from PyQt5.QtCore import QSize, QPoint
 from PyQt5.QtGui import QImage, QPainter
 from PyQt5.QtWidgets import QApplication
 
 
-class GhostEventParam():
+class GhostEventParam:
     def __init__(self, ghostID, eventType=0, eventTag='', data=None):
         self.ghostID = ghostID
         self.eventType = eventType
@@ -147,4 +146,3 @@ class KikkaHelper:
     @staticmethod
     def makeGhostEventParam(ghostID, eventType=0, eventTag='', data=None):
         return GhostEventParam(ghostID, eventType, eventTag, data)
-

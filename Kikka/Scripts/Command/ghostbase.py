@@ -1,8 +1,6 @@
 # coding=utf-8
 import logging
 import os
-import time
-import random
 
 from collections import OrderedDict
 
@@ -13,6 +11,7 @@ import kikka
 from kikka_menu import MenuStyle
 from soul import Soul
 from kikka_helper import GhostEventParam
+
 
 class KikkaGhostSignal(QObject):
     ghostEvent = pyqtSignal(GhostEventParam)
@@ -55,15 +54,18 @@ class GhostBase:
         for soul in self._souls.values():
             soul.hide()
 
-    def getSoul(self, soul_id):
+    def addSoul(self, soul_id, surface_id=0):
         if soul_id in self._souls.keys():
-            return self._souls[soul_id]
-        else:
+            logging.error("addSoul: the soul ID %d exits" % soul_id)
             return None
-
-    def addWindow(self, soul_id, surface_id=0):
         self._souls[soul_id] = Soul(self, soul_id, surface_id)
-        return self._souls[soul_id].getShellWindow()
+        return self._souls[soul_id]
+
+    def getSoul(self, soul_id):
+        return self._souls[soul_id] if soul_id in self._souls.keys() else None
+
+    def getSoulCount(self):
+        return len(self._souls)
 
     def changeShell(self, shellname):
         self.hide()
@@ -71,7 +73,7 @@ class GhostBase:
         self.show()
 
     def reloadShell(self, shellname=None):
-        if shellname==None:
+        if shellname is None:
             shellname = self.shell.name
         self.shell = kikka.shell.getShell(shellname)
         if self.shell is None:
@@ -274,5 +276,3 @@ class GhostBase:
 
     def ghostEvent(self, param):
         pass
-
-

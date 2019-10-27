@@ -1,14 +1,11 @@
 # coding=utf-8
-import sys
 import logging
 
 from PyQt5.QtCore import Qt, QRect, QPoint, QSize
 from PyQt5.QtGui import QPixmap, QPainter
-from PyQt5.QtWidgets import QWidget, QPushButton, QStackedLayout, QStackedWidget, QVBoxLayout, QHBoxLayout, QLabel, QGridLayout, \
-    QStyleOption, QStyle
+from PyQt5.QtWidgets import QWidget, QStackedLayout, QVBoxLayout, QHBoxLayout, QLabel, QStyleOption, QStyle
 
 import kikka
-from kikka_balloon import Balloon
 
 
 class DialogWindow(QWidget):
@@ -36,7 +33,7 @@ class DialogWindow(QWidget):
 
         self._talkLayout = QVBoxLayout()
         self._talkLabel = QLabel()
-        self._talkLabel.setAlignment(Qt.AlignLeft|Qt.AlignTop)
+        self._talkLabel.setAlignment(Qt.AlignLeft | Qt.AlignTop)
         self._talkLabel.setWordWrap(True)
         self._talkLayout.addWidget(self._talkLabel)
 
@@ -55,7 +52,7 @@ class DialogWindow(QWidget):
 
     def init(self):
         rect = self._soul.memoryRead('DialogRect', [])
-        if len(rect)>0:
+        if len(rect) > 0:
             self._rect = QRect(rect[0], rect[1], rect[2], rect[3])
             self.resize(self._rect.size())
         else:
@@ -165,13 +162,12 @@ class DialogWindow(QWidget):
 
     def setMenuLayout(self, layout):
         self._menuWidget.setLayout(layout)
-        pass
 
     def talkClear(self):
         self._talkLabel.setText('')
 
     def onTalk(self, message, speed=50):
         text = self._talkLabel.text()
-        text +=message
+        text += message
         self._talkLabel.setText(text)
         pass

@@ -12,6 +12,7 @@ from PyQt5.QtWidgets import QApplication, QSystemTrayIcon, QWidget
 
 import kikka
 
+
 class KikkaApp:
     _instance = None
     isDebug = False
@@ -107,7 +108,7 @@ class KikkaApp:
         foreground_hwnd = win32gui.GetForegroundWindow()
         desktop_hwnd = win32gui.GetDesktopWindow()
         my_hwnd = ctypes.windll.user32.GetShellWindow()
-        #logging.info("watchFullScreenProgress foreground_hwnd:%X desktop_hwnd:%X my_hwnd:%X"%(foreground_hwnd,desktop_hwnd,my_hwnd))
+        # logging.info("watchFullScreenProgress foreground_hwnd:%X desktop_hwnd:%X my_hwnd:%X"%(foreground_hwnd,desktop_hwnd,my_hwnd))
 
         if foreground_hwnd != 0 \
         and desktop_hwnd != 0 \
@@ -116,7 +117,7 @@ class KikkaApp:
             frect = win32gui.GetWindowRect(foreground_hwnd)
             drect = win32gui.GetWindowRect(desktop_hwnd)
 
-            #logging.info("%s, %s"%(frect,drect))
+            # logging.info("%s, %s"%(frect,drect))
             if frect[0] == drect[0] \
             and frect[1] == drect[1] \
             and frect[2] == drect[2] \
@@ -151,10 +152,9 @@ class KikkaApp:
         rect = QApplication.instance().desktop().availableGeometry()
         width = rect.width()
         height = rect.height()
-        if width!=old_width or height != old_height:
+        if width != old_width or height != old_height:
             kikka.core.signal.screenClientSizeChange.emit()
         return width, height
-
 
     def _createTrayIcon(self):
         qapp = QApplication.instance()

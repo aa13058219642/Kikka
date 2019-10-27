@@ -3,10 +3,11 @@ import os
 import logging
 import collections
 
-from PyQt5.QtCore import Qt, QRect, QPoint, QSize
+from PyQt5.QtCore import QRect, QPoint, QSize
 
 import kikka
 from kikka_shell import AuthorInfo
+
 
 class KikkaBalloon:
     _instance = None
@@ -63,20 +64,20 @@ class KikkaBalloon:
         if balloonname in self._balloons:
             return self._balloons[balloonname]
         else:
-            logging.warning("getBalloon: '%s' NOT in balloon list"%balloonname)
+            logging.warning("getBalloon: '%s' NOT in balloon list" % balloonname)
             return None
         pass
 
     def getBalloonByIndex(self, index):
         if 0 <= index < len(self._balloons):
             for balloon in self._balloons.values():
-                if index>0:
+                if index > 0:
                     index -= 1
                     continue
                 else:
                     return balloon
         else:
-            logging.warning("getBalloon: index=%d NOT in balloon list"%index)
+            logging.warning("getBalloon: index=%d NOT in balloon list" % index)
             return None
         pass
 
@@ -170,17 +171,16 @@ class Balloon:
             value = values.split(',')
 
             if key[0] == 'clip':
+                grid = int(value[0])
                 if key[1] == 'width':
-                    l = int(value[0])
-                    if l == 3 and len(value) == 4:
+                    if grid == 3 and len(value) == 4:
                         self.clipW = [int(value[1]), int(value[2]), int(value[3])]
-                    elif l == 5 and len(value) == 6:
+                    elif grid == 5 and len(value) == 6:
                         self.clipW = [int(value[1]), int(value[2]), int(value[3]), int(value[4]), int(value[5])]
                 elif key[1] == 'height':
-                    l = int(value[0])
-                    if l == 3 and len(value) == 4:
+                    if grid == 3 and len(value) == 4:
                         self.clipH = [int(value[1]), int(value[2]), int(value[3])]
-                    elif l == 5 and len(value) == 6:
+                    elif grid == 5 and len(value) == 6:
                         self.clipH = [int(value[1]), int(value[2]), int(value[3]), int(value[4]), int(value[5])]
                 else:
                     self._IgnoreParams(keys, values)
@@ -228,8 +228,5 @@ class Balloon:
         self.stylesheet = f.read()
         f.close()
 
-        pass
-
     def _IgnoreParams(self, key, values):
         print('unknow shell params: %s,%s' % (key, values))
-        pass

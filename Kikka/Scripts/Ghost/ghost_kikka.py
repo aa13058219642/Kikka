@@ -15,8 +15,8 @@ class GhostKikka(GhostAI):
 
     def __init__(self, gid=-1, name='Kikka'):
         GhostAI.__init__(self, gid, name)
-        w_kikka = self.addWindow(KIKKA, 0)
-        w_towa = self.addWindow(TOWA, 10)
+        w_kikka = self.addSoul(KIKKA, 0)
+        w_towa = self.addSoul(TOWA, 10)
 
         self._touch_count = {KIKKA: {}, TOWA: {}}
 
@@ -139,7 +139,7 @@ class GhostKikka(GhostAI):
         kikka.core.getGhost(param.ghostID).getSoul(param.data['SoulID']).getDialog().hide()
 
     def getPhase(self):
-        return 1
+        return 2
 
     def touchTalk(self, param):
         sid = param.data['SoulID']

@@ -4,6 +4,7 @@ from PyQt5.QtCore import QPoint, QSize
 
 KikkaMemoryFileName = 'Kikka.memory'
 
+
 class WindowConst:
     UNSET = QPoint(0x7FFFFFFF, 0x7FFFFFFF)
     ShellWindowDefaultWidth = 500
@@ -16,16 +17,18 @@ class WindowConst:
     DialogWindowDefaultSize = QSize(DialogWindowDefaultWidth, DialogWindowDefaultHeight)
     DialogWindowDefaultMargin = [3, 3, 3, 3]
 
+
 class GhostEvent(Enum):
-    EventNone       = 0
-    MouseDown       = 1
-    MouseMove       = 2
-    MouseTouch      = 3
-    MouseUp         = 4
+    EventNone = 0
+    MouseDown = 1
+    MouseMove = 2
+    MouseTouch = 3
+    MouseUp = 4
     MouseDoubleClick = 5
-    WheelEvent      = 6
+    WheelEvent = 6
 
     CustomEvent = 100
+
 
 class SurfaceEnum:
     # surface const
@@ -41,7 +44,7 @@ class SurfaceEnum:
     ANGER2 = 9         # 尴尬 / 照れ怒り
     HIDE = 19          # 消失 /
     THINKING = 20      # 思考 / 思考
-    ABSENT_MINDED = 21 # 恍惚 / 恍惚
+    ABSENT_MINDED = 21  # 恍惚 / 恍惚
     P90 = 22           # P90 / P90
     DAGGER = 23        # 匕首 / 鉈
     SINGING = 25       # 唱歌 / 歌
@@ -60,7 +63,7 @@ class SurfaceEnum:
     APRON_SHY = 51     # 围裙(害羞) / エプロン（照れ）
     NORMAL2 = 100      # 正常2 / 素2
     SHY2 = 101         # 害羞2 / 照れ2
-    APRON_COFFEE = 150 # 围裙(咖啡) / エプロン（コーヒー）
+    APRON_COFFEE = 150  # 围裙(咖啡) / エプロン（コーヒー）
     APRON_TEA2 = 250    # 围裙(日本茶) / エプロン（日本茶）
 
     KERO_NORMAL = 10           # 正常(闭眼) / 素
@@ -71,8 +74,9 @@ class SurfaceEnum:
     KERO_HUMAN_NORMAL = 111    # 正常(人形) / 素(人形)
     KERO_HUMAN_SURPRISE = 117  # 惊讶(人形) / 驚き(人形)
 
+
 SurfaceNameEnum = {
-    SurfaceEnum.NORMAL : "Normal",
+    SurfaceEnum.NORMAL: "Normal",
     SurfaceEnum.SHY: "Shy",
     SurfaceEnum.SURPRISE: "Surprise",
     SurfaceEnum.WORRIED: "Worried",
@@ -114,6 +118,3 @@ SurfaceNameEnum = {
     SurfaceEnum.KERO_HUMAN_NORMAL: "Kero Human Normal",
     SurfaceEnum.KERO_HUMAN_SURPRISE: "Kero Human Surprise",
 }
-
-
-

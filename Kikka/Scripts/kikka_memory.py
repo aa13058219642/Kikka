@@ -1,20 +1,12 @@
 # coding=utf-8
 import os
-import sqlite3
 import json
+import time
+import uuid
+import queue
 import logging
-
-import binascii
-import sys
-import random
-import base64
-
-from sympy import nextprime
-from struct import pack
-from Crypto.Cipher import AES
-
-import kikka
-import kikka_const
+import sqlite3
+import threading
 
 
 class KikkaMemory:
@@ -54,7 +46,6 @@ class KikkaMemory:
             self._sql_worker.close()
             self._sql_worker = None
 
-
     def createTable(self, table_name):
         try:
             name = str('T_' + table_name).upper()
@@ -64,7 +55,7 @@ class KikkaMemory:
             logging.warning('read table memory fail: key[%s]' % table_name)
 
     def read(self, table_name, key, default='', soulID=0):
-        logging.debug("kikka memory read %s"%key)
+        logging.debug("kikka memory read %s" % key)
         try:
             name = str('T_' + table_name).upper()
             sql = "select value from %s where key=? and soul=?" % name
@@ -87,7 +78,7 @@ class KikkaMemory:
             return default
 
     def write(self, table_name, key, value, soulID=0):
-        logging.debug("kikka memory write %s"%key)
+        logging.debug("kikka memory write %s" % key)
         try:
             name = str('T_' + table_name).upper()
             sql = "insert or replace into %s(key, soul, value) values(?, ?, ?)" % name
@@ -106,6 +97,7 @@ class KikkaMemory:
 
     def execute(self, query, values=None):
         return self._sql_worker.execute(query, values)
+
 
 class DeepMemory:
     def __init__(self, filename):
@@ -202,13 +194,6 @@ class DeepMemory:
 # __email__ = "shawnl@palantir.com"
 # __license__ = "MIT"
 
-import logging
-import queue
-import sqlite3
-import threading
-import time
-import uuid
-
 class Sqlite3Worker(threading.Thread):
     """Sqlite thread safe object.
     Example:
@@ -266,7 +251,7 @@ class Sqlite3Worker(threading.Thread):
                     logging.debug("run: commit")
                     self.sqlite3_conn.commit()
                     execute_count = 0
-            pass # exit if
+            pass  # exit if
 
             # Only exit if the queue is empty. Otherwise keep getting
             # through the queue until it's empty.

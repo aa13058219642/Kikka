@@ -166,10 +166,10 @@ class Soul:
     def clickClothesMenuItem(self, checked, act, bindgroup):
         shell = self._ghost.getShell()
         setting = shell.setting[self.ID]
-        bindgroups = setting.bindgroups
+        # bindgroups = setting.bindgroups
         bindoption = setting.bindoption
 
-        group = act.actionGroup()
+        # group = act.actionGroup()
         lastcloth = self._clothes[bindgroup.type]
         if lastcloth == bindgroup.aID:
             if (bindgroup.type in bindoption and bindoption[bindgroup.type] != 'mustselect') \
@@ -191,13 +191,13 @@ class Soul:
         count = kikka.shell.getShellCount()
         for i in range(count):
             shell = kikka.shell.getShellByIndex(i)
-            if len(shell.bind)>0:
+            if len(shell.bind) > 0:
                 data[shell.name] = shell.bind[self.ID]
         self.memoryWrite('ClothBind', data)
 
     def loadClothBind(self):
         data = self.memoryRead('ClothBind', {})
-        if len(data)<=0:
+        if len(data) <= 0:
             return
 
         for name in data.keys():

@@ -2,10 +2,8 @@
 import logging
 
 import kikka
-from mouseevent import MouseEvent
+from ghost_ai import GhostAI
 
 
-def getEventList():
-    e = {}
-
-    return e
+class GhostSSP(GhostAI):
+    pass
