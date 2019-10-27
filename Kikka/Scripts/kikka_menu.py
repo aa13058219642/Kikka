@@ -31,7 +31,7 @@ class KikkaMenu:
     def getMenu(ghost_id, soul_id):
         ghost = kikka.core.getGhost(ghost_id)
         if ghost is not None:
-            return ghost.getMenu(soul_id)
+            return ghost.getSoul(soul_id).getMenu()
         else:
             logging.warning('menu lost')
             return None
@@ -366,7 +366,7 @@ class KikkaMenu:
         surfacelist = ghost.getShell().getSurfaceNameList()
         group = QActionGroup(sufacemenu.parent())
         for surfaceID, item in surfacelist.items():
-            callbackfunc = lambda checked, surfaceID=surfaceID: ghost.setSurface(0, surfaceID)
+            callbackfunc = lambda checked, surfaceID=surfaceID: ghost.getSoul(0).setSurface(surfaceID)
             name = "%3d - %s(%s)" % (surfaceID, item[0], item[1])
             act = sufacemenu.addMenuItem(name, callbackfunc, None, group)
             act.setCheckable(True)

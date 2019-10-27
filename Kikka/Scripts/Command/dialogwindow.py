@@ -4,7 +4,7 @@ import logging
 
 from PyQt5.QtCore import Qt, QRect, QPoint, QSize
 from PyQt5.QtGui import QPixmap, QPainter
-from PyQt5.QtWidgets import QWidget, QPushButton, QStackedLayout, QVBoxLayout, QHBoxLayout, QLabel, QGridLayout, \
+from PyQt5.QtWidgets import QWidget, QPushButton, QStackedLayout, QStackedWidget, QVBoxLayout, QHBoxLayout, QLabel, QGridLayout, \
     QStyleOption, QStyle
 
 import kikka
@@ -19,8 +19,9 @@ class DialogWindow(QWidget):
         # self.setAttribute(Qt.WA_DeleteOnClose)
         # self.setMouseTracking(True)
         # self.setAcceptDrops(True)
-        self._soul = soul
+
         self.ID = win_id
+        self._soul = soul
         self._ghost = self._soul.getGhost()
         self._shellwindow = self._soul.getShellWindow()
         self._framelessWindowHint = True
@@ -33,6 +34,23 @@ class DialogWindow(QWidget):
         self._bgMask = None
         self._rect = None
 
+        self._talkLayout = QVBoxLayout()
+        self._talkLabel = QLabel()
+        self._talkLabel.setAlignment(Qt.AlignLeft|Qt.AlignTop)
+        self._talkLabel.setWordWrap(True)
+        self._talkLayout.addWidget(self._talkLabel)
+
+        self._menuWidget = QWidget(self)
+        self._menuWidget.setContentsMargins(0, 0, 0, 0)
+
+        self._talkWidget = QWidget(self)
+        self._talkWidget.setContentsMargins(0, 0, 0, 0)
+        self._talkWidget.setLayout(self._talkLayout)
+
+        self._mainLayout = QStackedLayout()
+        self._mainLayout.addWidget(self._menuWidget)
+        self._mainLayout.addWidget(self._talkWidget)
+        self.setLayout(self._mainLayout)
         self.init()
 
     def init(self):
@@ -103,12 +121,18 @@ class DialogWindow(QWidget):
             self.repaint()
 
         super().move(new_x, new_y)
-        pass
 
     def show(self):
         super().show()
         self.updatePosition()
-        pass
+
+    def showMenu(self):
+        self._mainLayout.setCurrentIndex(0)
+        self.show()
+
+    def showTalk(self):
+        self._mainLayout.setCurrentIndex(1)
+        self.show()
 
     def closeEvent(self, event):
         self.setFramelessWindowHint(True)
@@ -139,4 +163,15 @@ class DialogWindow(QWidget):
         self._bgMask = self._bgPixmap.mask()
         super().repaint()
 
+    def setMenuLayout(self, layout):
+        self._menuWidget.setLayout(layout)
+        pass
 
+    def talkClear(self):
+        self._talkLabel.setText('')
+
+    def onTalk(self, message, speed=50):
+        text = self._talkLabel.text()
+        text +=message
+        self._talkLabel.setText(text)
+        pass

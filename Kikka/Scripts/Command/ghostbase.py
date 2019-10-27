@@ -55,26 +55,15 @@ class GhostBase:
         for soul in self._souls.values():
             soul.hide()
 
-    def showMenu(self, soul_id, pos):
+    def getSoul(self, soul_id):
         if soul_id in self._souls.keys():
-            self._souls[soul_id].showMenu(pos)
-        pass
+            return self._souls[soul_id]
+        else:
+            return None
 
     def addWindow(self, soul_id, surface_id=0):
         self._souls[soul_id] = Soul(self, soul_id, surface_id)
         return self._souls[soul_id].getShellWindow()
-
-    def getShellWindow(self, soul_id):
-        if soul_id in self._souls.keys():
-            return self._souls[soul_id].getShellWindow()
-        else:
-            return None
-
-    def getDialog(self, soul_id):
-        if soul_id in self._souls.keys():
-            return self._souls[soul_id].getDialog()
-        else:
-            return None
 
     def changeShell(self, shellname):
         self.hide()
@@ -103,8 +92,8 @@ class GhostBase:
             self._shell_image[filename] = kikka.helper.getImage(p)
 
         for sid in self._souls.keys():
-            self.setSurface(sid)
-            self.updateClothesMenu(sid)
+            self._souls[sid].setSurface(-1)
+            self._souls[sid].updateClothesMenu()
 
     def setShell(self, shellname):
         if self.shell is not None and self.shell.name == shellname:
@@ -139,16 +128,6 @@ class GhostBase:
     def getBalloon(self):
         return self._balloon
 
-    def setMenu(self, soul_id, menu):
-        if soul_id in self._souls.keys():
-            self._souls[soul_id].setMenu(menu)
-
-    def getMenu(self, soul_id=0) :
-        if soul_id in self._souls.keys():
-            return self._souls[soul_id].getMenu()
-        else:
-            return None
-
     def resetWindowsPosition(self, usingDefaultPos=True, lockOnTaskbar=False):
         rightOffect = 0
         for soul in self._souls.values():
@@ -163,19 +142,7 @@ class GhostBase:
     def getIsLockOnTaskbar(self):
         return self._isLockOnTaskbar
 
-    # ###################################################################################
-
-    def setSurface(self, soul_id, surface_id=-1):
-        if soul_id in self._souls.keys():
-            self._souls[soul_id].setSurface(surface_id)
-
-    def getCurrentSurface(self, soul_id):
-        if soul_id in self._souls.keys():
-            return self._souls[soul_id].getCurrentSurface()
-
-    def getCurrentSurfaceID(self, soul_id):
-        if soul_id in self._souls.keys():
-            return self._souls[soul_id].getCurrentSurfaceID()
+    # surface ###################################################################################
 
     def getBalloonImage(self, size: QSize, flip=False, soul_id=-1):
         if self._balloon is None:
@@ -290,7 +257,7 @@ class GhostBase:
     def getShellImage(self):
         return self._shell_image
 
-    # #####################################################################################
+    # event #####################################################################################
 
     def memoryRead(self, key, default, soul_id=0, table_name=None):
         if table_name is None:
@@ -302,13 +269,10 @@ class GhostBase:
             table_name = str('ghost_' + self.name)
         kikka.memory.write(table_name, key, value, soul_id)
 
-    def updateClothesMenu(self, soul_id):
-        if soul_id in self._souls.keys():
-            self._souls[soul_id].updateClothesMenu()
-
     def emitGhostEvent(self, param):
         self.signal.ghostEvent.emit(param)
 
-    def ghostEvent(self, param=None):
+    def ghostEvent(self, param):
         pass
+
 

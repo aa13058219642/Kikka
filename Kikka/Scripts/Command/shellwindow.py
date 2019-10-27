@@ -86,6 +86,12 @@ class ShellWindow(QWidget):
                 param.eventTag = tag
                 self._ghost.emitGhostEvent(param)
             return tag
+
+        param = kikka.helper.makeGhostEventParam(self._ghost.ID, eventType, 'None')
+        param.data['ShellWindowID'] = self.ID
+        param.data['SoulID'] = self._soul.ID
+        param.data['QEvent'] = event
+        self._ghost.emitGhostEvent(param)
         return None
 
     def _mouseLogging(self, event, button, x, y):
@@ -129,7 +135,7 @@ class ShellWindow(QWidget):
 
     def contextMenuEvent(self, event):
         # logging.info('contextMenuEvent')
-        self._ghost.showMenu(self.ID, event.globalPos())
+        self._soul.showMenu(event.globalPos())
 
     def mousePressEvent(self, event):
         self._mouseLogging("mousePressEvent", event.buttons(), event.globalPos().x(), event.globalPos().y())
@@ -151,7 +157,7 @@ class ShellWindow(QWidget):
                 pos.setY(kikka.helper.getScreenClientRect()[1]-self.height())
                 self.move(pos)
 
-            self._ghost.getDialog(self.ID).updatePosition()
+            self._soul.getDialog().updatePosition()
             event.accept()
         else:
             self._isMoving = False
@@ -175,7 +181,6 @@ class ShellWindow(QWidget):
         self._mouseLogging("mouseDoubleClickEvent", event.buttons(), event.globalPos().x(), event.globalPos().y())
         if event.buttons() == Qt.LeftButton:
             self._isMoving = False
-            self._ghost.getDialog(self.ID).show()
 
         self._boxCollision(GhostEvent.MouseDoubleClick, event)
 
