@@ -44,7 +44,7 @@ class KikkaHelper:
     def _init(self):
         fn = os.path.join(sys.path[0], 'Resources/default.png')
         if os.path.exists(fn): self._defaultImage = QImage(fn)
-        else: self._defaultImage = QImage(QSize(1, 1))
+        else: self._defaultImage = QImage(1, 1, QImage.Format_RGBA8888)
 
     @staticmethod
     def getPath(tag):

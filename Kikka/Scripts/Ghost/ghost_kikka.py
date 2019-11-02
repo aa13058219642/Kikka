@@ -1,6 +1,7 @@
 # coding=utf-8
-import logging
 import random
+import logging
+import datetime
 
 from PyQt5.QtWidgets import QWidget, QPushButton, QStackedLayout, QVBoxLayout, QHBoxLayout, QLabel, QGridLayout
 
@@ -15,11 +16,14 @@ class GhostKikka(GhostAI):
 
     def __init__(self, gid=-1, name='Kikka'):
         GhostAI.__init__(self, gid, name)
-        w_kikka = self.addSoul(KIKKA, 0)
-        w_towa = self.addSoul(TOWA, 10)
-
+        self._datetime = datetime.datetime.now()
         self._touch_count = {KIKKA: {}, TOWA: {}}
 
+    def init(self):
+        super().init()
+
+        w_kikka = self.addSoul(KIKKA, 0)
+        w_towa = self.addSoul(TOWA, 10)
         self.initLayout()
         self.initTalk()
         self.initMenu()
@@ -137,6 +141,73 @@ class GhostKikka(GhostAI):
 
     def closeDlg(self, param):
         kikka.core.getGhost(param.ghostID).getSoul(param.data['SoulID']).getDialog().hide()
+
+    def onUpdate(self, updatetime):
+        super().onUpdate(updatetime)
+        self.onDatetime()
+
+    def onDatetime(self):
+        if self.isTalking():
+            return
+
+        now = datetime.datetime.now()
+        if self._datetime.minute != now.minute:
+            script = ''
+            if now.hour == 7 and now.minute == 30:
+                script = r"\0\s[5]早晨%(hour)点%(minute)分了，\w4该吃早餐了哦。\e"
+            elif now.hour == 12 and now.minute == 10:
+                script = r"\0\s[5]已经%(hour)点%(minute)分了，\w4该吃午餐了哦。\e"
+            elif now.hour == 18 and now.minute == 10:
+                script = r"\0\s[5]已经%(hour)点%(minute)分了，\w4该吃晚餐了哦。\e"
+            elif now.hour == 23 and now.minute == 30:
+                script = r"\0\s[5]现在是%(hour)点%(minute)分，\w9\w4要不要考虑吃个宵夜呢。\e"
+            elif now.minute == 0:
+                if now.hour == 0:
+                    script = r"\0凌晨12点了呢.又是新的一天～\e"
+                elif now.hour >= 1 and now.hour <= 4:
+                    script = random.choice([
+                        r"\0%(hour)点了.%(username)还不睡吗\e",
+                        r"\0%(hour)点了.%(username)不睡吗？熬夜会变笨的喔\e"
+                    ])
+                elif now.hour in [5, 6]:
+                    script = random.choice([
+                        r"\0%(hour)点了..要去看日出吗\e",
+			            r"\0呼哈～唔..%(hour)点了\e"
+                    ])
+                elif now.hour in [7, 8]:
+                    script = random.choice([
+                        r"\0%(hour)点了.还沒清醒的话赶快打起精神喔\e"
+                    ])
+                elif now.hour in [9, 10, 11]:
+                    script = random.choice([
+                        r"\0%(hour)点了..据说是人一天中记忆能力最好的時段呢，要好好利用喔\e"
+                    ])
+                elif now.hour == 12:
+                    script = random.choice([
+                        r"\012点了.午餐时间～\e"
+                    ])
+                elif now.hour in [13, 14]:
+                    script = random.choice([
+                        r"\0下午%(hour12)点了…總是很想睡的时间呢\e"
+                    ])
+                elif now.hour in [15, 16]:
+                    script = random.choice([
+                        r"\0%(hour)点了.要不要來杯下午茶呢\e"
+                    ])
+                elif now.hour in [17, 18]:
+                    script = random.choice([
+                        r"\0下午%(hour12)点.晚餐时间～\e"
+                    ])
+                elif now.hour >= 19 and now.hour <= 23:
+                    script = random.choice([
+                        r"\0%(hour)点了..接下來该做什么事呢\e",
+                        r"\0晚上%(hour12)了呢..%(username)在做什么呢\e",
+                        r"\0晚上%(hour12)了呢..这个时间%(username)应该都在电脑前吧\e"
+                    ])
+
+            self._datetime = now
+            self.talk(script)
+        pass  # exit if
 
     def getPhase(self):
         return 2

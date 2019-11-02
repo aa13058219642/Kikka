@@ -51,7 +51,6 @@ class KikkaShell:
 
     def scanShell(self, shelldir):
         self.shelldir = shelldir
-
         shelldict = {}
         for parent, dirnames, filenames in os.walk(shelldir):
             for dirname in dirnames:

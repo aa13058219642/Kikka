@@ -1,10 +1,13 @@
 # coding=utf-8
 import logging
-import threading
-import psutil
 import time
-import win32gui
+import psutil
 import ctypes
+import win32gui
+import win32con
+import win32api
+import threading
+import pywintypes
 
 from PyQt5.QtGui import QPainter, QIcon
 from PyQt5.QtCore import Qt, QTimer
@@ -103,26 +106,54 @@ class KikkaApp:
             logging.exception("error:_guard error")
         # exit while
 
+    def _getDesktopHwnd(self):
+        def _enumWindowsCallback(hwnd, extra):
+            class_name = win32gui.GetClassName(hwnd)
+            if class_name != "WorkerW":
+                return True
+            child = win32gui.FindWindowEx(hwnd, 0, "SHELLDLL_DefView", "")
+            if child == 0:
+                return True
+            extra.append(win32gui.FindWindowEx(child, 0, "SysListView32", "FolderView"))
+            return False
+
+        dt_hwnd = win32gui.GetDesktopWindow()
+        shell_hwnd = ctypes.windll.user32.GetShellWindow()
+        shell_dll_defview = win32gui.FindWindowEx(shell_hwnd, 0, "SHELLDLL_DefView", "")
+
+        if shell_dll_defview == 0:
+            sys_listview_container = []
+            try:
+                win32gui.EnumWindows(_enumWindowsCallback, sys_listview_container)
+            except pywintypes.error as e:
+                if e.winerror != 0:
+                    logging.warning("_getDesktopHwnd Fail")
+                    return []
+            sys_listview = sys_listview_container[0]
+            shell_dll_defview = win32gui.GetParent(sys_listview)
+        else:
+            sys_listview = win32gui.FindWindowEx(shell_dll_defview, 0, "SysListView32", "FolderView")
+        workerW = win32gui.GetParent(shell_dll_defview)
+
+        # logging.info("dt_hwnd:%X  shell_hwnd:%X workerW:%X shell_dll_defview:%X sys_listview:%X " % (
+        #     dt_hwnd, shell_hwnd, workerW, shell_dll_defview, sys_listview))
+        return [dt_hwnd, shell_hwnd, workerW, shell_dll_defview, sys_listview]
+
     def _watchFullScreenProgress(self):
         hasProgress = False
-        foreground_hwnd = win32gui.GetForegroundWindow()
-        desktop_hwnd = win32gui.GetDesktopWindow()
-        my_hwnd = ctypes.windll.user32.GetShellWindow()
-        # logging.info("watchFullScreenProgress foreground_hwnd:%X desktop_hwnd:%X my_hwnd:%X"%(foreground_hwnd,desktop_hwnd,my_hwnd))
+        sw = win32api.GetSystemMetrics(win32con.SM_CXSCREEN)
+        sh = win32api.GetSystemMetrics(win32con.SM_CYSCREEN)
+        fg_hwnd = win32gui.GetForegroundWindow()
+        ignore_hwnd = self._getDesktopHwnd()
 
-        if foreground_hwnd != 0 \
-        and desktop_hwnd != 0 \
-        and foreground_hwnd != desktop_hwnd \
-        and foreground_hwnd != my_hwnd:
-            frect = win32gui.GetWindowRect(foreground_hwnd)
-            drect = win32gui.GetWindowRect(desktop_hwnd)
-
-            # logging.info("%s, %s"%(frect,drect))
-            if frect[0] == drect[0] \
-            and frect[1] == drect[1] \
-            and frect[2] == drect[2] \
-            and frect[3] == drect[3]:
-                hasProgress = True
+        if fg_hwnd not in ignore_hwnd:
+            try:
+                fg_rect = win32gui.GetWindowRect(fg_hwnd)
+                if fg_rect[0] == 0 and fg_rect[1] == 0 \
+                    and fg_rect[2] == sw and fg_rect[3] == sh:
+                    hasProgress = True
+            except:
+                hasProgress = False
 
         if hasProgress != self._hasFullScreenProgress:
             self._hasFullScreenProgress = hasProgress
@@ -130,7 +161,6 @@ class KikkaApp:
                 kikka.core.signal.hide.emit()
             else:
                 kikka.core.signal.show.emit()
-        pass
 
     def _watchKikkaExeProgress(self):
         kikkaHere = False

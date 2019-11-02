@@ -1,4 +1,5 @@
 /Kikka/Python/*
+/Kikka/_Python/*
 !Kikka/Python/README.md
 /Shell
 /Tools
@@ -8,6 +9,7 @@
 kikka.log*
 *.[Mm]emory
 *.db
+
 
 __pycache__/
 .idea/

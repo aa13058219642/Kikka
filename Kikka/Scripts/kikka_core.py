@@ -1,7 +1,8 @@
 # coding=utf-8
-import logging
 import time
 import random
+import logging
+import datetime
 from enum import Enum
 
 from PyQt5.QtCore import QTimer, QObject, pyqtSignal
@@ -36,13 +37,12 @@ class KikkaCore:
 
     def _init(self):
         self._app_state = KikkaCore.APP_STATE.HIDE
-        self._Timer_Run = None
-        self._lasttime = 0
-        self.isNeedUpdate = True
+        self._lastclock = time.clock()
         self._timer_interval = 10
         self._Timer_Run = QTimer()
         self._Timer_Run.setSingleShot(False)
         self.setTimerInterval(self._timer_interval)
+        self.isNeedUpdate = True
         self._ghosts = {}
 
         self.signal = KikkaCoreSignal()
@@ -50,7 +50,6 @@ class KikkaCore:
         self.signal.hide.connect(self.hide)
         self.signal.screenClientSizeChange.connect(self.screenClientSizeChange)
         kikka.memory.createTable("kikka_core")
-        pass
 
     def getAppState(self):
         return self._app_state
@@ -75,6 +74,8 @@ class KikkaCore:
 
     def addGhost(self, ghost):
         self._ghosts[ghost.ID] = ghost
+        if not ghost.initialized:
+            ghost.init()
         return ghost.ID
 
     def getGhost(self, gid):
@@ -99,7 +100,7 @@ class KikkaCore:
             self._ghosts[ghost_id].setShell(shell_id)
 
     def start(self):
-        self._lasttime = time.clock()
+        self._lastclock = time.clock()
         self._Timer_Run.timeout.connect(self.run)
         self._Timer_Run.start(self._timer_interval)
 
@@ -115,13 +116,13 @@ class KikkaCore:
 
     def run(self):
         try:
-            nowtime = time.clock()
-            updatetime = (nowtime - self._lasttime) * 1000
+            nowclock = time.clock()
+            updatetime = (nowclock - self._lastclock) * 1000
 
             for gid, ghost in self._ghosts.items():
-                ghost.update(updatetime)
+                ghost.onUpdate(updatetime)
 
-            self._lasttime = nowtime
+            self._lastclock = nowclock
         except Exception as e:
             logging.exception('Core.run: run time error')
             raise SyntaxError('run time error')
@@ -129,6 +130,34 @@ class KikkaCore:
         self.isNeedUpdate = False
         pass
 
-    def repaint(self):
+    def repaintAllGhost(self):
         for _, g in self._ghosts.items():
             g.repaint()
+
+    def getProperty(self, key):
+        now = datetime.datetime.now()
+        if key == '':
+            return None
+        elif key == 'system.year':
+            return now.year
+        elif key == 'system.month':
+            return now.month
+        elif key == 'system.day':
+            return now.day
+        elif key == 'system.hour':
+            return now.hour
+        elif key == 'system.minute':
+            return now.minute
+        elif key == 'system.second':
+            return now.second
+        elif key == 'system.millisecond':
+            return now.microsecond
+        elif key == 'system.dayofweek':
+            return now.weekday()
+
+        elif key == 'ghostlist.count':
+            return len(self._ghosts)
+        else:
+            logging.warning("getProperty: Unknow Key")
+            return None
+

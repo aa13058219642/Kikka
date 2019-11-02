@@ -1,6 +1,7 @@
 # coding=utf-8
-import logging
 import os
+import datetime
+import logging
 
 from collections import OrderedDict
 
@@ -23,7 +24,7 @@ class GhostBase:
         self.ID = ghost_id if ghost_id != -1 else kikka.core.newGhostID()
         self.name = name
         self.shell = None
-        self._balloon = None
+        self.animation_list = {}
         self.signal = KikkaGhostSignal()
 
         self._souls = OrderedDict()
@@ -31,13 +32,12 @@ class GhostBase:
         self._balloon_image = {}
 
         self._eventlist = {}
-        self.animation_list = {}
-
+        self._balloon = None
         self._balloon_image_cache = None
         self._menustyle = None
         self._isLockOnTaskbar = True
-
-        self.init()
+        self._datetime = datetime.datetime.now()
+        self.initialized = False
 
     def init(self):
         kikka.memory.createTable(str('ghost_' + self.name))
@@ -45,6 +45,8 @@ class GhostBase:
         self.setBalloon(self.memoryRead('CurrentBalloonName', ''))
         self.setIsLockOnTaskbar(self.memoryRead('isLockOnTaskbar', True))
         self.signal.ghostEvent.connect(self.ghostEvent)
+        self.initialized = True
+
 
     def show(self):
         for soul in reversed(self._souls.values()):
@@ -243,11 +245,11 @@ class GhostBase:
     def getMenuStyle(self):
         return self._menustyle
 
-    def update(self, updatetime):
+    def onUpdate(self, updatetime):
         isNeedUpdate = False
 
         for soul in self._souls.values():
-            if soul.update(updatetime) is True:
+            if soul.onUpdate(updatetime) is True:
                 isNeedUpdate = True
 
         return isNeedUpdate
@@ -276,3 +278,5 @@ class GhostBase:
 
     def ghostEvent(self, param):
         pass
+
+

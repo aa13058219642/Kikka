@@ -82,11 +82,11 @@ class KikkaMenu:
 
             def callbackfunction1():
                 kikka.core.isDebug = not kikka.core.isDebug
-                kikka.core.repaint()
+                kikka.core.repaintAllGhost()
 
             def callbackfunction2():
                 kikka.shell.isDebug = not kikka.shell.isDebug
-                kikka.core.repaint()
+                kikka.core.repaintAllGhost()
 
             menu = Menu(mainmenu, ghost.ID, "Debug")
 

@@ -268,6 +268,9 @@ class Soul:
         self._shell_window.setBoxes(shell.getCollisionBoxes(surfaceID), self._draw_offset)
         kikka.menu.updateTestSurface(self._menu, self._ghost, surfaceID)
 
+    def setDefaultSurface(self):
+        self.setSurface(self._default_surfaceID)
+
     def getCurrentSurface(self):
         return self._surface
 
@@ -315,10 +318,10 @@ class Soul:
 
     # ################################################################
 
-    def update(self, updatetime):
+    def onUpdate(self, updatetime):
         isNeedUpdate = False
         for aid, ani in self._animations.items():
-            if ani.update(updatetime) is True:
+            if ani.onUpdate(updatetime) is True:
                 isNeedUpdate = True
 
         if isNeedUpdate is True:
@@ -528,7 +531,7 @@ class Animation:
 
         return True if hasControlPattern is True and AllStop is True else False
 
-    def update(self, updatetime):
+    def onUpdate(self, updatetime):
         isNeedUpdate = False
         if self.randomStart() is True:
             self.start()

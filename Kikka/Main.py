@@ -1,5 +1,14 @@
 # coding=utf-8
 import sys
+import os
+if os.path.dirname(os.path.abspath(__file__)) not in sys.path:
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(os.path.dirname(os.path.abspath(__file__)) + "/Scripts")
+sys.path.append(os.path.dirname(os.path.abspath(__file__)) + "/Scripts/Command")
+sys.path.append(os.path.dirname(os.path.abspath(__file__)) + "/Scripts/Moudles")
+sys.path.append(os.path.dirname(os.path.abspath(__file__)) + "/Scripts/Ghost")
+sys.path.append(os.path.dirname(os.path.abspath(__file__)) + "/Resources")
+
 import logging
 import logging.handlers
 
@@ -11,6 +20,7 @@ def awake():
     # CRITICAL, ERROR, WARNING, INFO, DEBUG, NOTSET
     file_handler = setLogging(logging.INFO)
     sys.excepthook = handle_exception
+    logging.info("sys.path %s" % sys.path)
 
     # init all Singletion class
     import kikka
