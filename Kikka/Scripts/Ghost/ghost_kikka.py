@@ -184,7 +184,7 @@ class GhostKikka(GhostAI):
                     ])
                 elif now.hour == 12:
                     script = random.choice([
-                        r"\012点了.午餐时间～\e"
+                        r"12点了.午餐时间～\e"
                     ])
                 elif now.hour in [13, 14]:
                     script = random.choice([

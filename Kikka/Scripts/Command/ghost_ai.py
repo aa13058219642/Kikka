@@ -107,7 +107,7 @@ class GhostAI(GhostBase):
                 else:
                     text = ''
                     logging.warning('unknow sakura script command: %s %s' % (token[0], token[1]))
-                if len(text) > 1:
+                if len(text) > 0:
                     self._tokens.insert(0, ('', text))
             else:
                 logging.warning('unknow sakura script command: %s %s' % (token[0], token[1]))
