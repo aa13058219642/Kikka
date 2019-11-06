@@ -129,7 +129,7 @@ class KikkaApp:
                 if e.winerror != 0:
                     logging.warning("_getDesktopHwnd Fail")
                     return []
-            sys_listview = sys_listview_container[0]
+            sys_listview = sys_listview_container[0] if len(sys_listview_container) > 0 else 0
             shell_dll_defview = win32gui.GetParent(sys_listview)
         else:
             sys_listview = win32gui.FindWindowEx(shell_dll_defview, 0, "SysListView32", "FolderView")

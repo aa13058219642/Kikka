@@ -4,8 +4,6 @@ QLabel {
 }
 
 QPushButton{
-	border-style: solid;
-	background-color:#00FF00;
 	padding: 3px;
 } 
 QPushButton:hover{

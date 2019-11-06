@@ -1,0 +1,13 @@
+charset,utf-8
+type,balloon
+name,blackcross2
+unicode_name,blackcross2
+craftman,Axel&A.A
+
+minimumsize,335,170
+clip.width,5,33, 84, 101, 84, 33
+clip.height,5,26, 17, 84, 17, 26
+flipbackground,1
+noflipcenter,1
+
+margin,20,20,20,20 

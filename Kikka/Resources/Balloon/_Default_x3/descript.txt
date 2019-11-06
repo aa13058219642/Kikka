@@ -10,4 +10,4 @@ clip.height,3,41,41,41
 flipbackground,1
 noflipcenter,0
 
-margin,41,41,41,41
+margin,20,20,20,20
