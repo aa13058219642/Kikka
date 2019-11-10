@@ -1,8 +1,9 @@
 charset,UTF-8
 craftman,8
-id,_Default_Kikka1
+craftmanw,8
 type,shell
-name,_Default_Kikka1
+id,_Default_2
+name,Default2
 mode,material
 
 sakura.balloon.offsetx,50

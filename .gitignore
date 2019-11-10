@@ -1,10 +1,9 @@
 /Kikka/Python/*
 /Kikka/_Python/*
-!Kikka/Python/README.md
 /Shell
 /Tools
 /WinForms
-/Kikka/Resources/Shell
+/Kikka/Resources/Shell/*
 /Main/output/*
 kikka.log*
 *.[Mm]emory
@@ -20,3 +19,7 @@ __pycache__/
 [Dd]ebugPublic/
 [Rr]elease/
 [Rr]eleases/
+
+!Kikka/Python/README.md
+!Kikka/Resources/Shell/_Default_1
+!Kikka/Resources/Shell/_Default_2

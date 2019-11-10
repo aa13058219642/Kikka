@@ -4,7 +4,7 @@ import os
 
 from PyQt5.QtCore import QRect, QSize, Qt, QRectF, QPoint, QEvent
 from PyQt5.QtWidgets import QMenu, QStyle, QStyleOptionMenuItem, QStyleOption, QWidget, QApplication, QActionGroup
-from PyQt5.QtWidgets import QAction
+from PyQt5.QtWidgets import QAction, QToolTip
 from PyQt5.QtGui import QIcon, QImage, QPainter, QFont, QPalette, QColor, QKeySequence
 
 import kikka
@@ -57,6 +57,8 @@ class KikkaMenu:
             act = menu.addMenuItem(shell.unicode_name, callbackfunc, None, group1)
             act.setData(shell.name)
             act.setCheckable(True)
+            act.setToolTip(shell.description)
+        menu.setToolTipsVisible(True)
         mainmenu.addSubMenu(menu)
 
         # clothes list
@@ -855,7 +857,12 @@ class Menu(QMenu):
         #     text = 'MouseButtonPress(%d %d)'%(event.globalPos().x(), event.globalPos().y())
         # logging.info("%s %d %s"%(self.title(), event.type(), text))
         if obj == self:
-            if event.type() == QEvent.WindowDeactivate: self.Hide()
-            # elif event.type() == QEvent.MouseMove: QApplication.sendEvent(self._parent, event)
-
+            if event.type() == QEvent.WindowDeactivate:
+                self.Hide()
+            elif event.type() == QEvent.ToolTip:
+                act = self.activeAction()
+                if act != 0 and act.toolTip() != act.text():
+                    QToolTip.showText(event.globalPos(), act.toolTip())
+                else:
+                    QToolTip.hideText()
         return False

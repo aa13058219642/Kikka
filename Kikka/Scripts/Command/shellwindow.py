@@ -63,9 +63,8 @@ class ShellWindow(QWidget):
                 continue
 
             tag = box[1]
-            param = kikka.helper.makeGhostEventParam(self._ghost.ID, eventType, tag)
+            param = kikka.helper.makeGhostEventParam(self._ghost.ID, self._soul.ID, eventType, tag)
             param.data['ShellWindowID'] = self.ID
-            param.data['SoulID'] = self._soul.ID
             param.data['QEvent'] = event
             self._ghost.emitGhostEvent(param)
 
@@ -82,21 +81,21 @@ class ShellWindow(QWidget):
             # print(self._touchTick, requestTick)
             if self._touchTick > requestTick:
                 self._touchTick = 0
-                param.eventType = GhostEvent.MouseTouch
+                param.eventType = GhostEvent.Shell_MouseTouch
                 param.eventTag = tag
                 self._ghost.emitGhostEvent(param)
             return tag
 
-        param = kikka.helper.makeGhostEventParam(self._ghost.ID, eventType, 'None')
+        param = kikka.helper.makeGhostEventParam(self._ghost.ID, self._soul.ID, eventType, 'None')
         param.data['ShellWindowID'] = self.ID
-        param.data['SoulID'] = self._soul.ID
         param.data['QEvent'] = event
         self._ghost.emitGhostEvent(param)
         return None
 
     def _mouseLogging(self, event, button, x, y):
-        page_sizes = dict((n, x) for x, n in vars(Qt).items() if isinstance(n, Qt.MouseButton))
-        logging.debug("%s %s (%d, %d)", event, page_sizes[button], x, y)
+        if kikka.core.isDebug:
+            page_sizes = dict((n, x) for x, n in vars(Qt).items() if isinstance(n, Qt.MouseButton))
+            logging.debug("%s %s (%d, %d)", event, page_sizes[button], x, y)
 
     def getMousePose(self):
         return self._movepos.x(), self._movepos.y()
@@ -104,108 +103,6 @@ class ShellWindow(QWidget):
     def saveShellRect(self):
         rect = [self.pos().x(), self.pos().y(), self.size().width(), self.size().height()]
         self._soul.memoryWrite('ShellRect', rect)
-
-    # ##############################################################################################################
-    # Event
-
-    # def eventFilter(self, obj, event):
-    #     text = ''
-    #     if event.type() == QEvent.UpdateRequest:text = 'UpdateRequest'
-    #     elif event.type() == QEvent.Leave:text = 'Leave'
-    #     elif event.type() == QEvent.Enter:text = 'Enter'
-    #     elif event.type() == QEvent.ToolTip:text = 'ToolTip'
-    #     elif event.type() == QEvent.StatusTip:text = 'StatusTip'
-    #     elif event.type() == QEvent.ZOrderChange:text = 'ZOrderChange'
-    #     elif event.type() == QEvent.Show:text = 'Show'
-    #     elif event.type() == QEvent.ShowToParent:text = 'ShowToParent'
-    #     elif event.type() == QEvent.UpdateLater:text = 'UpdateLater'
-    #     elif event.type() == QEvent.MouseMove:text = 'MouseMove'
-    #     elif event.type() == QEvent.Close:text = 'Close'
-    #     elif event.type() == QEvent.Hide:text = 'Hide'
-    #     elif event.type() == QEvent.HideToParent:text = 'HideToParent'
-    #     elif event.type() == QEvent.Timer:text = 'Timer'
-    #     elif event.type() == QEvent.Paint:text = 'Paint'
-    #     elif event.type() == QEvent.Move:text = 'Move'
-    #     elif event.type() == QEvent.InputMethodQuery:text = 'InputMethodQuery';self._InputMethodQuery = event
-    #     elif event.type() == QEvent.MouseButtonPress:
-    #         text = 'MouseButtonPress(%d %d)' % (event.globalPos().x(), event.globalPos().y())
-    #
-    #     logging.info("%s %d %s"%("MainWindow", event.type(), text))
-    #     return False
-
-    def contextMenuEvent(self, event):
-        # logging.info('contextMenuEvent')
-        self._soul.showMenu(event.globalPos())
-
-    def mousePressEvent(self, event):
-        self._mouseLogging("mousePressEvent", event.buttons(), event.globalPos().x(), event.globalPos().y())
-        self._movepos = event.globalPos() - self.pos()
-        if event.buttons() == Qt.LeftButton:
-            self._isMoving = True
-            event.accept()
-
-        self._boxCollision(GhostEvent.MouseDown, event)
-
-    def mouseMoveEvent(self, event):
-        # self._mouseLogging("mouseMoveEvent", event.buttons(), event.globalPos().x(), event.globalPos().y())
-        self._mousepos = event.pos()
-        if self._isMoving and event.buttons() == Qt.LeftButton:
-            if self._ghost.getIsLockOnTaskbar() is False:
-                self.move(event.globalPos() - self._movepos)
-            else:
-                pos = QPoint(event.globalPos() - self._movepos)
-                pos.setY(kikka.helper.getScreenClientRect()[1]-self.height())
-                self.move(pos)
-
-            self._soul.getDialog().updatePosition()
-            event.accept()
-        else:
-            self._isMoving = False
-
-        tag = self._boxCollision(GhostEvent.MouseMove, event)
-        if tag == 'Bust':
-            self.setCursor(QCursor(Qt.OpenHandCursor))
-        elif tag is None:
-            self.setCursor(QCursor(Qt.ArrowCursor))
-        else:
-            self.setCursor(QCursor(Qt.PointingHandCursor))
-
-    def mouseReleaseEvent(self, event):
-        self._mouseLogging("mouseReleaseEvent", event.buttons(), event.globalPos().x(), event.globalPos().y())
-        self._isMoving = False
-        self.saveShellRect()
-
-        self._boxCollision(GhostEvent.MouseUp, event)
-
-    def mouseDoubleClickEvent(self, event):
-        self._mouseLogging("mouseDoubleClickEvent", event.buttons(), event.globalPos().x(), event.globalPos().y())
-        if event.buttons() == Qt.LeftButton:
-            self._isMoving = False
-
-        self._boxCollision(GhostEvent.MouseDoubleClick, event)
-
-    def wheelEvent(self, event):
-        # self._mouseLogging("wheelEvent", btn, event.pos().x(), event.pos().y())
-        self._boxCollision(GhostEvent.WheelEvent, event)
-
-    def dragEnterEvent(self, event):
-
-        event.accept()
-
-    def dropEvent(self, event):
-        urls = event.mimeData().urls()
-        for url in urls:
-            logging.info("drop file: %s" % url.toLocalFile())
-        pass
-
-    ###############################################################################################################
-    # paint event
-
-    def paintEvent(self, event):
-        if self._pixmap is None:
-            return
-        painter = QPainter(self)
-        painter.drawPixmap(QPoint(), self._pixmap)
 
     def debugDraw(self, image):
 
@@ -279,3 +176,124 @@ class ShellWindow(QWidget):
         self.setFixedSize(self._pixmap.size())
         self.setMask(self._pixmap.mask())
         self.repaint()
+
+    # ##############################################################################################################
+    # Event
+
+    # def eventFilter(self, obj, event):
+    #     text = ''
+    #     if event.type() == QEvent.UpdateRequest:text = 'UpdateRequest'
+    #     elif event.type() == QEvent.Leave:text = 'Leave'
+    #     elif event.type() == QEvent.Enter:text = 'Enter'
+    #     elif event.type() == QEvent.ToolTip:text = 'ToolTip'
+    #     elif event.type() == QEvent.StatusTip:text = 'StatusTip'
+    #     elif event.type() == QEvent.ZOrderChange:text = 'ZOrderChange'
+    #     elif event.type() == QEvent.Show:text = 'Show'
+    #     elif event.type() == QEvent.ShowToParent:text = 'ShowToParent'
+    #     elif event.type() == QEvent.UpdateLater:text = 'UpdateLater'
+    #     elif event.type() == QEvent.MouseMove:text = 'MouseMove'
+    #     elif event.type() == QEvent.Close:text = 'Close'
+    #     elif event.type() == QEvent.Hide:text = 'Hide'
+    #     elif event.type() == QEvent.HideToParent:text = 'HideToParent'
+    #     elif event.type() == QEvent.Timer:text = 'Timer'
+    #     elif event.type() == QEvent.Paint:text = 'Paint'
+    #     elif event.type() == QEvent.Move:text = 'Move'
+    #     elif event.type() == QEvent.InputMethodQuery:text = 'InputMethodQuery';self._InputMethodQuery = event
+    #     elif event.type() == QEvent.MouseButtonPress:
+    #         text = 'MouseButtonPress(%d %d)' % (event.globalPos().x(), event.globalPos().y())
+    #
+    #     logging.info("%s %d %s"%("MainWindow", event.type(), text))
+    #     return False
+
+    def contextMenuEvent(self, event):
+        # logging.info('contextMenuEvent')
+        self._soul.showMenu(event.globalPos())
+
+    def mousePressEvent(self, event):
+        self._mouseLogging("mousePressEvent", event.buttons(), event.globalPos().x(), event.globalPos().y())
+        self._movepos = event.globalPos() - self.pos()
+        if event.buttons() == Qt.LeftButton:
+            self._isMoving = True
+            event.accept()
+
+        self._boxCollision(GhostEvent.Shell_MouseDown, event)
+
+    def mouseMoveEvent(self, event):
+        # self._mouseLogging("mouseMoveEvent", event.buttons(), event.globalPos().x(), event.globalPos().y())
+        self._mousepos = event.pos()
+        if self._isMoving and event.buttons() == Qt.LeftButton:
+            self.move(event.globalPos() - self._movepos)
+
+            self._soul.getDialog().updatePosition()
+            event.accept()
+        else:
+            self._isMoving = False
+
+        tag = self._boxCollision(GhostEvent.Shell_MouseMove, event)
+        if tag == 'Bust':
+            self.setCursor(QCursor(Qt.OpenHandCursor))
+        elif tag is None:
+            self.setCursor(QCursor(Qt.ArrowCursor))
+        else:
+            self.setCursor(QCursor(Qt.PointingHandCursor))
+
+    def mouseReleaseEvent(self, event):
+        self._mouseLogging("mouseReleaseEvent", event.buttons(), event.globalPos().x(), event.globalPos().y())
+        self._isMoving = False
+        self.saveShellRect()
+
+        self._boxCollision(GhostEvent.Shell_MouseUp, event)
+
+    def mouseDoubleClickEvent(self, event):
+        self._mouseLogging("mouseDoubleClickEvent", event.buttons(), event.globalPos().x(), event.globalPos().y())
+        if event.buttons() == Qt.LeftButton:
+            self._isMoving = False
+
+        self._boxCollision(GhostEvent.Shell_MouseDoubleClick, event)
+
+    def wheelEvent(self, event):
+        # self._mouseLogging("wheelEvent", btn, event.pos().x(), event.pos().y())
+        self._boxCollision(GhostEvent.Shell_WheelEvent, event)
+
+    def dragEnterEvent(self, event):
+
+        event.accept()
+
+    def dropEvent(self, event):
+        urls = event.mimeData().urls()
+        for url in urls:
+            logging.info("drop file: %s" % url.toLocalFile())
+        pass
+
+    def move(self, *__args):
+        if len(__args) == 1 and isinstance(__args[0], QPoint):
+            x = __args[0].x()
+            y = __args[0].y()
+        elif len(__args) == 2 and isinstance(__args[0], int) and isinstance(__args[1], int):
+            x = __args[0]
+            y = __args[1]
+        else:
+            super().move(*__args)
+            return
+
+        if self._ghost.getIsLockOnTaskbar() is True:
+            y = kikka.helper.getScreenClientRect()[1]-self.height()
+        super().move(x, y)
+
+    ###############################################################################################################
+    # paint event
+
+    def show(self):
+        param = kikka.helper.makeGhostEventParam(self._ghost.ID, self._soul.ID, kikka.const.GhostEvent.Shell_Show, 'Show')
+        self._ghost.emitGhostEvent(param)
+
+        super().show()
+        self.move(self.pos())
+
+    def paintEvent(self, event):
+        if self._pixmap is None:
+            return
+        painter = QPainter(self)
+        painter.drawPixmap(QPoint(), self._pixmap)
+
+

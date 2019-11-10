@@ -1,7 +1,8 @@
 # coding=utf-8
 import os
-import datetime
+import time
 import logging
+import datetime
 
 from collections import OrderedDict
 
@@ -23,8 +24,8 @@ class GhostBase:
     def __init__(self, ghost_id=-1, name=''):
         self.ID = ghost_id if ghost_id != -1 else kikka.core.newGhostID()
         self.name = name
+        self.initialized = False
         self.shell = None
-        self.animation_list = {}
         self.signal = KikkaGhostSignal()
 
         self._souls = OrderedDict()
@@ -37,16 +38,24 @@ class GhostBase:
         self._menustyle = None
         self._isLockOnTaskbar = True
         self._datetime = datetime.datetime.now()
-        self.initialized = False
 
     def init(self):
+        # create ghost table
         kikka.memory.createTable(str('ghost_' + self.name))
+
+        # update boot time
+        boot_last = datetime.datetime.fromtimestamp(self.memoryRead('BootThis', time.time()))
+        boot_this = datetime.datetime.now()
+        self.memoryWrite('BootLast', boot_last.timestamp())
+        self.memoryWrite('BootThis', boot_this.timestamp())
+
+        # get option
         self.setShell(self.memoryRead('CurrentShellName', ''))
         self.setBalloon(self.memoryRead('CurrentBalloonName', ''))
         self.setIsLockOnTaskbar(self.memoryRead('isLockOnTaskbar', True))
         self.signal.ghostEvent.connect(self.ghostEvent)
-        self.initialized = True
 
+        self.initialized = True
 
     def show(self):
         for soul in reversed(self._souls.values()):
@@ -95,9 +104,10 @@ class GhostBase:
                 continue
             self._shell_image[filename] = kikka.helper.getImage(p)
 
-        for sid in self._souls.keys():
-            self._souls[sid].setSurface(-1)
-            self._souls[sid].updateClothesMenu()
+        for sid, soul in self._souls.items():
+            soul.setSurface(-1)
+            soul.updateClothesMenu()
+            soul.move(soul.pos())
 
     def setShell(self, shellname):
         if self.shell is not None and self.shell.name == shellname:

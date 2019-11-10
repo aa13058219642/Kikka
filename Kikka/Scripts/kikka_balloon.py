@@ -220,7 +220,7 @@ class Balloon:
         pass  # exit for
 
     def _load_stylesheet(self):
-        stylesheet_path = os.path.join(self.resource_path, 'stylesheet.txt')
+        stylesheet_path = os.path.join(self.resource_path, 'stylesheet.qss')
         if not os.path.exists(stylesheet_path): return
 
         charset = kikka.helper.checkEncoding(stylesheet_path)

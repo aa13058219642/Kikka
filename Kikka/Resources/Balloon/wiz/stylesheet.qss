@@ -1,12 +1,12 @@
 
-QLabel {
+QWidget {
 	color: #FFFFFF;
 }
 
 QPushButton{
-	border-style: solid;
-	background-color:#00FF00;
+	text-align: left;
 	padding: 3px;
+	border: 0;
 } 
 QPushButton:hover{
 	text-decoration: underline;

@@ -20,12 +20,16 @@ class WindowConst:
 
 class GhostEvent(Enum):
     EventNone = 0
-    MouseDown = 1
-    MouseMove = 2
-    MouseTouch = 3
-    MouseUp = 4
-    MouseDoubleClick = 5
-    WheelEvent = 6
+
+    Shell_Show = 10
+    Shell_MouseDown = 11
+    Shell_MouseMove = 12
+    Shell_MouseTouch = 13
+    Shell_MouseUp = 14
+    Shell_MouseDoubleClick = 15
+    Shell_WheelEvent = 16
+
+    Dialog_Show = 20
 
     CustomEvent = 100
 

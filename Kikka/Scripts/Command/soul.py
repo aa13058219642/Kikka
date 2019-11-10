@@ -78,6 +78,12 @@ class Soul:
         self._shell_window.hide()
         self._dialog_window.hide()
 
+    def move(self, *__args):
+        self._shell_window.move(*__args)
+
+    def pos(self):
+        return self._shell_window.pos()
+
     def showMenu(self, pos):
         if self._menu is not None:
             self._menu.setPosition(pos)
@@ -452,7 +458,7 @@ class Animation:
 
             self.isRunning = True
             self.isFinish = False
-            self._updatetime = time.clock()
+            self._updatetime = 0
             self._curPattern = -1
 
     def stop(self):
@@ -461,12 +467,11 @@ class Animation:
         self._curPattern = -1
         self._image = None
 
-    def randomStart(self):
+    def randomStart(self, updatetime):
         if self.isFinish is False:
             return False
 
         isNeedStart = False
-        timer_interval = kikka.core.getTimerInterval()
         if self.interval == 'never' \
                 or self.interval == 'talk' \
                 or self.interval == 'bind' \
@@ -475,16 +480,16 @@ class Animation:
             isNeedStart = False
 
         elif self.interval == 'sometimes':
-            # 30% per second
-            isNeedStart = True if random.random() < 0.0003 * timer_interval else False
+            # 20% per second
+            isNeedStart = True if random.random() < 0.0002 * updatetime else False
 
         elif self.interval == 'rarely':
             # 10% per second
-            isNeedStart = True if random.random() < 0.0001 * timer_interval else False
+            isNeedStart = True if random.random() < 0.0001 * updatetime else False
 
         elif self.interval == 'random':
             # n% per second
-            isNeedStart = True if random.random() < self.intervalValue / 100000 * timer_interval else False
+            isNeedStart = True if random.random() < self.intervalValue / 100000 * updatetime else False
 
         elif self.interval == 'periodic':
             now = time.clock()
@@ -533,7 +538,7 @@ class Animation:
 
     def onUpdate(self, updatetime):
         isNeedUpdate = False
-        if self.randomStart() is True:
+        if self.randomStart(updatetime) is True:
             self.start()
             isNeedUpdate = True
 

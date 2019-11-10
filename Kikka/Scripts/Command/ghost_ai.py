@@ -6,7 +6,8 @@ import datetime
 
 import kikka
 from ghostbase import GhostBase
-
+from kikka_const import GhostEvent
+from dialogwindow import DialogWindow
 
 class GhostAI(GhostBase):
     def __init__(self, ghost_id=-1, name=''):
@@ -28,9 +29,20 @@ class GhostAI(GhostBase):
         self._variables['selfname2'] = ''
         self._variables['keroname'] = ''
 
-        self._variables['username'] = self.memoryRead('username', '')
+        self._variables['username'] = self.memoryRead('UserName', '')
         if self._variables['username'] == '':
             self._variables['username'] = 'A.A君'
+
+    def getVariable(self, key):
+        if key not in self._variables:
+            logging.warning("getVariables: key[%s] not exist" % key)
+            return None
+        return self._variables[key]
+
+    def setVariable(self, key, value):
+        if key is None:
+            return
+        self._variables[key] = value
 
     def execSakuraScript(self, updatetime):
         if self._script_wait > 0:
@@ -41,9 +53,9 @@ class GhostAI(GhostBase):
             self._istalking = False
             self._last_talk_time = self._now()
 
-            for sid in range(self.getSoulCount()):
-                self.getSoul(sid).setDefaultSurface()
-                self.getSoul(sid).getDialog().hide()
+            for soul in self._souls.values():
+                soul.setDefaultSurface()
+                soul.getDialog().hide()
             return
 
         while len(self._tokens) > 0:
@@ -113,6 +125,41 @@ class GhostAI(GhostBase):
                 logging.warning('unknow sakura script command: %s %s' % (token[0], token[1]))
         pass
 
+    def talk(self, script):
+        if script is None or script == '':
+            return
+
+        if kikka.core.getAppState() == kikka.core.APP_STATE.HIDE:
+            return
+
+        self.talkClear()
+        ss = SakuraScript(script)
+        self._tokens = ss.tokens
+        if len(self._tokens) <= 0:
+            return
+        if self._tokens[-1][0] != '\\e':
+            self._tokens.append(('\\e', ''))
+
+        self._last_talk_time = self._now()
+        self._istalking = True
+        self._script_wait = 0
+
+    def isTalking(self):
+        return self._istalking
+
+    def talkClear(self):
+        for soul in self._souls.values():
+            soul.getDialog().talkClear()
+
+    def _now(self):
+        return time.clock() * 1000
+
+    def getAITalk(self):
+        return ''
+
+    # ################################################################
+    # Event
+
     def onUpdate(self, updatetime):
         super().onUpdate(updatetime)
 
@@ -121,30 +168,16 @@ class GhostAI(GhostBase):
 
         self.execSakuraScript(updatetime)
 
-    def talk(self, script):
-        if script is None or script == '':
-            return
-
-        ss = SakuraScript(script)
-        self._tokens = ss.tokens
-        self.getSoul(self._current_talk_soul).getDialog().talkClear()
-        self._last_talk_time = self._now()
-        self._istalking = True
-        self._script_wait = 0
-
-    def isTalking(self):
-        return self._istalking
-
-    def _now(self):
-        return time.clock() * 1000
+    def ghostEvent(self, param):
+        super().ghostEvent(param)
+        istalking = self.touchTalk(param)
+        if not istalking and param.eventType == GhostEvent.Shell_MouseDoubleClick:
+            self.getSoul(param.soulID).getDialog().show(DialogWindow.DIALOG_MAINMENU)
 
     def onTalk(self, message):
         dlg = self.getSoul(self._current_talk_soul).getDialog()
-        dlg.showTalk()
+        dlg.show(DialogWindow.DIALOG_TALK)
         dlg.onTalk(message, self._talk_speed)
-
-    def getAITalk(self):
-        return ''
 
 
 class SakuraScript():

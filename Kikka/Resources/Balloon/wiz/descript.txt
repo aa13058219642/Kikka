@@ -4,7 +4,7 @@ name,wiz
 unicode_name,wiz
 craftman,A.A
 
-minimumsize,300,210
+minimumsize,300,170
 clip.width,3,32,32,32
 clip.height,3,32,32,32
 flipbackground,1

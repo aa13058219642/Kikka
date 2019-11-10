@@ -4,7 +4,7 @@ name,_Default_x5
 unicode_name,_Default_x5
 craftman,A.A
 
-minimumsize,300,210
+minimumsize,300,170
 clip.width,5,45, 15, 180, 15, 45
 clip.height,5,45, 15, 90, 15, 45
 flipbackground,1

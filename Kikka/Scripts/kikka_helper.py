@@ -11,14 +11,15 @@ from PyQt5.QtWidgets import QApplication
 
 
 class GhostEventParam:
-    def __init__(self, ghostID, eventType=0, eventTag='', data=None):
+    def __init__(self, ghostID, soulID=0, eventType=0, eventTag='', data=None):
         self.ghostID = ghostID
+        self.soulID = soulID
         self.eventType = eventType
         self.eventTag = eventTag
         self.data = {} if data is None else data
 
     def copy(self):
-        return GhostEventParam(self.ghostID, self.eventType, self.eventTag, copy.deepcopy(self.data))
+        return GhostEventParam(self.ghostID, self.soulID, self.eventType, self.eventTag, copy.deepcopy(self.data))
 
 
 class KikkaHelper:
@@ -144,5 +145,5 @@ class KikkaHelper:
         return md5.hexdigest()[8:24]
 
     @staticmethod
-    def makeGhostEventParam(ghostID, eventType=0, eventTag='', data=None):
-        return GhostEventParam(ghostID, eventType, eventTag, data)
+    def makeGhostEventParam(ghostID, soulID=0, eventType=0, eventTag='', data=None):
+        return GhostEventParam(ghostID, soulID, eventType, eventTag, data)

@@ -43,10 +43,10 @@ class KikkaShell:
                 break
 
         if not isExist:
-            logging.info("scan shell: %s", shell.unicode_name)
+            logging.info("scan shell: %s\t\t%s", shell.name, shell.unicode_name)
             shelldict[shell.name] = shell
         else:
-            logging.warning("load fail. shell exist: %s", shell.unicode_name)
+            logging.warning("load fail. shell exist: %s", shell.name)
         pass
 
     def scanShell(self, shelldir):
@@ -56,7 +56,6 @@ class KikkaShell:
             for dirname in dirnames:
                 shellpath = os.path.join(parent, dirname)
                 self.loadShell(shelldict, shellpath)
-        pass  # exit for
 
         shellordereddict = collections.OrderedDict(sorted(shelldict.items(), key=lambda t: t[0]))
         for name, shell in shellordereddict.items():
@@ -95,6 +94,7 @@ class Shell:
         self.name = ''
         self.unicode_name = ''
         self.type = ''
+        self.description = ''
         self.author = AuthorInfo()
         self.version = 0
         self.maxwidth = 0
@@ -420,6 +420,8 @@ class Shell:
                 self.name = value[0]
             elif key[0] == 'name':
                 self.unicode_name = value[0]
+            elif key[0] == 'description':
+                self.description = value[0]
             elif key[0] == 'type':
                 self.type = value[0]
             elif key[0] == 'craftman' or key[0] == 'craftmanw':

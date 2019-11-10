@@ -3,12 +3,16 @@ import logging
 
 from PyQt5.QtCore import Qt, QRect, QPoint, QSize
 from PyQt5.QtGui import QPixmap, QPainter
-from PyQt5.QtWidgets import QWidget, QStackedLayout, QVBoxLayout, QHBoxLayout, QLabel, QStyleOption, QStyle
+from PyQt5.QtWidgets import QWidget, QStackedLayout, QVBoxLayout, QHBoxLayout, QLabel, QStyleOption, QStyle, QLineEdit, QPushButton
 
 import kikka
 
 
 class DialogWindow(QWidget):
+    DIALOG_MAINMENU = 'mainmenu'
+    DIALOG_TALK = 'talk'
+    DIALOG_INPUT = 'input'
+
     def __init__(self, soul, win_id):
         QWidget.__init__(self)
         self.setWindowFlags(Qt.Tool | Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint)
@@ -31,26 +35,15 @@ class DialogWindow(QWidget):
         self._bgMask = None
         self._rect = None
 
-        self._talkLayout = QVBoxLayout()
-        self._talkLabel = QLabel()
-        self._talkLabel.setAlignment(Qt.AlignLeft | Qt.AlignTop)
-        self._talkLabel.setWordWrap(True)
-        self._talkLayout.addWidget(self._talkLabel)
-
-        self._menuWidget = QWidget(self)
-        self._menuWidget.setContentsMargins(0, 0, 0, 0)
-
-        self._talkWidget = QWidget(self)
-        self._talkWidget.setContentsMargins(0, 0, 0, 0)
-        self._talkWidget.setLayout(self._talkLayout)
-
-        self._mainLayout = QStackedLayout()
-        self._mainLayout.addWidget(self._menuWidget)
-        self._mainLayout.addWidget(self._talkWidget)
-        self.setLayout(self._mainLayout)
+        self._curPage = 0
+        self._widgets = {}
+        self._talkLabel = None
+        self._inputLineEdit = None
+        self._callback = None
         self.init()
 
     def init(self):
+        # rect
         rect = self._soul.memoryRead('DialogRect', [])
         if len(rect) > 0:
             self._rect = QRect(rect[0], rect[1], rect[2], rect[3])
@@ -65,7 +58,49 @@ class DialogWindow(QWidget):
             self._rect = QRect(QPoint(x, y), self.size())
             rectdata = [x - p_pos.x(), y - p_pos.y(), self.size().width(), self.size().height()]
             self._soul.memoryWrite('DialogRect', rectdata)
-        pass
+
+        # default control
+        self._talkLabel = QLabel()
+        self._talkLabel.setAlignment(Qt.AlignLeft | Qt.AlignTop)
+        self._talkLabel.setWordWrap(True)
+
+        self._inputLabel = QLabel()
+        self._inputLineEdit = QLineEdit()
+        self._inputOk = QPushButton("OK")
+        self._inputOk.clicked.connect(self.onInputOk)
+        self._inputCancel = QPushButton("Cancel")
+        self._inputCancel.clicked.connect(self.onInputCancel)
+
+        # default UI
+        talkLayout = QVBoxLayout()
+        talkLayout.addWidget(self._talkLabel)
+        talkWidget = QWidget(self)
+        talkWidget.setContentsMargins(0, 0, 0, 0)
+        talkWidget.setLayout(talkLayout)
+
+        menuWidget = QWidget(self)
+        menuWidget.setContentsMargins(0, 0, 0, 0)
+
+        l = QHBoxLayout()
+        l.addStretch()
+        l.addWidget(self._inputOk)
+        l.addWidget(self._inputCancel)
+        inputLayout = QVBoxLayout()
+        inputLayout.addWidget(self._inputLabel)
+        inputLayout.addWidget(self._inputLineEdit)
+        inputLayout.addLayout(l)
+        inputLayout.addStretch()
+        inputWidget = QWidget(self)
+        inputWidget.setContentsMargins(0, 0, 0, 0)
+        inputWidget.setLayout(inputLayout)
+
+        self.setPage(self.DIALOG_MAINMENU, menuWidget)
+        self.setPage(self.DIALOG_TALK, talkWidget)
+        self.setPage(self.DIALOG_INPUT, inputWidget)
+
+        self._mainLayout = QStackedLayout()
+        self._mainLayout.addWidget(menuWidget)
+        self.setLayout(self._mainLayout)
 
     def setFramelessWindowHint(self, boolean):
         self._framelessWindowHint = boolean
@@ -119,17 +154,41 @@ class DialogWindow(QWidget):
 
         super().move(new_x, new_y)
 
-    def show(self):
+    def setPage(self, tag, qwidget):
+        if tag in self._widgets:
+            self._widgets[tag].deleteLater()
+        qwidget.hide()
+        qwidget.setParent(self)
+        self._widgets[tag] = qwidget
+
+    def getTalkLabel(self):
+        return self._talkLabel
+
+    def showInputBox(self, title, default='', callback=None):
+        self._inputLabel.setText(title)
+        self._inputLineEdit.setText(default)
+        self._callback = callback
+        self.show(self.DIALOG_INPUT)
+
+    def show(self, pageTag=None):
+        if pageTag is None:
+            pageTag = self.DIALOG_MAINMENU
+        elif pageTag not in self._widgets:
+            logging.warning("show: page[%s] not exist" % pageTag)
+            pageTag = self.DIALOG_MAINMENU
+
+        if self._widgets[pageTag] != self._mainLayout.currentWidget():
+            self._mainLayout.removeWidget(self._mainLayout.currentWidget())
+            self._mainLayout.addWidget(self._widgets[pageTag])
+            self._mainLayout.setCurrentIndex(0)
+            self._curPage = pageTag
+
+        param = kikka.helper.makeGhostEventParam(self._ghost.ID, self._soul.ID, kikka.const.GhostEvent.Dialog_Show, 'Show')
+        param.data['pageTag'] = self._curPage
+        self._ghost.emitGhostEvent(param)
+
         super().show()
         self.updatePosition()
-
-    def showMenu(self):
-        self._mainLayout.setCurrentIndex(0)
-        self.show()
-
-    def showTalk(self):
-        self._mainLayout.setCurrentIndex(1)
-        self.show()
 
     def closeEvent(self, event):
         self.setFramelessWindowHint(True)
@@ -137,6 +196,7 @@ class DialogWindow(QWidget):
         pass
 
     def resizeEvent(self, event):
+        super().resizeEvent(event)
         self.repaint()
 
     def paintEvent(self, event):
@@ -153,15 +213,14 @@ class DialogWindow(QWidget):
         self.setMinimumSize(balloon.minimumsize)
         self.setContentsMargins(balloon.margin[0], balloon.margin[1], balloon.margin[2], balloon.margin[3])
         self.setStyleSheet(balloon.stylesheet)
+        self.style().unpolish(self)
+        self.style().polish(self)
 
     def repaint(self):
         self._bgImage = self._ghost.getBalloonImage(self.size(), self.isFlip, self.ID)
         self._bgPixmap = QPixmap().fromImage(self._bgImage, Qt.AutoColor)
         self._bgMask = self._bgPixmap.mask()
         super().repaint()
-
-    def setMenuLayout(self, layout):
-        self._menuWidget.setLayout(layout)
 
     def talkClear(self):
         self._talkLabel.setText('')
@@ -170,4 +229,11 @@ class DialogWindow(QWidget):
         text = self._talkLabel.text()
         text += message
         self._talkLabel.setText(text)
-        pass
+
+    def onInputOk(self):
+        if self._callback is not None:
+            self._callback(self._inputLineEdit.text())
+        self.hide()
+
+    def onInputCancel(self):
+        self.hide()
