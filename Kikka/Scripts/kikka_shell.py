@@ -43,7 +43,7 @@ class KikkaShell:
                 break
 
         if not isExist:
-            logging.info("scan shell: %s\t\t%s", shell.name, shell.unicode_name)
+            logging.info("scan shell: %s", shell.unicode_name)
             shelldict[shell.name] = shell
         else:
             logging.warning("load fail. shell exist: %s", shell.name)

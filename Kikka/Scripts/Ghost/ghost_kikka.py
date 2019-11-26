@@ -37,7 +37,6 @@ class GhostKikka(GhostAI):
         self.initMenu()
         self.onFirstBoot()
 
-
     def initLayout(self):
         dlg = self.getSoul(KIKKA).getDialog()
         self._kikkaWidget = QWidget()
@@ -181,7 +180,7 @@ class GhostKikka(GhostAI):
     # ########################################################################################################
 
     def onFirstBoot(self):
-        boot_last = datetime.datetime.fromtimestamp(self.memoryRead('BootThis', time.time()))
+        boot_last = datetime.datetime.fromtimestamp(self.memoryRead('BootLast', time.time()))
         today = datetime.datetime.now()
         if boot_last.day == today.day:
             return
@@ -522,8 +521,8 @@ class GhostKikka(GhostAI):
                     shell_list = self.getShellByWeather(weather)
                     if self.shell.name not in shell_list:
                         shell_name = random.choice(shell_list)
-                    if shell_name is not None:
-                        self.changeShell(shell_name)
+                        if shell_name is not None:
+                            self.changeShell(shell_name)
 
                 if now.hour == 0:
                     script = r"\0凌晨12点了呢.又是新的一天～\e"
@@ -564,8 +563,8 @@ class GhostKikka(GhostAI):
                 elif 19 <= now.hour <= 23:
                     script = random.choice([
                         r"\0%(hour)点了..接下來该做什么事呢\e",
-                        r"\0晚上%(hour12)了呢..%(username)在做什么呢\e",
-                        r"\0晚上%(hour12)了呢..这个时间%(username)应该都在电脑前吧\e"
+                        r"\0晚上%(hour12)点了呢..%(username)在做什么呢\e",
+                        r"\0晚上%(hour12)点了呢..这个时间%(username)应该都在电脑前吧\e"
                     ])
 
             self._datetime = now

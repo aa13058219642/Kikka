@@ -127,13 +127,17 @@ class KikkaApp:
                 win32gui.EnumWindows(_enumWindowsCallback, sys_listview_container)
             except pywintypes.error as e:
                 if e.winerror != 0:
-                    logging.warning("_getDesktopHwnd Fail")
-                    return []
-            sys_listview = sys_listview_container[0] if len(sys_listview_container) > 0 else 0
-            shell_dll_defview = win32gui.GetParent(sys_listview)
+                    err = win32api.GetLastError()
+                    logging.warning("_getDesktopHwnd Fail: %d" % err)
+
+            if len(sys_listview_container) > 0:
+                sys_listview = sys_listview_container[0]
+                shell_dll_defview = win32gui.GetParent(sys_listview)
+            else:
+                sys_listview = 0
         else:
             sys_listview = win32gui.FindWindowEx(shell_dll_defview, 0, "SysListView32", "FolderView")
-        workerW = win32gui.GetParent(shell_dll_defview)
+        workerW = win32gui.GetParent(shell_dll_defview) if shell_dll_defview != 0 else 0
 
         # logging.info("dt_hwnd:%X  shell_hwnd:%X workerW:%X shell_dll_defview:%X sys_listview:%X " % (
         #     dt_hwnd, shell_hwnd, workerW, shell_dll_defview, sys_listview))
@@ -149,8 +153,7 @@ class KikkaApp:
         if fg_hwnd not in ignore_hwnd:
             try:
                 fg_rect = win32gui.GetWindowRect(fg_hwnd)
-                if fg_rect[0] == 0 and fg_rect[1] == 0 \
-                    and fg_rect[2] == sw and fg_rect[3] == sh:
+                if fg_rect[0] == 0 and fg_rect[1] == 0 and fg_rect[2] == sw and fg_rect[3] == sh:
                     hasProgress = True
             except:
                 hasProgress = False
